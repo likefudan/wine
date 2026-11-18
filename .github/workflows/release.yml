@@ -9,6 +9,10 @@ name: Release
 # 版本: empty makes a new release from main; an existing tag, e.g. v2026.11.18, makes no release and
 # only deploys that one again (redeploy, or roll back to it).
 #
+# 自动发布: CI on main calls this after the test site is deployed (ci.yml, job auto-release), so
+# every green merge goes to production. Switch it off without a code change: Settings → Secrets and
+# variables → Actions → Variables → AUTO_RELEASE = false (delete it, or set true, to switch back on).
+#
 # The tag and release are created with this workflow's token, which does not fire ci.yml's tag-push
 # run; nothing needs it, since the deploy is part of this run.
 on:
@@ -22,16 +26,27 @@ on:
         description: "发布说明（Markdown，可留空；合并的 PR 列表总会附在后面；只用于新版本）"
         type: string
         required: false
+  workflow_call:
+    inputs:
+      ci_green:
+        description: Called by CI on main after its checks passed, so not waiting for CI
+        type: boolean
+        default: false
+      tag:
+        type: string
+        default: ""
+      notes:
+        type: string
+        default: ""
 
 permissions:
   contents: write # tag + release
   actions: read # CI state of main
 
-concurrency: release
-
 jobs:
   release:
     runs-on: ubuntu-latest
+    concurrency: release
     outputs:
       tag: ${{ steps.existing.outputs.tag || steps.version.outputs.tag }}
     env:
@@ -65,7 +80,7 @@ jobs:
             exit 1
           fi
       - name: main must be green (waits while its CI runs)
-        if: inputs.tag == ''
+        if: inputs.tag == '' && !inputs.ci_green
         run: |
           for i in $(seq 90); do
             state=$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" --json status,conclusion,headBranch \

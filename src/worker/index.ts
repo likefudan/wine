@@ -8,6 +8,7 @@ import { profileRoutes } from "./profile";
 import { placesRoutes } from "./places";
 import { friendRoutes } from "./friends";
 import { proseRoutes } from "./prose";
+import { reviewRoutes } from "./reviews";
 import { sharingRoutes } from "./sharing";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -40,6 +41,7 @@ app.route("/api", placesRoutes);
 app.route("/api", proseRoutes);
 app.route("/api", sharingRoutes);
 app.route("/api", friendRoutes);
+app.route("/api", reviewRoutes);
 app.route("/api", profileRoutes);
 app.all("/api/*", (c) => c.json({ error: "not_found", message: "Not found" }, 404));
 
