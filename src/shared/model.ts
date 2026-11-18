@@ -131,6 +131,30 @@ export interface VintageInfo {
   abv: number | null;
   /** The LWIN it was picked from, if any (only sent with putVintage). */
   lwin?: number | null;
+  /** The producer's Google place, when it was picked from 酒庄地址联想. */
+  place?: ProducerPlace | null;
+}
+
+/** Where a producer is: a Google Places place. */
+export interface ProducerPlace {
+  id: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+}
+
+/** /api/places: one suggestion while typing a producer. */
+export interface PlaceSuggestion {
+  id: string;
+  name: string;
+  detail: string;
+}
+
+/** /api/places/:id: the picked place. `area` is the state or province. */
+export interface PlaceDetails extends ProducerPlace {
+  name: string;
+  country: string | null;
+  area: string | null;
 }
 
 /** A wine from the public LWIN list (/api/catalog), not yet in our own catalogue. */
@@ -213,6 +237,7 @@ export type Op =
       grapes?: string[];
       abv?: number | null;
       lwin?: number | null;
+      place?: ProducerPlace | null;
     }
   | { op: "putList"; list: WineList }
   | { op: "deleteList"; id: string }

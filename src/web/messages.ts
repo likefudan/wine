@@ -39,6 +39,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "最快，幾秒出結果，小字偶爾認錯",
     en: "Fastest, a few seconds; sometimes misreads small print",
   },
+  "搜索中…": { tw: "搜尋中…", en: "Searching…" },
   酒款库: { tw: "酒款庫", en: "Wine directory" },
   "酒款库来自 LWIN（Liv-ex）": { tw: "酒款庫來自 LWIN（Liv-ex）", en: "Wine directory: LWIN by Liv-ex" },
   "新酒：{q}": { tw: "新酒：{q}", en: "New wine: {q}" },
