@@ -159,7 +159,7 @@ def client() -> anthropic.Anthropic:
                                timeout=240, max_retries=1)
 
 
-def run_claude(model: str, prompt: str, tools: list, betas: list | None = None) -> dict:
+def run_claude(model: str, prompt: str, tools: list, betas: list | None = None, fmt: dict | None = None) -> dict:
     t0 = time.time()
     c = client()
     messages: list = [{"role": "user", "content": prompt}]
@@ -168,6 +168,8 @@ def run_claude(model: str, prompt: str, tools: list, betas: list | None = None) 
     try:
         for _ in range(4):  # follow pause_turn
             kwargs = dict(model=model, max_tokens=8000, messages=messages, tools=tools)
+            if fmt:
+                kwargs["extra_body"] = {"output_config": {"format": {"type": "json_schema", "schema": fmt}}}
             if betas:
                 kwargs["extra_headers"] = {"anthropic-beta": ",".join(betas)}
             resp = c.messages.create(**kwargs)
@@ -235,9 +237,53 @@ def claude_for(w: tuple) -> dict:
     return out
 
 
+SCORE = {"type": "object", "additionalProperties": False,
+         "required": ["critic", "reviewer", "score", "source_url", "evidence"],
+         "properties": {"critic": {"type": "string"}, "reviewer": {"type": ["string", "null"]},
+                        "score": {"type": "string"}, "source_url": {"type": "string"}, "evidence": {"type": "string"}}}
+SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "required": ["critic_scores", "community", "price_usd", "drink_window", "aromas", "summary", "pages"],
+    "properties": {
+        "critic_scores": {"type": "array", "items": SCORE},
+        "community": {"anyOf": [{"type": "null"}, {"type": "object", "additionalProperties": False,
+                      "required": ["source", "avg", "count", "source_url"],
+                      "properties": {"source": {"type": "string"}, "avg": {"type": "number"},
+                                     "count": {"type": ["integer", "null"]}, "source_url": {"type": "string"}}}]},
+        "price_usd": {"anyOf": [{"type": "null"}, {"type": "object", "additionalProperties": False,
+                      "required": ["avg", "source_url"],
+                      "properties": {"avg": {"type": "number"}, "source_url": {"type": "string"}}}]},
+        "drink_window": {"type": ["string", "null"]},
+        "aromas": {"type": "array", "items": {"type": "string"}},
+        "summary": {"type": "string"},
+        "pages": {"type": "object", "additionalProperties": False, "required": ["wine_searcher", "cellartracker"],
+                  "properties": {"wine_searcher": {"type": ["string", "null"]}, "cellartracker": {"type": ["string", "null"]}}},
+    },
+}
+
+
+def structured_only(out_dir: str) -> None:
+    """Second pass: the same search with structured output, on a few wines (incl. the one that failed to parse)."""
+    picks = [WINES[i] for i in (0, 10, 18, 21)]
+    prompt = PROMPT + "\nGive the score exactly as printed (e.g. \"98+\", \"97-99\"), and the reviewer's name when shown."
+
+    def one(w: tuple) -> dict:
+        p = prompt.format(producer=w[0], name=w[1], vintage=w[2])
+        return {"wine": w, "sonnet": run_claude("claude-sonnet-5-5", p, SEARCH_TOOL, fmt=SCHEMA),
+                "haiku": run_claude("claude-haiku-5-5-2", p, SEARCH_TOOL, fmt=SCHEMA)}
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        res = list(pool.map(one, picks))
+    with open(os.path.join(out_dir, "structured.json"), "w") as fh:
+        json.dump(res, fh, ensure_ascii=False, indent=1)
+
+
 def main() -> None:
     out_dir = sys.argv[1]
     os.makedirs(out_dir, exist_ok=True)
+    if os.environ.get("SPIKE_MODE") == "structured":
+        structured_only(out_dir)
+        return
     only = int(os.environ.get("SPIKE_LIMIT") or len(WINES))
     wines = WINES[:only]
     pages: dict = {}
