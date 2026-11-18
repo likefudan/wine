@@ -3,7 +3,7 @@ import { avaOf } from "../src/shared/ava";
 import { placePath, tidyPlace } from "../src/shared/place";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
-import { beginnerQuestions, glassColor, tastingNote } from "../src/shared/guide";
+import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
 
 describe("vocabulary", () => {
@@ -45,6 +45,18 @@ describe("beginner questions", () => {
       "Deep ruby, aromas of blackcurrant and cedar, high tannin, medium+ acidity, long finish",
     );
     expect(tastingNote("en", "white", {}, {}, {}, [])).toBe("");
+  });
+
+  it("adds what was tasted after what was smelled", () => {
+    const palate = { body: 4 as const, flavours: ["black-cherry", "vanilla"] };
+    expect(tastingNote("zh-CN", "red", {}, {}, palate, ["cedar"])).toBe("雪松香气，酒体偏饱满，口中有黑樱桃和香草");
+    expect(tastingNote("en", "red", {}, {}, palate, [])).toBe("Medium+ body, flavours of black cherry and vanilla");
+  });
+
+  it("offers brown to both red and white without mixing their hue sets", () => {
+    expect(huesFor("red", "brown")).toContain("tawny");
+    expect(huesFor("white", "brown")).toContain("amber");
+    expect(huesFor("dessert", "brown")).toContain("gold");
   });
 });
 

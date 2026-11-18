@@ -19,6 +19,7 @@ import {
   LEVEL_WORDS,
   MOUSSE_WORDS,
   QUALITY_WORDS,
+  READINESS_WORDS,
   REASON_WORDS,
   SWEETNESS_WORDS,
   TEXTURE_WORDS,
@@ -28,7 +29,7 @@ import {
   swatch,
   tastingNote,
 } from "../../shared/guide";
-import { DEPTHS, type Depth, type Tasting, type VintageInfo } from "../../shared/model";
+import { DEPTHS, type Depth, type Tasting, type TastingDescriptor, type VintageInfo } from "../../shared/model";
 import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
@@ -258,21 +259,31 @@ function Conclusion(props: { x: Tasting; patch: Patch; expert?: boolean; standar
   );
 }
 
+/** A list of chosen words and how to change it: the nose's aromas, or the palate's flavours. */
+interface Words {
+  value: TastingDescriptor[];
+  set: (d: TastingDescriptor[]) => void;
+}
+const aromasOf = (x: Tasting, patch: Patch): Words => ({
+  value: x.descriptors,
+  set: (descriptors) => patch({ descriptors }),
+});
+
 /** Chips for aroma words; tap to add, tap again to remove (专业: tap cycles the strength). */
-function AromaChips(props: { ids: string[]; x: Tasting; patch: Patch; strength?: boolean; row?: boolean }) {
-  const { x, patch } = props;
+function AromaChips(props: { ids: string[]; w: Words; strength?: boolean; row?: boolean }) {
+  const { value, set } = props.w;
   const toggle = (id: string) => {
-    const has = x.descriptors.find((d) => d.id === id);
-    if (!has) return patch({ descriptors: [...x.descriptors, { id, intensity: 2 }] });
+    const has = value.find((d) => d.id === id);
+    if (!has) return set([...value, { id, intensity: 2 }]);
     if (props.strength && has.intensity < 3)
-      return patch({ descriptors: x.descriptors.map((d) => (d.id === id ? { ...d, intensity: d.intensity + 1 } : d)) });
-    patch({ descriptors: x.descriptors.filter((d) => d.id !== id) });
+      return set(value.map((d) => (d.id === id ? { ...d, intensity: d.intensity + 1 } : d)));
+    set(value.filter((d) => d.id !== id));
   };
   return (
     <div class={props.row ? "chips family-row" : "chips"}>
       {props.ids.map((id) => {
         const d = DESCRIPTOR_BY_ID.get(id)!;
-        const on = x.descriptors.find((s) => s.id === id);
+        const on = value.find((s) => s.id === id);
         return (
           <button
             key={id}
@@ -292,7 +303,7 @@ function AromaChips(props: { ids: string[]; x: Tasting; patch: Patch; strength?:
 }
 
 /** The whole vocabulary, by family, with a search box. */
-function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength?: boolean }) {
+function AromaPicker(props: { x: Tasting; v: VintageInfo; w: Words; strength?: boolean; placeholder?: string }) {
   const [q, setQ] = useState("");
   const color = redLike(props.v, props.x);
   const ql = q.trim().toLowerCase();
@@ -304,7 +315,7 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
       d.name.en.toLowerCase(),
       ...(d.hint ? [d.hint.zh, d.hint.tw, d.hint.en.toLowerCase()] : []),
     ].some((s) => s.includes(ql));
-  const chosen = props.x.descriptors.map((d) => d.id);
+  const chosen = props.w.value.map((d) => d.id);
   // Every family is open, one row each, its words scrolling sideways. Nothing needs a tap to open, so
   // nothing on the page moves: a chosen word stays where it is and only lights up, and the summary
   // of what is chosen sits below the families, where growing only pushes down what comes after.
@@ -313,7 +324,7 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
       <input
         type="search"
         class="search small"
-        placeholder={t("找香气，例如 雪松")}
+        placeholder={props.placeholder ?? t("找香气，例如 雪松")}
         value={q}
         onInput={(e) => setQ((e.target as HTMLInputElement).value)}
       />
@@ -333,32 +344,26 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
                   {p(f.name)}
                   {picked > 0 && <span class="family-count">{picked}</span>}
                 </span>
-                <AromaChips
-                  ids={words.map((d) => d.id)}
-                  x={props.x}
-                  patch={props.patch}
-                  strength={props.strength}
-                  row
-                />
+                <AromaChips ids={words.map((d) => d.id)} w={props.w} strength={props.strength} row />
               </div>
             );
           })}
         </div>
       ))}
-      <ChosenAromas x={props.x} patch={props.patch} strength={props.strength} />
+      <ChosenAromas w={props.w} strength={props.strength} />
     </div>
   );
 }
 
 /** What is chosen so far, under the word lists so that it never pushes them around. */
-function ChosenAromas(props: { x: Tasting; patch: Patch; strength?: boolean; hideEmpty?: boolean }) {
-  const ids = props.x.descriptors.map((d) => d.id);
+function ChosenAromas(props: { w: Words; strength?: boolean; hideEmpty?: boolean }) {
+  const ids = props.w.value.map((d) => d.id);
   if (props.hideEmpty && !ids.length) return null;
   return (
     <div class="aroma-chosen">
       <span class="tier-label">{t("已选 {n}", { n: ids.length })}</span>
       {ids.length > 0 ? (
-        <AromaChips ids={ids} x={props.x} patch={props.patch} strength={props.strength} />
+        <AromaChips ids={ids} w={props.w} strength={props.strength} />
       ) : (
         <span class="field-hint">{t("点上面的词，选中的会亮起来")}</span>
       )}
@@ -455,10 +460,10 @@ function Quick(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
       <section class="step">
         <h2 class="step-title">{t("香气")}</h2>
         {more ? (
-          <AromaPicker x={x} v={v} patch={patch} />
+          <AromaPicker x={x} v={v} w={aromasOf(x, patch)} />
         ) : (
           <>
-            <AromaChips ids={[...ids, ...extra]} x={x} patch={patch} />
+            <AromaChips ids={[...ids, ...extra]} w={aromasOf(x, patch)} />
             <button type="button" class="link small" onClick={() => setMore(true)}>
               {t("更多香气")}
             </button>
@@ -628,7 +633,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
                 {t("换个方向再找")}
               </button>
             )}
-            <ChosenAromas x={x} patch={patch} hideEmpty />
+            <ChosenAromas w={aromasOf(x, patch)} hideEmpty />
           </div>
         )}
         {q.options.length > 0 && (
@@ -687,6 +692,10 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
   const red = v.color === "red";
   const num = (val: string) => (val === "" || !Number.isFinite(Number(val)) ? undefined : Number(val));
   const [custom, setCustom] = useState("");
+  const flavours: Words = {
+    value: (pl.flavours ?? []).map((id) => ({ id, intensity: 2 })),
+    set: (d) => setP({ flavours: d.map((s) => s.id) }),
+  };
 
   return (
     <div class="steps">
@@ -734,52 +743,61 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
           />
         </Field>
         <Hues x={x} v={v} patch={patch} />
-        {expert && (
-          <>
-            <Field label={t("澄清度")} group>
-              <Choice
-                label={t("澄清度")}
-                value={a.clarity}
-                options={[
-                  { value: "clear" as const, label: t("清澈") },
-                  { value: "hazy" as const, label: t("浑浊") },
-                ]}
-                onChange={(val) => setA({ clarity: val })}
+        <Field label={t("澄清度")} group>
+          <Choice
+            label={t("澄清度")}
+            value={a.clarity}
+            options={[
+              { value: "clear" as const, label: t("清澈") },
+              { value: "hazy" as const, label: t("浑浊") },
+            ]}
+            onChange={(val) => setA({ clarity: val })}
+          />
+        </Field>
+        <div class="checks">
+          {expert && (
+            <label class="check">
+              <input
+                type="checkbox"
+                checked={!!a.rim}
+                onChange={(e) => setA({ rim: (e.target as HTMLInputElement).checked || undefined })}
               />
-            </Field>
-            <div class="checks">
-              <label class="check">
-                <input
-                  type="checkbox"
-                  checked={!!a.rim}
-                  onChange={(e) => setA({ rim: (e.target as HTMLInputElement).checked || undefined })}
-                />
-                {t("杯沿颜色变化明显")}
-              </label>
-              <label class="check">
-                <input
-                  type="checkbox"
-                  checked={!!a.legs}
-                  onChange={(e) => setA({ legs: (e.target as HTMLInputElement).checked || undefined })}
-                />
-                {t("挂杯明显")}
-              </label>
-              <label class="check">
-                <input
-                  type="checkbox"
-                  checked={!!a.sediment}
-                  onChange={(e) => setA({ sediment: (e.target as HTMLInputElement).checked || undefined })}
-                />
-                {t("有沉淀")}
-              </label>
-            </div>
-          </>
-        )}
+              {t("杯沿颜色变化明显")}
+            </label>
+          )}
+          <label class="check">
+            <input
+              type="checkbox"
+              checked={!!a.legs}
+              onChange={(e) => setA({ legs: (e.target as HTMLInputElement).checked || undefined })}
+            />
+            {t("挂杯明显")}
+          </label>
+          <label class="check">
+            <input
+              type="checkbox"
+              checked={!!a.sediment}
+              onChange={(e) => setA({ sediment: (e.target as HTMLInputElement).checked || undefined })}
+            />
+            {t("有沉淀")}
+          </label>
+        </div>
       </section>
 
       <section class="step">
         <h2 class="step-title">2 · {t("闻香")}</h2>
         <p class="hint">{t("先不摇杯闻一次，再摇杯闻一次；先判断是红色果还是黑色果")}</p>
+        <Field label={t("状态")} hint={t("闻到湿纸板、发霉或醋味，就是不干净")} group>
+          <Choice
+            label={t("状态")}
+            value={n.condition}
+            options={[
+              { value: "clean" as const, label: t("干净") },
+              { value: "unclean" as const, label: t("不干净") },
+            ]}
+            onChange={(val) => setN({ condition: val })}
+          />
+        </Field>
         <Field label={t("香气强度")} group>
           <Choice
             label={t("香气强度")}
@@ -788,20 +806,18 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
             onChange={(val) => setN({ intensity: val })}
           />
         </Field>
-        {expert && (
-          <Field label={t("发展阶段")} group>
-            <Choice
-              label={t("发展阶段")}
-              value={n.development}
-              options={Object.entries(DEVELOPMENT_WORDS).map(([k, w]) => ({
-                value: k as NonNullable<typeof n.development>,
-                label: p(w),
-              }))}
-              onChange={(val) => setN({ development: val })}
-            />
-          </Field>
-        )}
-        <AromaPicker x={x} v={v} patch={patch} strength={expert} />
+        <Field label={t("发展阶段")} group>
+          <Choice
+            label={t("发展阶段")}
+            value={n.development}
+            options={Object.entries(DEVELOPMENT_WORDS).map(([k, w]) => ({
+              value: k as NonNullable<typeof n.development>,
+              label: p(w),
+            }))}
+            onChange={(val) => setN({ development: val })}
+          />
+        </Field>
+        <AromaPicker x={x} v={v} w={aromasOf(x, patch)} strength={expert} />
         {expert && (
           <div class="custom-words">
             <div class="chips">
@@ -899,7 +915,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
             onChange={(val) => setP({ body: val })}
           />
         </Field>
-        {expert && v.color === "sparkling" && (
+        {(v.color === "sparkling" || pl.mousse) && (
           <Field label={t("气泡")} group>
             <Choice
               label={t("气泡")}
@@ -912,16 +928,28 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
             />
           </Field>
         )}
-        {expert && (
-          <Field label={t("风味强度")} group>
-            <Choice
-              label={t("风味强度")}
-              value={pl.flavour}
-              options={levels(LEVEL_WORDS) as { value: 1 | 2 | 3 | 4 | 5; label: string }[]}
-              onChange={(val) => setP({ flavour: val })}
-            />
-          </Field>
-        )}
+        <Field label={t("风味强度")} group>
+          <Choice
+            label={t("风味强度")}
+            value={pl.flavour}
+            options={levels(LEVEL_WORDS) as { value: 1 | 2 | 3 | 4 | 5; label: string }[]}
+            onChange={(val) => setP({ flavour: val })}
+          />
+        </Field>
+        <Field label={t("风味特征")} group>
+          <span class="field-hint">{t("嘴里尝到的味道，和闻到的常常一样，也会多出或少了几样")}</span>
+          <button
+            type="button"
+            class="button small same-as-nose"
+            disabled={!x.descriptors.length}
+            onClick={() =>
+              setP({ flavours: [...new Set([...(pl.flavours ?? []), ...x.descriptors.map((d) => d.id)])] })
+            }
+          >
+            {t("和闻到的一样")}
+          </button>
+          <AromaPicker x={x} v={v} w={flavours} placeholder={t("找风味，例如 黑醋栗")} />
+        </Field>
         <Field label={t("余味")} group>
           <Choice
             label={t("余味")}
@@ -940,22 +968,37 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
       </section>
       <Conclusion x={x} patch={patch} standard expert={expert} />
 
+      <section class="step">
+        <Field label={t("品质的理由")} hint={t("平衡、余味长度、强度、复杂度，哪几样做得好")} group>
+          <div class="chips">
+            {Object.entries(REASON_WORDS).map(([k, w]) => (
+              <button
+                key={k}
+                type="button"
+                class={ex.reasons?.includes(k) ? "chip on" : "chip"}
+                aria-pressed={!!ex.reasons?.includes(k)}
+                onClick={() => setE({ reasons: toggleIn(ex.reasons, k) })}
+              >
+                {p(w)}
+              </button>
+            ))}
+          </div>
+        </Field>
+        <Field label={t("适饮程度")} group>
+          <Choice
+            label={t("适饮程度")}
+            value={ex.readiness}
+            options={Object.entries(READINESS_WORDS).map(([k, w]) => ({
+              value: k as NonNullable<typeof ex.readiness>,
+              label: p(w),
+            }))}
+            onChange={(val) => setE({ readiness: val })}
+          />
+        </Field>
+      </section>
+
       {expert && (
         <section class="step">
-          <Field label={t("品质的理由")} group>
-            <div class="chips">
-              {Object.entries(REASON_WORDS).map(([k, w]) => (
-                <button
-                  key={k}
-                  type="button"
-                  class={ex.reasons?.includes(k) ? "chip on" : "chip"}
-                  onClick={() => setE({ reasons: toggleIn(ex.reasons, k) })}
-                >
-                  {p(w)}
-                </button>
-              ))}
-            </div>
-          </Field>
           <div class="field-row">
             <Field label={t("适饮期从")}>
               <input

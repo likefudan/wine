@@ -485,6 +485,12 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
   const descriptors = Array.isArray(t.descriptors)
     ? [...new Map(t.descriptors.filter((d) => isDescriptorId(d?.id)).map((d) => [d.id, d])).values()].slice(0, 40)
     : [];
+  // Palate flavours come from the same vocabulary as the nose: keep only known words, once each.
+  const palate = t.palate && typeof t.palate === "object" && !Array.isArray(t.palate) ? { ...t.palate } : {};
+  if ("flavours" in palate)
+    palate.flavours = Array.isArray(palate.flavours)
+      ? [...new Set(palate.flavours.filter(isDescriptorId))].slice(0, 40)
+      : undefined;
   const values = [
     vintageId,
     itemId,
@@ -492,7 +498,7 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
     depth,
     json(t.appearance, 2000),
     json(t.nose, 4000),
-    json(t.palate, 2000),
+    json(palate, 2000),
     json(t.extra, 2000),
     json(t.guesses, 1000),
     clampText(t.quality, 20),

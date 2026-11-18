@@ -279,11 +279,13 @@ describe("lists and tastings", () => {
         { id: "cedar", intensity: 9 },
         { id: "unicorn", intensity: 2 },
       ],
+      palate: { acidity: 3, flavours: ["cedar", "unicorn", "cedar", "vanilla"] },
     });
     const r = await c.ops([v, { op: "putTasting", tasting: bad }, { op: "putTasting", tasting: odd }]);
     expect(r.data.results.map((x) => x.ok)).toEqual([true, false, true]);
     const s = (await c.call("/api/sync")).data;
     expect(s.tastings[0].descriptors).toEqual([{ id: "cedar", intensity: 2 }]);
+    expect(s.tastings[0].palate).toEqual({ acidity: 3, flavours: ["cedar", "vanilla"] });
   });
 
   it("keeps people apart", async () => {
