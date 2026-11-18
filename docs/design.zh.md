@@ -62,7 +62,7 @@ flowchart LR
 | 异步任务 | Cloudflare Queues | 新增 |
 | 二维码 | `qrcode` 包，浏览器内生成 | 相同 |
 | 离线 | PWA + IndexedDB 草稿队列 | 羽毛球网站有 `offline.ts`，这里要做得更重 |
-| 多语言 | `lang.ts` / `i18n.ts` / `messages.ts` | 相同机制，见 3.7 |
+| 多语言 | `lang.ts` / `i18n.ts` / `messages.ts` | 相同机制，见 3.8 |
 | 测试与发布 | Vitest + Playwright；main → staging，`v*` tag → 生产；Biome | 相同 |
 
 要点和约束：
