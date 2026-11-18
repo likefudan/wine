@@ -352,11 +352,21 @@ export const LABEL_MODELS = [
 export type LabelModel = (typeof LABEL_MODELS)[number]["id"];
 export const isLabelModel = (v: unknown): v is LabelModel => LABEL_MODELS.some((m) => m.id === v);
 
+/** 头像: their own photo, the Google picture, or none on purpose. */
+export type AvatarMode = "own" | "google" | "none";
+
 export interface Me {
   id: string;
   email: string;
+  /** What others see: their 昵称, else the Google name. */
   name: string | null;
+  /** What others see: their own photo, else the Google picture (null = none). */
   picture: string | null;
+  /** Their own name; null = the Google one. */
+  nickname: string | null;
+  googleName: string | null;
+  googlePicture: string | null;
+  avatarMode: AvatarMode;
   locale: Lang | null;
   depth: Depth | null;
   /** null = the default (LABEL_MODELS[0]). */
@@ -372,7 +382,11 @@ export interface Me {
 export interface Member {
   id: string;
   email: string;
+  /** Their 昵称, else the Google name. */
   name: string | null;
+  /** The Google name, when they chose another. */
+  googleName: string | null;
+  picture: string | null;
   status: "active" | "pending" | "disabled";
   createdAt: string;
   approvedBy: string | null;
@@ -504,4 +518,20 @@ export interface FriendFeed {
   notes: FriendNote[];
   /** Pass as ?before= for older notes; null when there are none. */
   next: string | null;
+}
+
+/** 昵称 (Ke Li 2026-11-18): at most this many characters. */
+export const NICKNAME_MAX = 20;
+
+/**
+ * A nickname (trimmed, not empty): letters of any language, digits, spaces and . - _ ' ( ) ·,
+ * starting with a letter or digit — so no emoji, line breaks or a name of only dots (the badminton
+ * site's checkNameChars(), widened past 中文/English for names like José or 정민).
+ */
+export function checkNickname(name: string): string | null {
+  if ([...name].length > NICKNAME_MAX) return "昵称最多 20 个字";
+  if (!/^[\p{L}\p{M}\p{N} ._\-'’()（）·・]*$/u.test(name)) return "昵称只能用文字、数字、空格和 . - _ ' ( ) ·";
+  if (!/^[\p{L}\p{N}]/u.test(name)) return "昵称要以文字或数字开头";
+  if (/\s{2,}/.test(name)) return "昵称里不要连着打空格";
+  return null;
 }

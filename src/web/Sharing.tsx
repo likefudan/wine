@@ -1,3 +1,4 @@
+import { Face } from "./Profile";
 import { useEffect, useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../shared/descriptors";
 import { glassColor, tastingNote } from "../shared/guide";
@@ -44,17 +45,9 @@ function useQr(text: string | null): string {
   return src;
 }
 
-export function Initial(props: { name: string; picture: string | null }) {
-  return (
-    <span class="avatar small" aria-hidden="true">
-      {props.picture ? (
-        <img src={props.picture} alt="" referrerpolicy="no-referrer" />
-      ) : (
-        <span>{props.name.trim()[0]?.toUpperCase() ?? "?"}</span>
-      )}
-    </span>
-  );
-}
+export const Initial = (props: { name: string; picture: string | null }) => (
+  <Face name={props.name} picture={props.picture} class="small" />
+);
 
 /** 分享: the QR code for friends at the table, and (for the owner) who may see and when notes open. */
 export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; onClose: () => void }) {

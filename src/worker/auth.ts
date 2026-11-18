@@ -3,6 +3,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { type Depth, type Lang, type Me, isLabelModel, isLang, ulid } from "../shared/model";
 import type { Env } from "./env";
+import { avatarMode, avatarUrl, nameOf } from "./profile";
 import { HttpError, now, randomToken, sha256, timingSafeEqual } from "./http";
 
 /**
@@ -33,6 +34,9 @@ export interface UserRow {
   email: string;
   name: string | null;
   picture: string | null;
+  /** 昵称和头像 (profile.ts): their own name / photo, over Google's. */
+  nickname: string | null;
+  avatar: string | null;
   locale: string | null;
   depth: string | null;
   label_model: string | null;
@@ -55,8 +59,12 @@ export function meOf(env: Env, u: UserRow): Me {
   return {
     id: u.id,
     email: u.email,
-    name: u.name,
-    picture: u.picture,
+    name: nameOf(u),
+    picture: avatarUrl(u),
+    nickname: u.nickname,
+    googleName: u.name,
+    googlePicture: u.picture,
+    avatarMode: avatarMode(u),
     locale: isLang(u.locale) ? (u.locale as Lang) : null,
     depth: (u.depth as Depth | null) ?? null,
     labelModel: isLabelModel(u.label_model) ? u.label_model : null,

@@ -4,6 +4,7 @@ import { exportName, toCsv, toJson } from "../../shared/export";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
 import { Choice, Field } from "../components";
 import { GrowthPanel } from "../Growth";
+import { Face, ProfileSheet } from "../Profile";
 import { LangSwitch } from "../LangSwitch";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
@@ -19,23 +20,10 @@ const LABEL_MODEL_HINT: Record<LabelModel, string> = {
   "DeepSeek-V4.1-Flash-1017": "最快，几秒出结果，小字偶尔认错",
 };
 
-/** My picture: a link to 我的, or (`tab`) the icon of the 我的 tab, which is already a link. */
-export function Avatar(props: { tab?: boolean }) {
+/** My picture, the icon of the 我的 tab (which is already a link). */
+export function Avatar() {
   const me = useStore((s) => s.me);
-  if (!me) return null;
-  const initial = (me.name ?? me.email).trim()[0]?.toUpperCase() ?? "?";
-  const face = me.picture ? <img src={me.picture} alt="" referrerpolicy="no-referrer" /> : <span>{initial}</span>;
-  if (props.tab)
-    return (
-      <span class="avatar tab-avatar" aria-hidden="true">
-        {face}
-      </span>
-    );
-  return (
-    <a href="/me" class="avatar" aria-label={t("我的")}>
-      {face}
-    </a>
-  );
+  return me ? <Face name={me.name ?? me.email} picture={me.picture} class="tab-avatar" /> : null;
 }
 
 type MeTab = "growth" | "tasting" | "general" | "members";
@@ -68,6 +56,7 @@ export function MePage() {
   const count = useStore((s) => s.tastings.length);
   const [theme, setT] = useState<Theme>(savedTheme());
   const [syncing, setSyncing] = useState(false);
+  const [editing, setEditing] = useState(false);
   const { query, route } = useLocation();
   const waiting = usePending();
   useEffect(() => {
@@ -95,14 +84,16 @@ export function MePage() {
   return (
     <div class="page">
       <h1 class="visually-hidden">{t("我的")}</h1>
-      <section class="me-card">
-        <Avatar tab />
-        <div>
+      <button type="button" class="me-card" aria-label={t("编辑资料")} onClick={() => setEditing(true)}>
+        <Face name={me.name ?? me.email} picture={me.picture} size={56} />
+        <div class="me-card-text">
           <strong>{me.name ?? me.email}</strong>
           <div class="muted small">{me.email}</div>
           <div class="muted small">{t("已记录 {n} 款", { n: count })}</div>
         </div>
-      </section>
+        <span class="me-card-edit">{t("编辑")}</span>
+      </button>
+      {editing && <ProfileSheet onClose={() => setEditing(false)} />}
       <div class="segmented" role="tablist" aria-label={t("设置")}>
         {tabs.map((x) => (
           <button
@@ -318,9 +309,11 @@ function Members() {
   const others = list?.filter((m) => m.status !== "pending") ?? [];
   const row = (m: Member, actions: preact.ComponentChildren) => (
     <li key={m.id} class="member-row">
+      <Face name={m.name ?? m.email} picture={m.picture} class="small" />
       <span class="member-who">
         <strong>{m.name ?? m.email}</strong>
         <span class="muted small">
+          {m.googleName ? `${t("Google 名字：{name}", { name: m.googleName })} · ` : ""}
           {m.email} · {fmtDate(m.createdAt, false)}
           {m.status === "disabled" ? ` · ${t("已停用")}` : m.approvedBy === "auto" ? ` · ${t("免审核")}` : ""}
         </span>

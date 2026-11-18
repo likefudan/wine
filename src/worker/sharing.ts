@@ -13,6 +13,7 @@ import { type UserRow, currentUser, requireSameOrigin, requireUser } from "./aut
 import { VINTAGE_SELECT, type VintageRow, vintageInfo } from "./data";
 import type { Env } from "./env";
 import { HttpError, now, randomToken, readJson, timingSafeEqual } from "./http";
+import { NAME_SQL, PICTURE_SQL } from "./profile";
 
 /**
  * 分享与共同评价 (docs/design.zh.md §3.6). A list's QR code holds /l/{list id}?k={key}: scanning it
@@ -49,7 +50,7 @@ const notFound = () => new HttpError(404, "not_found", "找不到这次品鉴");
 async function loadList(db: DB, listId: string): Promise<ListRow> {
   if (!ID_RE.test(listId)) throw notFound();
   const l = await db
-    .prepare("SELECT l.*, u.name AS owner_name FROM lists l JOIN users u ON u.id = l.owner_id WHERE l.id = ?")
+    .prepare(`SELECT l.*, ${NAME_SQL()} AS owner_name FROM lists l JOIN users u ON u.id = l.owner_id WHERE l.id = ?`)
     .bind(listId)
     .first<ListRow>();
   if (!l) throw notFound();
@@ -100,7 +101,7 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
     db
       .prepare(
         `SELECT t.id, t.user_id, t.list_item_id, t.depth, t.score, t.buy_again, t.appearance, t.nose, t.palate, t.note,
-           u.name, u.email, u.picture
+           ${NAME_SQL()} AS name, u.email, ${PICTURE_SQL()} AS picture
          FROM tastings t JOIN users u ON u.id = t.user_id JOIN list_items i ON i.id = t.list_item_id
          WHERE i.list_id = ? AND ${HANDED_IN} ORDER BY t.score IS NULL, t.score DESC, t.updated_at`,
       )
@@ -113,7 +114,7 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
       .bind(l.id),
     db
       .prepare(
-        `SELECT u.id, u.name, u.email, u.picture, m.role FROM list_members m JOIN users u ON u.id = m.user_id
+        `SELECT u.id, ${NAME_SQL()} AS name, u.email, ${PICTURE_SQL()} AS picture, m.role FROM list_members m JOIN users u ON u.id = m.user_id
          WHERE m.list_id = ? ORDER BY m.role = 'owner' DESC, m.joined_at`,
       )
       .bind(l.id),

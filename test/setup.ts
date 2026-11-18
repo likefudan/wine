@@ -18,6 +18,7 @@ const TABLES = [
   "invites",
   "sessions",
   "oauth_states",
+  "user_avatars",
   "users",
 ];
 

@@ -2,9 +2,11 @@
 // checks none is missing). zh-TW uses Taiwan phrasing (登入, 網路, 品飲), not a character swap.
 
 import { FRIEND_MESSAGES } from "./messages-friends";
+import { PROFILE_MESSAGES } from "./messages-profile";
 
 export const MESSAGES: Record<string, { tw: string; en: string }> = {
   ...FRIEND_MESSAGES,
+  ...PROFILE_MESSAGES,
   我的分: { tw: "我的分數", en: "My score" },
   拖动打分: { tw: "拖動評分", en: "Slide to score" },
   清除: { tw: "清除", en: "Clear" },

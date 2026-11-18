@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { type Depth, type FriendFeed, type FriendNote, ID_RE } from "../shared/model";
 import { requireUser } from "./auth";
+import { NAME_SQL, PICTURE_SQL } from "./profile";
 import { VINTAGE_SELECT, type VintageRow, vintageInfo } from "./data";
 import type { Env } from "./env";
 import { HttpError } from "./http";
@@ -61,7 +62,7 @@ export async function friendFeed(
     await db
       .prepare(
         `SELECT t.id, t.user_id, t.list_item_id, t.depth, t.score, t.buy_again, t.note, t.updated_at,
-           u.name, u.email, u.picture, l.id AS list_id, l.title, l.blind, l.revealed_at, i.vintage_id,
+           ${NAME_SQL()} AS name, u.email, ${PICTURE_SQL()} AS picture, l.id AS list_id, l.title, l.blind, l.revealed_at, i.vintage_id,
            EXISTS (SELECT 1 FROM tastings m WHERE m.list_item_id = t.list_item_id AND m.user_id = ?1
              AND ${handedIn("m")}) AS mine_in
          FROM tastings t

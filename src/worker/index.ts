@@ -4,6 +4,7 @@ import { dataRoutes } from "./data";
 import type { Env } from "./env";
 import { HttpError } from "./http";
 import { aiEnabled, labelRoutes } from "./label";
+import { profileRoutes } from "./profile";
 import { placesRoutes } from "./places";
 import { friendRoutes } from "./friends";
 import { proseRoutes } from "./prose";
@@ -19,7 +20,8 @@ app.onError((err, c) => {
 
 app.use("/api/*", async (c, next) => {
   await next();
-  c.header("Cache-Control", "no-store");
+  // A 头像 photo (whose address changes with every upload) and label photos say how long they keep.
+  if (!c.res.headers.has("Cache-Control")) c.header("Cache-Control", "no-store");
 });
 
 app.get("/api/health", (c) =>
@@ -38,6 +40,7 @@ app.route("/api", placesRoutes);
 app.route("/api", proseRoutes);
 app.route("/api", sharingRoutes);
 app.route("/api", friendRoutes);
+app.route("/api", profileRoutes);
 app.all("/api/*", (c) => c.json({ error: "not_found", message: "Not found" }, 404));
 
 /**
