@@ -23,6 +23,7 @@ import {
   yearLabel,
 } from "../../shared/model";
 import { ProducerInput } from "../ProducerInput";
+import { SuggestInput } from "../SuggestInput";
 import { BackIcon, CameraIcon, Choice, Field, Glass, WineName } from "../components";
 import { p, t, tm } from "../i18n";
 import { ApiError, addItem, addVintage, api, blankTasting, getState, saveTasting, useStore } from "../store";
@@ -420,12 +421,10 @@ function WineForm(props: {
   const set = (k: keyof Draft) => (e: Event) => setD({ ...d, [k]: (e.target as HTMLInputElement).value });
   // Each level fills the empty ones above it: Oakville gives Napa Valley, California and USA; Sonoma County
   // gives California and USA; California gives USA. A 大区 that came from the old 子产区 follows the new one.
-  const setRegion = (e: Event) => {
-    const region = (e.target as HTMLInputElement).value;
+  const setRegion = (region: string) => {
     setD((x) => ({ ...x, region, country: x.country || countryOfRegion(region) || "" }));
   };
-  const setArea = (e: Event) => {
-    const area = (e.target as HTMLInputElement).value;
+  const setArea = (area: string) => {
     const known = areaNamed(area);
     setD((x) => ({
       ...x,
@@ -434,8 +433,7 @@ function WineForm(props: {
       country: x.country || known?.country || countryOfRegion(known?.region) || "",
     }));
   };
-  const setAppellation = (e: Event) => {
-    const appellation = (e.target as HTMLInputElement).value;
+  const setAppellation = (appellation: string) => {
     const known = appellationOf(appellation);
     setD((x) => ({
       ...x,
@@ -528,36 +526,33 @@ function WineForm(props: {
           <input value={d.country} maxLength={60} onInput={set("country")} placeholder="USA" />
         </Field>
         <Field label={t("产区")}>
-          <input value={d.region} maxLength={80} onInput={setRegion} placeholder="California" list="region-list" />
+          <SuggestInput
+            name="region"
+            value={d.region}
+            options={REGION_NAMES}
+            onInput={setRegion}
+            placeholder="California"
+          />
         </Field>
       </div>
       {/* Suggestions narrow as the levels above are filled: California lists its 大区 and AVAs only. */}
-      <datalist id="region-list">
-        {REGION_NAMES.map((n) => (
-          <option key={n} value={n} />
-        ))}
-      </datalist>
-      <datalist id="area-list">
-        {areasIn(d.region).map((n) => (
-          <option key={n} value={n} />
-        ))}
-      </datalist>
-      <datalist id="appellation-list">
-        {appellationsIn(d.region, d.area).map((n) => (
-          <option key={n} value={n} />
-        ))}
-      </datalist>
       <div class="field-row top">
         <Field label={t("大区")} hint={t("选了子产区会自动填")}>
-          <input value={d.area} maxLength={80} onInput={setArea} placeholder="Napa Valley" list="area-list" />
+          <SuggestInput
+            name="area"
+            value={d.area}
+            options={areasIn(d.region)}
+            onInput={setArea}
+            placeholder="Napa Valley"
+          />
         </Field>
         <Field label={t("子产区")} hint={t("酒标上最小的产区")}>
-          <input
+          <SuggestInput
+            name="appellation"
             value={d.appellation}
-            maxLength={80}
+            options={appellationsIn(d.region, d.area)}
             onInput={setAppellation}
             placeholder="Oakville"
-            list="appellation-list"
           />
         </Field>
       </div>

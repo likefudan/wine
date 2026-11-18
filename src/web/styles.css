@@ -1376,6 +1376,13 @@ h3 {
   color: var(--muted);
   font-size: 13px;
 }
+/* 产区 / 大区 / 子产区 lists (SuggestInput): long, so they scroll. */
+.suggestions.scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
 .searching {
   color: var(--muted);
   font-style: normal;
