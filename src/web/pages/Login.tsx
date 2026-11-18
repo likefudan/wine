@@ -8,7 +8,7 @@ const inWeChat = () => /MicroMessenger/i.test(navigator.userAgent);
 const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 const ERRORS: Record<string, string> = {
-  not_invited: tk("这个 Google 账号还没有受邀。请让站长把你的邮箱加进邀请名单。"),
+  disabled: tk("这个账号已被停用。"),
   not_configured: tk("Google 登录还没有开通。"),
   cancelled: tk("登录已取消。"),
   invalid_state: tk("登录超时了，请再试一次。"),
@@ -76,7 +76,7 @@ export function Login(props: { session: { google: boolean; dev: boolean; me: Me 
           </button>
         </form>
       )}
-      <p class="muted center small">{t("目前只对受邀的朋友开放。")}</p>
+      <p class="muted center small">{t("任何 Google 账号都能注册。新用户有时要等站长审核，审核前也能正常记录。")}</p>
     </div>
   );
 }

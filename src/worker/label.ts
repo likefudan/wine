@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono } from "hono";
 import { COLORS, ID_RE, LABEL_MODELS, type LabelModel, isLabelModel, ulid } from "../shared/model";
-import { requireSameOrigin, requireUser } from "./auth";
+import { requireApproved, requireSameOrigin, requireUser } from "./auth";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 
@@ -178,6 +178,7 @@ export const labelRoutes = new Hono<{ Bindings: Env }>();
 labelRoutes.post("/label", async (c) => {
   requireSameOrigin(c);
   const user = await requireUser(c);
+  requireApproved(c.env, user);
   if (!aiEnabled(c.env)) throw new HttpError(503, "ai_off", "拍酒标识别还没有开通，请手动输入");
   const body = await readJson(c.req.raw);
   const image = typeof body.image === "string" ? body.image.replace(/^data:image\/jpeg;base64,/, "") : "";

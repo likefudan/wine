@@ -26,16 +26,41 @@ describe("sign-in", () => {
     expect(res.status).toBe(403);
   });
 
-  it("knows the owner and lets them invite", async () => {
+  it("lets newcomers in while today's free places last, then waits for the owner", async () => {
     const owner = await signIn("owner@example.com");
-    const s = await owner.call("/api/auth/session");
-    expect(s.data.me.owner).toBe(true);
-    expect((await owner.call("/api/invites", { email: "Friend@Example.com" })).status).toBe(200);
-    const list = await owner.call("/api/invites");
-    expect(list.data.invites).toEqual([{ email: "friend@example.com", joined: false }]);
-    const friend = await signIn("friend@example.com");
-    expect((await friend.call("/api/invites")).status).toBe(403);
-    expect((await friend.call("/api/auth/session")).data.me.owner).toBe(false);
+    expect((await owner.call("/api/auth/session")).data.me).toMatchObject({ owner: true, approved: true });
+    expect((await owner.call("/api/settings/auto-approve", { perDay: 1 })).status).toBe(200);
+
+    const first = await signIn("first@example.com");
+    expect((await first.call("/api/auth/session")).data.me).toMatchObject({ owner: false, approved: true });
+    const second = await signIn("second@example.com");
+    expect((await second.call("/api/auth/session")).data.me.approved).toBe(false);
+    // Waiting: notes yes, things that cost money no.
+    expect((await second.ops([vintageOp()])).data.results[0]!.ok).toBe(true);
+    const label = await second.call("/api/label", { image: "abc" });
+    expect([label.status, label.data.error]).toEqual([403, "pending_approval"]);
+    expect((await second.call("/api/places?q=ridge")).status).toBe(403);
+    expect((await second.call("/api/members")).status).toBe(403);
+
+    const list = (await owner.call("/api/members")).data;
+    expect(list.autoApprovePerDay).toBe(1);
+    const waiting = list.members[0];
+    expect([waiting.email, waiting.status]).toEqual(["second@example.com", "pending"]);
+    await owner.call(`/api/members/${waiting.id}`, { status: "active" });
+    expect((await second.call("/api/auth/session")).data.me.approved).toBe(true);
+
+    // Disabled: signed out at once and cannot sign in again.
+    await owner.call(`/api/members/${waiting.id}`, { status: "disabled" });
+    expect((await second.call("/api/sync")).status).toBe(401);
+    const again = new Client();
+    expect((await again.call("/api/auth/dev", { email: "second@example.com" })).status).toBe(403);
+  });
+
+  it("with no free places, every newcomer waits", async () => {
+    const owner = await signIn("owner@example.com");
+    await owner.call("/api/settings/auto-approve", { perDay: 0 });
+    const c = await signIn("someone@example.com");
+    expect((await c.call("/api/auth/session")).data.me.approved).toBe(false);
   });
 
   it("logs out", async () => {

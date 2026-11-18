@@ -7,8 +7,9 @@ import { HttpError, now, randomToken, sha256, timingSafeEqual } from "./http";
 
 /**
  * Google sign-in, the same server-side PKCE flow as the badminton site (googleAuth.ts there), with
- * one account type: a person. Only invited emails get in (docs/design.zh.md §2): OWNER_EMAILS, and
- * whoever an owner added in 我的 → 邀请.
+ * one account type: a person. Anyone may sign up (开放注册, as jaysbadminton): a newcomer is let in at
+ * once while today's free places last (每天免审核名额), otherwise waits for an owner to approve them.
+ * Waiting accounts can keep notes, but not use label reading or place lookups, which cost money.
  */
 
 type Ctx<E extends { Bindings: Env } = { Bindings: Env }> = Context<E>;
@@ -35,6 +36,9 @@ export interface UserRow {
   locale: string | null;
   depth: string | null;
   label_model: string | null;
+  status: string;
+  approved_at: string | null;
+  approved_by: string | null;
   role: string;
   created_at: string;
 }
@@ -55,6 +59,7 @@ export function meOf(env: Env, u: UserRow): Me {
     locale: isLang(u.locale) ? (u.locale as Lang) : null,
     depth: (u.depth as Depth | null) ?? null,
     labelModel: isLabelModel(u.label_model) ? u.label_model : null,
+    approved: u.status === "active" || isOwner(env, u.email),
     owner: isOwner(env, u.email),
   };
 }
@@ -69,7 +74,7 @@ export async function currentUser<E extends { Bindings: Env }>(c: Ctx<E>): Promi
   const raw = getCookie(c, SESSION_COOKIE);
   if (!raw) return null;
   return c.env.DB.prepare(
-    "SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ?",
+    "SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ? AND u.status != 'disabled'",
   )
     .bind(await sha256(raw), now())
     .first<UserRow>();
@@ -81,15 +86,42 @@ export async function requireUser<E extends { Bindings: Env }>(c: Ctx<E>): Promi
   return u;
 }
 
-/** May this email sign in: an owner, someone invited, or someone who already has an account. */
-async function allowed(env: Env, sub: string, email: string): Promise<boolean> {
-  if (isOwner(env, email)) return true;
-  const row = await env.DB.prepare(
-    "SELECT 1 FROM invites WHERE email = ? UNION ALL SELECT 1 FROM users WHERE google_sub = ? LIMIT 1",
-  )
-    .bind(email.toLowerCase(), sub)
-    .first();
-  return !!row;
+/** 每天免审核名额 when no owner has set one. */
+export const DEFAULT_AUTO_APPROVE_PER_DAY = 10;
+
+export async function autoApprovePerDay(env: Env): Promise<number> {
+  const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'auto_approve_per_day'").first<{
+    value: string;
+  }>();
+  const n = Number(row?.value);
+  return row && Number.isInteger(n) && n >= 0 && n <= 1000 ? n : DEFAULT_AUTO_APPROVE_PER_DAY;
+}
+
+/** A newcomer's account: an owner is in; others take one of the last 24 hours' free places, or wait. */
+async function newcomerStatus(env: Env, email: string): Promise<{ status: string; by: string | null }> {
+  if (isOwner(env, email)) return { status: "active", by: "owner" };
+  const since = new Date(Date.now() - 86400_000).toISOString();
+  const used = await env.DB.prepare("SELECT COUNT(*) AS n FROM users WHERE approved_by = 'auto' AND approved_at > ?")
+    .bind(since)
+    .first<{ n: number }>();
+  return (used?.n ?? 0) < (await autoApprovePerDay(env))
+    ? { status: "active", by: "auto" }
+    : { status: "pending", by: null };
+}
+
+/** Owners are always in; a disabled account cannot sign in. */
+async function refused(env: Env, sub: string, email: string): Promise<boolean> {
+  if (isOwner(env, email)) return false;
+  const row = await env.DB.prepare("SELECT status FROM users WHERE google_sub = ?")
+    .bind(sub)
+    .first<{ status: string }>();
+  return row?.status === "disabled";
+}
+
+/** Label reading and place lookups cost money: only for approved accounts. */
+export function requireApproved(env: Env, u: UserRow) {
+  if (u.status !== "active" && !isOwner(env, u.email))
+    throw new HttpError(403, "pending_approval", "站长审核通过后才能使用这个功能");
 }
 
 /** Accept only HTTPS avatar URLs from Google's image hosts. */
@@ -117,6 +149,7 @@ async function startSession(
     .bind(profile.sub)
     .first<{ id: string }>();
   const userId = existing?.id ?? ulid();
+  const fresh = existing ? null : await newcomerStatus(c.env, profile.email);
   const raw = randomToken(),
     expires = new Date(Date.now() + SESSION_DAYS * 86400_000);
   const old = getCookie(c, SESSION_COOKIE);
@@ -126,8 +159,21 @@ async function startSession(
           .prepare("UPDATE users SET email = ?, name = COALESCE(?, name), picture = ? WHERE id = ?")
           .bind(profile.email, profile.name, profile.picture, userId)
       : db
-          .prepare("INSERT INTO users (id, google_sub, email, name, picture, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-          .bind(userId, profile.sub, profile.email, profile.name, profile.picture, now()),
+          .prepare(
+            `INSERT INTO users (id, google_sub, email, name, picture, created_at, status, approved_at, approved_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          )
+          .bind(
+            userId,
+            profile.sub,
+            profile.email,
+            profile.name,
+            profile.picture,
+            now(),
+            fresh!.status,
+            fresh!.by ? now() : null,
+            fresh!.by,
+          ),
     db.prepare("DELETE FROM sessions WHERE expires_at < ? OR id_hash = ?").bind(now(), old ? await sha256(old) : ""),
     db
       .prepare("INSERT INTO sessions (id_hash, user_id, expires_at) VALUES (?, ?, ?)")
@@ -237,7 +283,7 @@ authRoutes.get("/google/callback", async (c) => {
     // Never log codes, tokens or provider responses.
     return c.redirect("/login?error=failed");
   }
-  if (!(await allowed(c.env, profile.sub, profile.email))) return c.redirect("/login?error=not_invited");
+  if (await refused(c.env, profile.sub, profile.email)) return c.redirect("/login?error=disabled");
   await startSession(c, profile);
   return c.redirect("/");
 });
@@ -249,6 +295,8 @@ authRoutes.post("/dev", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as { email?: unknown; name?: unknown };
   const email = typeof body.email === "string" && /^[^@\s]+@[^@\s]+$/.test(body.email) ? body.email : null;
   if (!email) throw new HttpError(400, "bad_request", "邮箱无效");
+  if (await refused(c.env, `dev:${email.toLowerCase()}`, email))
+    throw new HttpError(403, "disabled", "这个账号已被停用");
   await startSession(c, {
     sub: `dev:${email.toLowerCase()}`,
     email,

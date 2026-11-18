@@ -2,7 +2,7 @@
 
 A mobile-first web app for keeping a structured wine tasting journal: record each wine in seconds at the winery, search everything you have tasted later, and compare notes with the friends who were there.
 
-- **Site**: https://wine.llmat.dev (invited Google accounts only)
+- **Site**: https://wine.llmat.dev (sign up with Google; the owner approves newcomers beyond a daily number)
 - **Test site**: https://wine-staging.llmat.dev
 
 > **Status: phase 1** (record at the winery): Google sign-in, wine lists, finding a wine by name or label photo, quick notes and the three guided depths, a searchable personal library, offline notes, 简体 / 繁體 / English. Sharing, critic reviews, cellar and recommendations come in later phases ([docs/design.zh.md](docs/design.zh.md) §6).
@@ -62,7 +62,7 @@ Repository secrets (Settings → Secrets and variables → Actions):
 | Secret | What |
 | --- | --- |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Deploys. The token needs Workers Scripts, D1, Workers R2 Storage (edit), Account Settings (read), and on the zone llmat.dev Workers Routes, DNS (edit) and Zone (read). |
-| `OWNER_EMAILS` | Google emails of the site owners, comma-separated: they can always sign in and invite others in 我的. |
+| `OWNER_EMAILS` | Google emails of the site owners, comma-separated: they can always sign in, approve newcomers and set 每天免审核名额 in 我的 → 成员. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The same OAuth client as jaysbadminton. Its redirect URIs must include `https://wine.llmat.dev/api/auth/google/callback` and `https://wine-staging.llmat.dev/api/auth/google/callback`. |
 | `AZURE_FOUNDRY_API_KEY` | Reading wine labels (Claude on Azure, the same key as jaysbadminton). Label scanning is hidden behind a message while it is missing. |
 

@@ -20,9 +20,10 @@ import {
   nameKey,
   ulid,
   type LwinWine,
+  type Member,
   searchWords,
 } from "../shared/model";
-import { type UserRow, isOwner, meOf, requireSameOrigin, requireUser } from "./auth";
+import { type UserRow, autoApprovePerDay, isOwner, meOf, requireSameOrigin, requireUser } from "./auth";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 
@@ -592,40 +593,77 @@ export async function searchLwin(db: DB, q: string): Promise<LwinWine[]> {
   return rows.results;
 }
 
-// ── Invites ──────────────────────────────────────────────────────────────────────────────────
+// ── Members (开放注册) ─────────────────────────────────────────────────────────────────────────
 
 const requireOwner = async (c: Parameters<typeof requireUser>[0]) => {
   const u = await requireUser(c);
-  if (!isOwner(c.env, u.email)) throw new HttpError(403, "forbidden", "只有站长能管理邀请");
+  if (!isOwner(c.env, u.email)) throw new HttpError(403, "forbidden", "只有站长能管理成员");
   return u;
 };
 
-dataRoutes.get("/invites", async (c) => {
+/** Everyone who signed up, those waiting first; and 每天免审核名额. */
+dataRoutes.get("/members", async (c) => {
   await requireOwner(c);
   const rows = await c.env.DB.prepare(
-    `SELECT i.email, i.created_at, (SELECT 1 FROM users u WHERE lower(u.email) = i.email) AS joined
-     FROM invites i ORDER BY i.created_at DESC`,
-  ).all<{ email: string; created_at: string; joined: number | null }>();
-  return c.json({ invites: rows.results.map((r) => ({ email: r.email, joined: !!r.joined })) });
+    `SELECT id, email, name, status, created_at, approved_by FROM users
+     ORDER BY status = 'pending' DESC, created_at DESC LIMIT 500`,
+  ).all<{
+    id: string;
+    email: string;
+    name: string | null;
+    status: Member["status"];
+    created_at: string;
+    approved_by: string | null;
+  }>();
+  return c.json({
+    members: rows.results.map(
+      (r): Member => ({
+        id: r.id,
+        email: r.email,
+        name: r.name,
+        status: r.status,
+        createdAt: r.created_at,
+        approvedBy: r.approved_by,
+      }),
+    ),
+    autoApprovePerDay: await autoApprovePerDay(c.env),
+  });
 });
 
-dataRoutes.post("/invites", async (c) => {
+/** 通过 / 停用 / 恢复 one account. Owners cannot be stopped from here. */
+dataRoutes.post("/members/:id", async (c) => {
   requireSameOrigin(c);
-  const u = await requireOwner(c);
-  const email = String((await readJson(c.req.raw)).email ?? "")
-    .trim()
-    .toLowerCase();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 200)
-    throw new HttpError(400, "bad_email", "请填写正确的邮箱");
-  await c.env.DB.prepare("INSERT OR IGNORE INTO invites (email, invited_by, created_at) VALUES (?, ?, ?)")
-    .bind(email, u.id, now())
+  const owner = await requireOwner(c);
+  const status = (await readJson(c.req.raw)).status;
+  if (status !== "active" && status !== "disabled") throw new HttpError(400, "bad_status", "状态无效");
+  const target = await c.env.DB.prepare("SELECT email FROM users WHERE id = ?")
+    .bind(c.req.param("id"))
+    .first<{ email: string }>();
+  if (!target) throw new HttpError(404, "not_found", "找不到这个成员");
+  if (isOwner(c.env, target.email)) throw new HttpError(400, "owner", "不能停用站长");
+  await c.env.DB.prepare(
+    `UPDATE users SET status = ?1,
+       approved_at = CASE WHEN ?1 = 'active' AND approved_at IS NULL THEN ?2 ELSE approved_at END,
+       approved_by = CASE WHEN ?1 = 'active' AND approved_by IS NULL THEN ?3 ELSE approved_by END
+     WHERE id = ?4`,
+  )
+    .bind(status, now(), owner.id, c.req.param("id"))
     .run();
+  if (status === "disabled")
+    await c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(c.req.param("id")).run();
   return c.json({ ok: true });
 });
 
-dataRoutes.delete("/invites/:email", async (c) => {
+/** 每天免审核名额: 0 means every newcomer waits for approval. */
+dataRoutes.post("/settings/auto-approve", async (c) => {
   requireSameOrigin(c);
   await requireOwner(c);
-  await c.env.DB.prepare("DELETE FROM invites WHERE email = ?").bind(c.req.param("email").toLowerCase()).run();
+  const n = Number((await readJson(c.req.raw)).perDay);
+  if (!Number.isInteger(n) || n < 0 || n > 1000) throw new HttpError(400, "bad_number", "请填 0 到 1000 之间的整数");
+  await c.env.DB.prepare(
+    "INSERT INTO settings (key, value) VALUES ('auto_approve_per_day', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+  )
+    .bind(String(n))
+    .run();
   return c.json({ ok: true });
 });
