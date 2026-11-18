@@ -35,7 +35,7 @@ jobs:
               t = time.time()
               r = urllib.request.Request(url, data=json.dumps(body).encode(), headers={"content-type": "application/json", **headers})
               try:
-                  with urllib.request.urlopen(r, timeout=300) as resp:
+                  with urllib.request.urlopen(r, timeout=600) as resp:
                       return resp.status, json.loads(resp.read()), time.time() - t
               except urllib.error.HTTPError as e:
                   return e.code, e.read().decode()[:600], time.time() - t
@@ -44,9 +44,9 @@ jobs:
           def openai_body(model):
               content = [{"type": "text", "text": PROMPT}] + [
                   {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + b}} for b in imgs]
-              return {"model": model, "messages": [{"role": "user", "content": content}], "max_tokens": 8000}
+              return {"model": model, "messages": [{"role": "user", "content": content}], "max_tokens": 32000}
           results = {}
-          for model in ["Kimi-K3.1-Pro", "DeepSeek-V4.1-Flash-1017"]:
+          for model in ["Kimi-K3.1-Pro"]:
               tries = [(f"{HOST}/openai/v1/chat/completions", openai_body(model)),
                        (f"{HOST}/openai/deployments/{model}/chat/completions?api-version=2024-10-21", openai_body(model))]
               for url, body in tries:
@@ -54,7 +54,7 @@ jobs:
                   results.setdefault(model, []).append({"url": url.replace(HOST, ""), "status": st, "seconds": round(sec, 1), "out": out})
                   print(model, url.replace(HOST, ""), "HTTP", st, f"{sec:.1f}s")
                   if st == 200: break
-          for model in ["claude-fable-5-2"]:
+          for model in []:
               content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b}} for b in imgs]
               content.append({"type": "text", "text": PROMPT})
               st, out, sec = call(f"{HOST}/anthropic/v1/messages", {"x-api-key": KEY, "anthropic-version": "2023-06-01"},
@@ -63,4 +63,4 @@ jobs:
               print(model, "HTTP", st, f"{sec:.1f}s")
           json.dump(results, open("results.json", "w"), ensure_ascii=False, indent=1)
       - name: Store the results in R2
-        run: npx -y wrangler@4 r2 object put wine-photos-staging/tmp-model-test/results.json --file results.json --content-type application/json --remote > /dev/null
+        run: npx -y wrangler@4 r2 object put wine-photos-staging/tmp-model-test/results-kimi.json --file results.json --content-type application/json --remote > /dev/null
