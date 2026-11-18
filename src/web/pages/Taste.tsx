@@ -31,17 +31,11 @@ import {
 } from "../../shared/guide";
 import { COMPARABLE, compareLine, isComparable, nudge, previousTasting, scaleValue } from "../../shared/compare";
 import { aromasInNote } from "../../shared/notewords";
-import {
-  DEPTHS,
-  type Depth,
-  type Tasting,
-  type TastingDescriptor,
-  type VintageInfo,
-  toDepth,
-} from "../../shared/model";
+import { DEPTHS, type Depth, type Tasting, type TastingDescriptor, type VintageInfo } from "../../shared/model";
 import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
+import { GrapePicker } from "../GrapePicker";
 import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe, useStore } from "../store";
 import { ShareIcon, TastingShareSheet } from "../TastingCard";
@@ -109,8 +103,6 @@ export function Taste() {
       </div>
     );
 
-  // A note saved as 专业 before it merged into 进阶 opens as 进阶.
-  const depth = toDepth(x.depth) ?? "quick";
   const patch: Patch = (change) => {
     const next = { ...x, ...change };
     setX(next);
@@ -122,7 +114,7 @@ export function Taste() {
     }, 400);
   };
   const switchDepth = (d: Depth) => {
-    if (d === depth) return;
+    if (d === x.depth) return;
     patch({ depth: d });
     const n = switches + 1;
     setSwitches(n);
@@ -164,8 +156,8 @@ export function Taste() {
             key={d}
             type="button"
             role="tab"
-            aria-selected={depth === d}
-            class={depth === d ? "on" : ""}
+            aria-selected={x.depth === d}
+            class={x.depth === d ? "on" : ""}
             onClick={() => switchDepth(d)}
           >
             {t(DEPTH_INFO[d].name)}
@@ -192,9 +184,11 @@ export function Taste() {
       )}
       <TastingPlace id={x.id} fresh={query.new === "1"} />
       {saved && <TastingFromCellar x={saved} fresh={query.new === "1"} />}
-      {depth === "quick" && <Quick x={x} v={vintage} patch={patch} />}
-      {depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} prev={prev} />}
-      {depth === "standard" && <Systematic x={x} v={vintage} patch={patch} prev={prev} />}
+      {x.depth === "quick" && <Quick x={x} v={vintage} patch={patch} />}
+      {x.depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} prev={prev} />}
+      {(x.depth === "standard" || x.depth === "expert") && (
+        <Systematic x={x} v={vintage} patch={patch} expert={x.depth === "expert"} prev={prev} />
+      )}
       <div class="taste-foot">
         <button type="button" class="button block" onClick={() => setSharing(true)}>
           <ShareIcon /> {t("生成分享图")}
@@ -239,7 +233,7 @@ function backOf(x: Tasting): string {
 
 // ── Shared pieces ────────────────────────────────────────────────────────────────────────────
 
-function Conclusion(props: { x: Tasting; patch: Patch; standard?: boolean }) {
+function Conclusion(props: { x: Tasting; patch: Patch; expert?: boolean; standard?: boolean }) {
   const { x, patch } = props;
   return (
     <section class="step">
@@ -298,7 +292,7 @@ function Conclusion(props: { x: Tasting; patch: Patch; standard?: boolean }) {
           <BoughtToCellar x={x} />
         </>
       )}
-      <NoteField x={x} patch={patch} rows={props.standard ? 5 : 2} />
+      <NoteField x={x} patch={patch} rows={props.expert ? 5 : 2} />
     </section>
   );
 }
@@ -807,18 +801,20 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
   );
 }
 
-// ── 进阶 ──────────────────────────────────────────────────────────────────────────────────
+// ── 进阶 / 专业 ──────────────────────────────────────────────────────────────────────────────
 
-function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Prev | null }) {
-  const { x, v, patch } = props;
+function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: boolean; prev: Prev | null }) {
+  const { x, v, patch, expert } = props;
   const a = x.appearance,
     n = x.nose,
     pl = x.palate,
-    ex = x.extra;
+    ex = x.extra,
+    gs = x.guesses;
   const setA = (c: Partial<Tasting["appearance"]>) => patch({ appearance: { ...a, ...c } });
   const setN = (c: Partial<Tasting["nose"]>) => patch({ nose: { ...n, ...c } });
   const setP = (c: Partial<Tasting["palate"]>) => patch({ palate: { ...pl, ...c } });
   const setE = (c: Partial<Tasting["extra"]>) => patch({ extra: { ...ex, ...c } });
+  const setG = (c: Partial<Tasting["guesses"]>) => patch({ guesses: { ...gs, ...c } });
   const toggleIn = (list: string[] | undefined, k: string) =>
     list?.includes(k) ? list.filter((s) => s !== k) : [...(list ?? []), k];
   const red = v.color === "red";
@@ -831,6 +827,38 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
 
   return (
     <div class="steps">
+      {expert && (
+        <section class="step">
+          <h2 class="step-title">{t("盲品猜酒")}</h2>
+          <p class="hint">{t("先猜再看答案。猜过的会统计命中率。")}</p>
+          <Field label={t("品种")} group>
+            <GrapePicker
+              label={t("品种")}
+              single
+              color={v.color}
+              value={gs.grape ? [gs.grape] : []}
+              onChange={(g) => setG({ grape: g[0] })}
+            />
+          </Field>
+          <div class="field-row">
+            <Field label={t("产区")}>
+              <input
+                value={gs.region ?? ""}
+                maxLength={60}
+                onInput={(e) => setG({ region: (e.target as HTMLInputElement).value || undefined })}
+              />
+            </Field>
+            <Field label={t("年份")}>
+              <input
+                inputMode="numeric"
+                maxLength={4}
+                value={gs.vintage ?? ""}
+                onInput={(e) => setG({ vintage: num((e.target as HTMLInputElement).value) })}
+              />
+            </Field>
+          </div>
+        </section>
+      )}
       <section class="step">
         <h2 class="step-title">1 · {t("外观")}</h2>
         <p class="hint">{t("把杯子斜放在白纸前，看杯沿的颜色")}</p>
@@ -855,14 +883,16 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
           />
         </Field>
         <div class="checks">
-          <label class="check">
-            <input
-              type="checkbox"
-              checked={!!a.rim}
-              onChange={(e) => setA({ rim: (e.target as HTMLInputElement).checked || undefined })}
-            />
-            {t("杯沿颜色变化明显")}
-          </label>
+          {expert && (
+            <label class="check">
+              <input
+                type="checkbox"
+                checked={!!a.rim}
+                onChange={(e) => setA({ rim: (e.target as HTMLInputElement).checked || undefined })}
+              />
+              {t("杯沿颜色变化明显")}
+            </label>
+          )}
           <label class="check">
             <input
               type="checkbox"
@@ -915,40 +945,42 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
             onChange={(val) => setN({ development: val })}
           />
         </Field>
-        <AromaPicker x={x} v={v} w={aromasOf(x, patch)} strength />
-        <div class="custom-words">
-          <div class="chips">
-            {(n.custom ?? []).map((w) => (
-              <button
-                key={w}
-                type="button"
-                class="chip on"
-                onClick={() => setN({ custom: (n.custom ?? []).filter((s) => s !== w) })}
-              >
-                {w} ✕
+        <AromaPicker x={x} v={v} w={aromasOf(x, patch)} strength={expert} />
+        {expert && (
+          <div class="custom-words">
+            <div class="chips">
+              {(n.custom ?? []).map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  class="chip on"
+                  onClick={() => setN({ custom: (n.custom ?? []).filter((s) => s !== w) })}
+                >
+                  {w} ✕
+                </button>
+              ))}
+            </div>
+            <form
+              class="inline-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const w = custom.trim();
+                if (w && !(n.custom ?? []).includes(w) && (n.custom ?? []).length < 20)
+                  setN({ custom: [...(n.custom ?? []), w.slice(0, 40)] });
+                setCustom("");
+              }}
+            >
+              <input
+                placeholder={t("词表里没有的香气")}
+                value={custom}
+                onInput={(e) => setCustom((e.target as HTMLInputElement).value)}
+              />
+              <button type="submit" class="button small">
+                {t("添加")}
               </button>
-            ))}
+            </form>
           </div>
-          <form
-            class="inline-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const w = custom.trim();
-              if (w && !(n.custom ?? []).includes(w) && (n.custom ?? []).length < 20)
-                setN({ custom: [...(n.custom ?? []), w.slice(0, 40)] });
-              setCustom("");
-            }}
-          >
-            <input
-              placeholder={t("词表里没有的香气")}
-              value={custom}
-              onInput={(e) => setCustom((e.target as HTMLInputElement).value)}
-            />
-            <button type="submit" class="button small">
-              {t("添加")}
-            </button>
-          </form>
-        </div>
+        )}
       </section>
 
       <section class="step">
@@ -982,7 +1014,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
             />
           </Field>
         )}
-        {(red || pl.tanninTexture) && (
+        {expert && (red || pl.tanninTexture) && (
           <Field label={t("单宁质感")} group>
             <Choice
               label={t("单宁质感")}
@@ -1054,7 +1086,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
             onChange={(val) => setP({ finish: val })}
           />
         </Field>
-        <FinishTimer value={pl.finishSeconds} onChange={(s) => setP({ finishSeconds: s })} />
+        {expert && <FinishTimer value={pl.finishSeconds} onChange={(s) => setP({ finishSeconds: s })} />}
       </section>
 
       <Note x={x} v={v} prev={props.prev} />
@@ -1062,7 +1094,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
       <section class="step">
         <h2 class="step-title">4 · {t("结论")}</h2>
       </section>
-      <Conclusion x={x} patch={patch} standard />
+      <Conclusion x={x} patch={patch} standard expert={expert} />
 
       <section class="step">
         <Field label={t("品质的理由")} hint={t("平衡、余味长度、强度、复杂度，哪几样做得好")} group>
@@ -1093,73 +1125,75 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
         </Field>
       </section>
 
-      <section class="step">
-        <div class="field-row">
-          <Field label={t("适饮期从")}>
-            <input
-              inputMode="numeric"
-              maxLength={4}
-              value={ex.drinkFrom ?? ""}
-              onInput={(e) => setE({ drinkFrom: num((e.target as HTMLInputElement).value) })}
-            />
-          </Field>
-          <Field label={t("到")}>
-            <input
-              inputMode="numeric"
-              maxLength={4}
-              value={ex.drinkTo ?? ""}
-              onInput={(e) => setE({ drinkTo: num((e.target as HTMLInputElement).value) })}
-            />
-          </Field>
-        </div>
-        <Field label={t("缺陷")} group>
-          <div class="chips">
-            {Object.entries(FAULT_WORDS).map(([k, w]) => (
-              <button
-                key={k}
-                type="button"
-                class={ex.faults?.includes(k) ? "chip on warn" : "chip"}
-                onClick={() => setE({ faults: toggleIn(ex.faults, k) })}
-              >
-                {p(w)}
-              </button>
-            ))}
+      {expert && (
+        <section class="step">
+          <div class="field-row">
+            <Field label={t("适饮期从")}>
+              <input
+                inputMode="numeric"
+                maxLength={4}
+                value={ex.drinkFrom ?? ""}
+                onInput={(e) => setE({ drinkFrom: num((e.target as HTMLInputElement).value) })}
+              />
+            </Field>
+            <Field label={t("到")}>
+              <input
+                inputMode="numeric"
+                maxLength={4}
+                value={ex.drinkTo ?? ""}
+                onInput={(e) => setE({ drinkTo: num((e.target as HTMLInputElement).value) })}
+              />
+            </Field>
           </div>
-        </Field>
-        <h3 class="sub-title">{t("侍酒条件")}</h3>
-        <div class="field-row">
-          <Field label={t("醒酒（分钟）")}>
-            <input
-              inputMode="numeric"
-              value={ex.decantMinutes ?? ""}
-              onInput={(e) => setE({ decantMinutes: num((e.target as HTMLInputElement).value) })}
-            />
+          <Field label={t("缺陷")} group>
+            <div class="chips">
+              {Object.entries(FAULT_WORDS).map(([k, w]) => (
+                <button
+                  key={k}
+                  type="button"
+                  class={ex.faults?.includes(k) ? "chip on warn" : "chip"}
+                  onClick={() => setE({ faults: toggleIn(ex.faults, k) })}
+                >
+                  {p(w)}
+                </button>
+              ))}
+            </div>
           </Field>
-          <Field label={t("酒温 °C")}>
-            <input
-              inputMode="numeric"
-              value={ex.tempC ?? ""}
-              onInput={(e) => setE({ tempC: num((e.target as HTMLInputElement).value) })}
-            />
-          </Field>
-        </div>
-        <div class="field-row">
-          <Field label={t("杯型")}>
-            <input
-              value={ex.glass ?? ""}
-              maxLength={40}
-              onInput={(e) => setE({ glass: (e.target as HTMLInputElement).value || undefined })}
-            />
-          </Field>
-          <Field label={t("开瓶第几天")}>
-            <input
-              inputMode="numeric"
-              value={ex.dayOpen ?? ""}
-              onInput={(e) => setE({ dayOpen: num((e.target as HTMLInputElement).value) })}
-            />
-          </Field>
-        </div>
-      </section>
+          <h3 class="sub-title">{t("侍酒条件")}</h3>
+          <div class="field-row">
+            <Field label={t("醒酒（分钟）")}>
+              <input
+                inputMode="numeric"
+                value={ex.decantMinutes ?? ""}
+                onInput={(e) => setE({ decantMinutes: num((e.target as HTMLInputElement).value) })}
+              />
+            </Field>
+            <Field label={t("酒温 °C")}>
+              <input
+                inputMode="numeric"
+                value={ex.tempC ?? ""}
+                onInput={(e) => setE({ tempC: num((e.target as HTMLInputElement).value) })}
+              />
+            </Field>
+          </div>
+          <div class="field-row">
+            <Field label={t("杯型")}>
+              <input
+                value={ex.glass ?? ""}
+                maxLength={40}
+                onInput={(e) => setE({ glass: (e.target as HTMLInputElement).value || undefined })}
+              />
+            </Field>
+            <Field label={t("开瓶第几天")}>
+              <input
+                inputMode="numeric"
+                value={ex.dayOpen ?? ""}
+                onInput={(e) => setE({ dayOpen: num((e.target as HTMLInputElement).value) })}
+              />
+            </Field>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

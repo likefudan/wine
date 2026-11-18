@@ -1,4 +1,4 @@
-import { type Depth, type Tasting, type VintageInfo, toDepth } from "./model";
+import type { Depth, Tasting, VintageInfo } from "./model";
 
 /**
  * 成长记录 (docs/design.zh.md §3.4): what my notes say about how I taste and how that changes —
@@ -65,7 +65,7 @@ export function growthOf(tastings: readonly Tasting[], vintages: readonly Vintag
   const grapes = new Map<string, number>();
   const countries = new Map<string, number>();
   const regions = new Set<string>();
-  const byDepth: Record<Depth, number> = { quick: 0, beginner: 0, standard: 0 };
+  const byDepth: Record<Depth, number> = { quick: 0, beginner: 0, standard: 0, expert: 0 };
   const months = new Map<string, MonthSum>();
   const seenWines = new Set<string>();
   for (const t of notes) {
@@ -76,14 +76,13 @@ export function growthOf(tastings: readonly Tasting[], vintages: readonly Vintag
     m.wines++;
     m.words += ws.length;
     if (t.score !== null) m.scores.push(t.score);
-    bump(m.depths, toDepth(t.depth) ?? "quick");
+    bump(m.depths, t.depth);
     for (const w of ws) {
       if (!words.has(w)) m.newWords.push(w);
       bump(words, w);
     }
     months.set(month, m);
-    const depth = toDepth(t.depth) ?? "quick";
-    byDepth[depth] = (byDepth[depth] ?? 0) + 1;
+    byDepth[t.depth] = (byDepth[t.depth] ?? 0) + 1;
     // A wine tasted twice counts once for grapes and places.
     if (v && !seenWines.has(v.wineId)) {
       seenWines.add(v.wineId);

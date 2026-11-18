@@ -1,7 +1,7 @@
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { type Lang, type Me, isLabelModel, isLang, toDepth, ulid } from "../shared/model";
+import { type Depth, type Lang, type Me, isLabelModel, isLang, ulid } from "../shared/model";
 import type { Env } from "./env";
 import { avatarMode, avatarUrl, nameOf } from "./profile";
 import { HttpError, now, randomToken, sha256, timingSafeEqual } from "./http";
@@ -66,7 +66,7 @@ export function meOf(env: Env, u: UserRow): Me {
     googlePicture: u.picture,
     avatarMode: avatarMode(u),
     locale: isLang(u.locale) ? (u.locale as Lang) : null,
-    depth: toDepth(u.depth) ?? null,
+    depth: (u.depth as Depth | null) ?? null,
     labelModel: isLabelModel(u.label_model) ? u.label_model : null,
     locationOn: u.location_on === null || u.location_on === undefined ? null : !!u.location_on,
     approved: u.status === "active" || isOwner(env, u.email),

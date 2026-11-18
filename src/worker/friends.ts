@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { type FriendFeed, type FriendNote, ID_RE, toDepth } from "../shared/model";
+import { type Depth, type FriendFeed, type FriendNote, ID_RE } from "../shared/model";
 import { requireUser } from "./auth";
 import { NAME_SQL, PICTURE_SQL } from "./profile";
 import { VINTAGE_SELECT, type VintageRow, vintageInfo } from "./data";
@@ -113,7 +113,7 @@ export async function friendFeed(
         user: { id: r.user_id, name: displayName(r.name, r.email), picture: r.picture },
         at: r.updated_at,
         open: o,
-        depth: o ? (toDepth(r.depth) ?? null) : null,
+        depth: o ? (r.depth as Depth) : null,
         score: o ? r.score : null,
         buyAgain: o && r.buy_again !== null ? !!r.buy_again : null,
         descriptors: o ? (words.get(r.id) ?? []) : [],
