@@ -33,7 +33,7 @@ test("the 产区 / 大区 / 子产区 lists show on tap, narrow by what is above
   await expect(page.locator('input[name="appellation"]')).toHaveValue("Oakville");
   await expect(page.locator('input[name="area"]')).toHaveValue("Napa Valley");
   await page.click("text=开始品鉴");
-  await expect(page.locator(".q-ask")).toBeVisible();
+  await expect(page.locator(".level-two")).toBeVisible();
   await page.goBack();
   await expect(page.locator(".wine-sub").first()).toContainText("Napa Valley › Oakville");
 });

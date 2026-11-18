@@ -28,7 +28,8 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await expect(page.locator(".grape-picker .chip.on")).toHaveText(["赤霞珠", "梅洛", "品丽珠"]);
   await page.click("text=开始品鉴");
 
-  // 入门: plain questions, one at a time.
+  // 入门 opens on its table; the plain questions, one at a time, fill it in.
+  await page.click("text=一题一题帮我填");
   await expect(page.locator(".q-ask")).toHaveText("杯里的酒最像哪个颜色？");
   await page.click(".hue >> nth=1");
   await page.click(".choice >> text=深");
@@ -54,14 +55,16 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await expect(page.locator(".tasting-note p")).toHaveText(
     "深宝石红，黑醋栗香气，高单宁，中酸度，酒体中等，中酒精，口中有黑醋栗，余味长",
   );
-  // The answers on the Level 2 grid.
-  const row = (label: string) => page.locator(".sheet-row", { hasText: label }).locator("dd");
-  await expect(row("澄清度")).toHaveText("清澈");
-  await expect(row("状态")).toHaveText("干净");
-  await expect(row("香气特征")).toHaveText("黑醋栗");
-  await expect(row("单宁")).toHaveText("高");
-  await expect(row("风味特征")).toHaveText("黑醋栗");
-  await expect(row("品质")).toHaveText("很好");
+  // The answers fill in the Level 2 table, where every item can still be changed.
+  const on = (label: string) => page.locator(`.level-two .choice[aria-label="${label}"] button.on`);
+  await expect(on("澄清度")).toHaveText("清澈");
+  await expect(on("状态")).toHaveText("干净");
+  await expect(on("单宁")).toHaveText("高");
+  await expect(on("酸度")).toHaveText("中");
+  await expect(on("品质等级")).toHaveText("很好");
+  await expect(page.locator(".level-two .aroma-chosen .chip")).toHaveText(["黑醋栗", "黑醋栗"]);
+  await page.click('.level-two .choice[aria-label="酸度"] >> text=高');
+  await expect(page.locator(".tasting-note p")).toContainText("高酸度");
 
   // Switching depth keeps the answers.
   await page.click(".depth-tabs >> text=进阶");
@@ -169,9 +172,9 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
   // 盲评: only how many rated it.
   await expect(friend.locator(".everyone-chip").first()).toHaveText("🔒 1 人已评");
 
-  // A friend new to the site starts at 入门: one plain question at a time.
+  // A friend new to the site starts at 入门, on its table.
   await friend.locator(".rows.numbered .row").first().click();
-  await expect(friend.locator(".q-ask")).toHaveText("杯里的酒最像哪个颜色？");
+  await expect(friend.locator(".level-two")).toBeVisible();
   await friend.click(".depth-tabs >> text=快记");
   await slide(friend, "我的分", 86);
   await friend.click("header >> text=完成");
