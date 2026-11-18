@@ -1809,6 +1809,59 @@ html.standalone body {
   color: var(--muted);
 }
 
+/* 朋友动态 */
+.friends .section-head {
+  margin-top: 4px;
+}
+.friend-note {
+  padding: 12px;
+}
+.friend-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.friend-who strong,
+.friend-who .muted {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.friend-new {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.note-head .friend-new {
+  margin-left: auto;
+}
+.note-head .friend-new + .row-score,
+.note-head .friend-new + .friend-lock {
+  margin-left: 6px;
+}
+.friend-lock {
+  margin-left: auto;
+  font-size: 16px;
+}
+.friend-wine {
+  margin-top: 8px;
+  gap: 8px;
+}
+.friend-note p {
+  margin: 6px 0 0;
+}
+.friend-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* 分享图 (TastingCard.tsx) */
 .card-with-action {
   position: relative;

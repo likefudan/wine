@@ -2,6 +2,7 @@ import { useLocation, useRoute } from "preact-iso";
 import { useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../../shared/descriptors";
 import { glassColor, tastingNote } from "../../shared/guide";
+import { FriendsOnWine } from "../Friends";
 import { BackIcon, Glass, WineName } from "../components";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, fmtDate, p, t } from "../i18n";
@@ -116,6 +117,7 @@ export function WinePage() {
           );
         })}
       </ul>
+      <FriendsOnWine vintageId={v.id} />
       <button type="button" class="button primary block" onClick={() => openTasting(route, v.id, null)}>
         ＋ {t("再记一次")}
       </button>

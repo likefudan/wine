@@ -69,8 +69,9 @@ const notesOpen = (l: ListRow) => !l.blind || !!l.revealed_at;
  * A note counts as handed in once it says anything: opening a wine starts an empty note, which must
  * neither unlock the others' notes nor show up as a rating.
  */
-const HANDED_IN = `(t.score IS NOT NULL OR t.note IS NOT NULL
-  OR EXISTS (SELECT 1 FROM tasting_descriptors d WHERE d.tasting_id = t.id))`;
+export const handedIn = (t: string) => `(${t}.score IS NOT NULL OR ${t}.note IS NOT NULL
+  OR EXISTS (SELECT 1 FROM tasting_descriptors d WHERE d.tasting_id = ${t}.id))`;
+const HANDED_IN = handedIn("t");
 
 const parse = <T>(s: string | null): T => {
   try {
@@ -80,7 +81,7 @@ const parse = <T>(s: string | null): T => {
   }
 };
 
-const displayName = (name: string | null, email: string) => name?.trim() || email.split("@")[0]!;
+export const displayName = (name: string | null, email: string) => name?.trim() || email.split("@")[0]!;
 
 export async function board(db: DB, l: ListRow, user: UserRow | null, k: string | null): Promise<Board> {
   const member = !!user && (await memberOf(db, l.id, user.id));
