@@ -1,0 +1,17 @@
+# Temporary (not to merge): look at the TTB public COLA search forms
+name: tmp TTB probe
+on:
+  pull_request:
+    paths: [".github/workflows/tmp-ttb-probe.yml", "scripts/ttb_probe.py"]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: pip install -q requests beautifulsoup4 certifi
+      - run: >
+          python3 scripts/ttb_probe.py
+          https://ttbonline.gov/colasonline/publicSearchColasBasic.do
+          https://ttbonline.gov/colasonline/publicSearchColasAdvanced.do
