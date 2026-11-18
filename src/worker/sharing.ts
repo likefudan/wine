@@ -44,7 +44,7 @@ interface ListRow {
   owner_name: string | null;
 }
 
-const notFound = () => new HttpError(404, "not_found", "找不到这份酒单");
+const notFound = () => new HttpError(404, "not_found", "找不到这次品鉴");
 
 async function loadList(db: DB, listId: string): Promise<ListRow> {
   if (!ID_RE.test(listId)) throw notFound();
@@ -88,7 +88,7 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
   const viaKey = keyOk(l, k);
   if (!member && l.visibility !== "public" && !viaKey) {
     // Signed out, or not a member, with no key: a private list says nothing about itself.
-    throw new HttpError(403, "private_list", "这份酒单是私密的，请向创建者要二维码");
+    throw new HttpError(403, "private_list", "这次品鉴是私密的，请向创建者要二维码");
   }
   const open = notesOpen(l);
   const [items, notes, descriptors, members] = await db.batch([
@@ -270,7 +270,7 @@ sharingRoutes.post("/lists/:id/join", async (c) => {
     const k = (await readJson(c.req.raw)).k;
     if (!keyOk(l, typeof k === "string" ? k : null))
       throw new HttpError(403, "bad_key", "二维码已失效，请向创建者要新的");
-    if (!l.join_open) throw new HttpError(403, "join_closed", "这份酒单已停止扫码加入");
+    if (!l.join_open) throw new HttpError(403, "join_closed", "这次品鉴已停止扫码加入");
     await db.batch([
       db
         .prepare("INSERT OR IGNORE INTO list_members (list_id, user_id, role, joined_at) VALUES (?, ?, 'member', ?)")
@@ -287,7 +287,7 @@ sharingRoutes.post("/lists/:id/share", async (c) => {
   const user = await requireUser(c);
   const db = c.env.DB;
   const l = await loadList(db, c.req.param("id"));
-  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有酒单的创建者能修改");
+  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有品鉴的创建者能修改");
   const b = await readJson(c.req.raw);
   const sets: string[] = [];
   const values: unknown[] = [];
@@ -319,7 +319,7 @@ sharingRoutes.post("/lists/:id/leave", async (c) => {
   requireSameOrigin(c);
   const user = await requireUser(c);
   const l = await loadList(c.env.DB, c.req.param("id"));
-  if (l.owner_id === user.id) throw new HttpError(400, "owner", "创建者不能退出，可以删除酒单");
+  if (l.owner_id === user.id) throw new HttpError(400, "owner", "创建者不能退出，可以删除品鉴");
   await removeMember(c.env.DB, l.id, user.id);
   return c.json({ ok: true });
 });
@@ -330,8 +330,8 @@ sharingRoutes.post("/lists/:id/members/:user/remove", async (c) => {
   const user = await requireUser(c);
   const db = c.env.DB;
   const l = await loadList(db, c.req.param("id"));
-  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有酒单的创建者能修改");
-  if (c.req.param("user") === user.id) throw new HttpError(400, "owner", "创建者不能退出，可以删除酒单");
+  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有品鉴的创建者能修改");
+  if (c.req.param("user") === user.id) throw new HttpError(400, "owner", "创建者不能退出，可以删除品鉴");
   await removeMember(db, l.id, c.req.param("user"));
   return c.json(await board(db, l, user, null));
 });

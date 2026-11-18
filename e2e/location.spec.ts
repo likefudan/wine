@@ -18,7 +18,7 @@ const NEAR = {
 
 test.use({ geolocation: { latitude: 38.4416, longitude: -122.3985 }, permissions: ["geolocation"] });
 
-test("记一杯 notes where I am, and 新建酒单 finds the place around me", async ({ page }) => {
+test("记一杯 notes where I am, and 新建品鉴 finds the place around me", async ({ page }) => {
   // Google is not reachable from the test server: answer the nearby lookup here.
   await page.route("**/api/places/near?**", (r) => r.fulfill({ json: NEAR }));
   await page.goto("/");
@@ -26,7 +26,7 @@ test("记一杯 notes where I am, and 新建酒单 finds the place around me", a
   await page.click("text=Dev login");
   await page.click("text=刚开始认真喝，想学怎么品");
 
-  await page.click("text=新建酒单");
+  await page.click("text=新建品鉴");
   await page.click(".sheet >> text=用当前位置");
   await page.click(".nearby-list >> text=Opus One Winery");
   await expect(page.locator('.sheet input[placeholder="Opus One"]')).toHaveValue("Opus One Winery");

@@ -84,7 +84,7 @@ export function MePage() {
     location.href = "/";
   };
   const tabs: { id: MeTab; label: string }[] = [
-    { id: "tasting", label: t("品鉴") },
+    { id: "tasting", label: t("记录偏好") },
     { id: "general", label: t("通用") },
     ...(me.owner ? [{ id: "members" as const, label: t("成员") }] : []),
   ];

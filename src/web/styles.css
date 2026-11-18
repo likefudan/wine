@@ -1591,6 +1591,55 @@ html.standalone body {
   }
 }
 
+/* 记一杯 opened from a list: which list the wine goes into. */
+.add-to-list {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.add-to-list strong {
+  margin-left: 4px;
+  color: var(--ink);
+}
+
+/* Which tasting a note belongs to, on top of the note. */
+.page-head.sticky:has(.belongs) {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.belongs {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.belongs strong {
+  margin-left: 2px;
+  color: var(--primary);
+  font-weight: 600;
+}
+.row-list {
+  display: block;
+  color: var(--primary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* 用当前位置 (NearbyPicker) and 品酒地点 (TastingPlace) */
 .nearby {
   margin: -4px 0 4px;

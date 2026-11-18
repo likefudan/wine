@@ -58,7 +58,7 @@ export function JoinPage(props: { signedIn: boolean }) {
         <p class="notice" role="alert">
           {error}
         </p>
-        <a href="/">{props.signedIn ? t("回到酒单") : t("打开品酒日记")}</a>
+        <a href="/">{props.signedIn ? t("回到品鉴") : t("打开品酒日记")}</a>
       </div>
     );
   if (!board) return <div class="splash" aria-busy="true" />;
@@ -69,7 +69,7 @@ export function JoinPage(props: { signedIn: boolean }) {
   return (
     <div class="page join">
       {head}
-      <p class="muted small">{t("{name} 的酒单", { name: l.ownerName })}</p>
+      <p class="muted small">{t("{name} 的品鉴", { name: l.ownerName })}</p>
       <h1 class="list-title">{l.title}</h1>
       <p class="muted small">
         {[
@@ -84,18 +84,18 @@ export function JoinPage(props: { signedIn: boolean }) {
 
       {board.member ? (
         <a class="button primary block" href={`/lists/${l.id}`}>
-          {t("打开酒单")}
+          {t("打开品鉴")}
         </a>
       ) : board.canJoin ? (
         <div class="join-box">
           <p>
             {t(
-              "加入后，你可以和大家一起往酒单里加酒，每款酒记下自己的感受和评分。不懂品酒术语也没关系，会一步步用大白话问你。",
+              "加入后，你可以和大家一起往品鉴里加酒，每款酒记下自己的感受和评分。不懂品酒术语也没关系，会一步步用大白话问你。",
             )}
           </p>
           {props.signedIn ? (
             <button type="button" class="button primary block" disabled={joining} onClick={join}>
-              {t("加入这份酒单")}
+              {t("加入这次品鉴")}
             </button>
           ) : inWeChat() ? (
             <div class="notice">
@@ -110,7 +110,7 @@ export function JoinPage(props: { signedIn: boolean }) {
           )}
         </div>
       ) : !l.joinOpen && k ? (
-        <p class="notice">{t("这份酒单已停止扫码加入")}</p>
+        <p class="notice">{t("这次品鉴已停止扫码加入")}</p>
       ) : null}
       {error && (
         <p class="notice" role="alert">

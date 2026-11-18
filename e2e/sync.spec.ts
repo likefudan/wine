@@ -10,7 +10,7 @@ test("tapping through a private note does not upload each change", async ({ page
   await page.fill('input[type="email"]', `sync${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=只想快速记个分");
-  await page.click("text=新建酒单");
+  await page.click("text=新建品鉴");
   await page.fill('.sheet input[placeholder^="例如"]', "Sonoma");
   await page.click("text=建好了");
   await page.click("text=加下一款酒");

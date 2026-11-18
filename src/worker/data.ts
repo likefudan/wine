@@ -347,7 +347,7 @@ function listPlace(p: unknown): [string | null, string | null, string | null, nu
 
 async function putList(db: DB, user: UserRow, l: WineList) {
   const lid = id(l?.id);
-  const title = clampText(l.title, 80) ?? fail("请填写酒单名称");
+  const title = clampText(l.title, 80) ?? fail("请填写品鉴名称");
   const kind = (LIST_KINDS as readonly string[]).includes(l.kind) ? l.kind : "winery";
   const startsOn = typeof l.startsOn === "string" && DATE_RE.test(l.startsOn) ? l.startsOn : null;
   const note = clampText(l.note, 500);
@@ -355,7 +355,7 @@ async function putList(db: DB, user: UserRow, l: WineList) {
   const existing = await db.prepare("SELECT owner_id FROM lists WHERE id = ?").bind(lid).first<{ owner_id: string }>();
   const at = now();
   if (existing) {
-    if (existing.owner_id !== user.id) fail("只有酒单的创建者能修改");
+    if (existing.owner_id !== user.id) fail("只有品鉴的创建者能修改");
     await db
       .prepare("UPDATE lists SET title = ?, kind = ?, starts_on = ?, note = ?, updated_at = ? WHERE id = ?")
       .bind(title, kind, startsOn, note, at, lid)
@@ -386,7 +386,7 @@ async function putList(db: DB, user: UserRow, l: WineList) {
 async function deleteList(db: DB, user: UserRow, listId: string) {
   const l = await db.prepare("SELECT owner_id FROM lists WHERE id = ?").bind(id(listId)).first<{ owner_id: string }>();
   if (!l) return;
-  if (l.owner_id !== user.id) fail("只有酒单的创建者能删除");
+  if (l.owner_id !== user.id) fail("只有品鉴的创建者能删除");
   // The notes stay in each person's 酒库 (docs/design.zh.md §3.6): they lose only their place in the list.
   await db.batch([
     db
@@ -403,7 +403,7 @@ async function deleteList(db: DB, user: UserRow, listId: string) {
 async function putItem(db: DB, user: UserRow, i: ListItem) {
   const iid = id(i?.id);
   const listId = id(i.listId);
-  if (!(await isMember(db, listId, user.id))) fail("你不是这份酒单的成员");
+  if (!(await isMember(db, listId, user.id))) fail("你不是这次品鉴的成员");
   const vintageId = await resolveVintage(db, id(i.vintageId));
   const position = Number.isInteger(i.position) ? i.position : 0;
   const price = optNum(i.priceUsd, 0, 100_000);
@@ -436,7 +436,7 @@ async function deleteItem(db: DB, user: UserRow, itemId: string) {
     .bind(id(itemId))
     .first<{ list_id: string; added_by: string; owner_id: string }>();
   if (!row) return;
-  if (row.added_by !== user.id && row.owner_id !== user.id) fail("只有添加的人或酒单创建者能移除");
+  if (row.added_by !== user.id && row.owner_id !== user.id) fail("只有添加的人或品鉴创建者能移除");
   await db.batch([
     db.prepare("UPDATE tastings SET list_item_id = NULL WHERE list_item_id = ?").bind(itemId),
     db.prepare("DELETE FROM list_items WHERE id = ?").bind(itemId),
@@ -444,7 +444,7 @@ async function deleteItem(db: DB, user: UserRow, itemId: string) {
 }
 
 async function reorder(db: DB, user: UserRow, listId: string, ids: unknown) {
-  if (!(await isMember(db, id(listId), user.id))) fail("你不是这份酒单的成员");
+  if (!(await isMember(db, id(listId), user.id))) fail("你不是这次品鉴的成员");
   if (!Array.isArray(ids) || ids.length > 500) fail("顺序无效");
   const list = ids as unknown[];
   if (!list.length) return;
