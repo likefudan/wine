@@ -5,6 +5,8 @@ import type { Env } from "./env";
 import { HttpError } from "./http";
 import { aiEnabled, labelRoutes } from "./label";
 import { placesRoutes } from "./places";
+import { friendRoutes } from "./friends";
+import { proseRoutes } from "./prose";
 import { reviewRoutes } from "./reviews";
 import { sharingRoutes } from "./sharing";
 
@@ -34,7 +36,9 @@ app.route("/api/auth", authRoutes);
 app.route("/api", dataRoutes);
 app.route("/api", labelRoutes);
 app.route("/api", placesRoutes);
+app.route("/api", proseRoutes);
 app.route("/api", sharingRoutes);
+app.route("/api", friendRoutes);
 app.route("/api", reviewRoutes);
 app.all("/api/*", (c) => c.json({ error: "not_found", message: "Not found" }, 404));
 

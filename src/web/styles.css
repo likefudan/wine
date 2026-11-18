@@ -1185,7 +1185,9 @@ h3 {
 }
 .taste-foot {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
   /* Keep the last button clear of the bottom edge: on iPhone Safari a tap there only brings back
      the toolbar, and in a home-screen app it sits under the home indicator. */
   padding-bottom: calc(48px + env(safe-area-inset-bottom));
@@ -1964,4 +1966,102 @@ a.pro-score {
 .chip .count {
   font-size: 11px;
   color: var(--muted);
+}
+
+/* 朋友动态 */
+.friends .section-head {
+  margin-top: 4px;
+}
+.friend-note {
+  padding: 12px;
+}
+.friend-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.friend-who strong,
+.friend-who .muted {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.friend-new {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.note-head .friend-new {
+  margin-left: auto;
+}
+.note-head .friend-new + .row-score,
+.note-head .friend-new + .friend-lock {
+  margin-left: 6px;
+}
+.friend-lock {
+  margin-left: auto;
+  font-size: 16px;
+}
+.friend-wine {
+  margin-top: 8px;
+  gap: 8px;
+}
+.friend-note p {
+  margin: 6px 0 0;
+}
+.friend-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 分享图 (TastingCard.tsx) */
+.card-with-action {
+  position: relative;
+}
+.card-with-action .card {
+  padding-right: 52px;
+}
+.card-action {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--muted);
+}
+.taste-foot .button svg {
+  vertical-align: -4px;
+}
+.share-card-wait {
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.share-card-wait.tall {
+  aspect-ratio: 9 / 16;
+}
+.share-card-opts {
+  display: flex;
+  gap: 10px;
+}
+.share-card-opts .segmented {
+  flex: 1;
+}
+.share-card textarea {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.share-card .list-card-img {
+  box-shadow: var(--shadow);
 }

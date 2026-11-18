@@ -38,6 +38,7 @@ import { DEPTH_INFO } from "../depths";
 import { GrapePicker } from "../GrapePicker";
 import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe, useStore } from "../store";
+import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { TastingPlace } from "../TastingPlace";
 
 /**
@@ -71,6 +72,7 @@ export function Taste() {
   const [x, setX] = useState<Tasting | undefined>(saved);
   const [switches, setSwitches] = useState(0);
   const [offer, setOffer] = useState<Depth | null>(null);
+  const [sharing, setSharing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(x);
 
@@ -185,6 +187,9 @@ export function Taste() {
         <Systematic x={x} v={vintage} patch={patch} expert={x.depth === "expert"} prev={prev} />
       )}
       <div class="taste-foot">
+        <button type="button" class="button block" onClick={() => setSharing(true)}>
+          <ShareIcon /> {t("生成分享图")}
+        </button>
         <button
           type="button"
           class="link danger small"
@@ -200,6 +205,7 @@ export function Taste() {
           {t("删除这条记录")}
         </button>
       </div>
+      {sharing && <TastingShareSheet v={vintage} x={x} onClose={() => setSharing(false)} />}
     </div>
   );
 }

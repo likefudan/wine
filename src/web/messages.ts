@@ -1,9 +1,11 @@
 // Translations for every page text, keyed by the Simplified Chinese in the code (test/i18n.test.ts
 // checks none is missing). zh-TW uses Taiwan phrasing (登入, 網路, 品飲), not a character swap.
 
+import { FRIEND_MESSAGES } from "./messages-friends";
 import { REVIEW_MESSAGES } from "./messages-reviews";
 
 export const MESSAGES: Record<string, { tw: string; en: string }> = {
+  ...FRIEND_MESSAGES,
   ...REVIEW_MESSAGES,
   我的分: { tw: "我的分數", en: "My score" },
   拖动打分: { tw: "拖動評分", en: "Slide to score" },
@@ -503,6 +505,39 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   "{n} 人一起记": { tw: "{n} 人一起記", en: "{n} tasting together" },
   "{n} 人已评": { tw: "{n} 人已評", en: "{n} rated" },
   下载图片: { tw: "下載圖片", en: "Download image" },
+  // 分享图 (TastingCard.tsx, src/worker/prose.ts)
+  分享这条记录: { tw: "分享這筆紀錄", en: "Share this note" },
+  生成分享图: { tw: "產生分享圖", en: "Make a share image" },
+  "{name} 品鉴": { tw: "{name} 品飲", en: "Tasted by {name}" },
+  品鉴笔记: { tw: "品飲筆記", en: "Tasting note" },
+  "正在把你的记录写成酒评…": { tw: "正在把你的紀錄寫成酒評…", en: "Writing your notes up as a review…" },
+  样式: { tw: "樣式", en: "Style" },
+  尺寸: { tw: "尺寸", en: "Size" },
+  "酒评文字（可以改）": { tw: "酒評文字（可以修改）", en: "Review text (you can edit it)" },
+  "这条记录改过了，可以重新生成文字": {
+    tw: "這筆紀錄改過了，可以重新產生文字",
+    en: "This note has changed since; you can rewrite the text",
+  },
+  "生成中…": { tw: "產生中…", en: "Writing…" },
+  重新生成文字: { tw: "重新產生文字", en: "Rewrite text" },
+  "文字由 AI 根据你的记录改写，只用你记下的内容，发出前请看一遍": {
+    tw: "文字由 AI 根據你的紀錄改寫，只用你記下的內容，發出前請看一遍",
+    en: "AI rewrites your own notes, using only what you recorded. Give it a read before you post.",
+  },
+  分享图片: { tw: "分享圖片", en: "Share image" },
+  保存图片: { tw: "儲存圖片", en: "Save image" },
+  也可以长按图片保存: { tw: "也可以長按圖片儲存", en: "Or press and hold the image to save it" },
+  "没有网络，先用记录里的文字": { tw: "沒有網路，先用紀錄裡的文字", en: "Offline: using the words from your notes" },
+  "AI 还没有开通": { tw: "AI 尚未開通", en: "AI isn't set up yet" },
+  缺少酒款信息: { tw: "缺少酒款資訊", en: "Wine details are missing" },
+  "今天的 AI 次数用完了，明天再试": {
+    tw: "今天的 AI 次數用完了，明天再試",
+    en: "Today's AI allowance is used up; try tomorrow",
+  },
+  "没能写出品鉴文字，请稍后再试": {
+    tw: "沒能寫出品飲文字，請稍後再試",
+    en: "Couldn't write the review; please try again later",
+  },
   不会再买: { tw: "不會再買", en: "Wouldn't buy again" },
   二维码: { tw: "QR Code", en: "QR code" },
   "二维码已失效，请向创建者要新的": {
