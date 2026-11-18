@@ -167,15 +167,16 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         title: l.title!,
         kind: l.kind as WineList["kind"],
         startsOn: l.starts_on ?? null,
-        place: l.place_name
-          ? {
-              name: l.place_name,
-              id: l.place_id ?? null,
-              address: l.place_address ?? null,
-              lat: (l.place_lat as unknown as number | null) ?? null,
-              lng: (l.place_lng as unknown as number | null) ?? null,
-            }
-          : null,
+        place:
+          l.place_name || l.place_address
+            ? {
+                name: l.place_name ?? "",
+                id: l.place_id ?? null,
+                address: l.place_address ?? null,
+                lat: (l.place_lat as unknown as number | null) ?? null,
+                lng: (l.place_lng as unknown as number | null) ?? null,
+              }
+            : null,
         note: l.note ?? null,
         createdAt: l.created_at!,
         updatedAt: l.updated_at!,
@@ -309,19 +310,14 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   return vid;
 }
 
-/** A list's place as its five columns; all null when it has none. */
+/** A list's place as its five columns; all null when it has neither a name nor an address. */
 function listPlace(p: unknown): [string | null, string | null, string | null, number | null, number | null] {
   const o = (p && typeof p === "object" ? p : {}) as Partial<ListPlace>;
   const name = clampText(o.name, 120);
-  if (!name) return [null, null, null, null, null];
+  const address = clampText(o.address, 200);
+  if (!name && !address) return [null, null, null, null, null];
   const pid = typeof o.id === "string" && /^[A-Za-z0-9_-]{10,300}$/.test(o.id) ? o.id : null;
-  return [
-    name,
-    pid,
-    clampText(o.address, 200),
-    pid ? optNum(o.lat, -90, 90) : null,
-    pid ? optNum(o.lng, -180, 180) : null,
-  ];
+  return [name, pid, address, pid ? optNum(o.lat, -90, 90) : null, pid ? optNum(o.lng, -180, 180) : null];
 }
 
 async function putList(db: DB, user: UserRow, l: WineList) {

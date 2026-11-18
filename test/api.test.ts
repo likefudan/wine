@@ -216,6 +216,11 @@ describe("lists and tastings", () => {
       lat: null,
       lng: null,
     });
+    // An address with no name, typed by hand.
+    await c.ops([
+      { op: "putList", list: { ...again, place: { name: "", id: null, address: "1 Park Ave", lat: null, lng: null } } },
+    ]);
+    expect((await c.call("/api/sync")).data.lists[0].place).toMatchObject({ name: "", address: "1 Park Ave" });
     expect(s.items[0]).toMatchObject({ id: itemId, vintageId: v.id, priceUsd: 60 });
     expect(s.tastings[0]).toMatchObject({
       id: t.id,
@@ -394,6 +399,9 @@ describe("producer places", () => {
       seen.length = 0;
       await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "french laundry", "abcdefgh-1234", "restaurant");
       expect(seen).toEqual([["restaurant"], null]);
+      seen.length = 0;
+      await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "123 main st", "abcdefgh-1234", "address");
+      expect(seen).toEqual([["street_address", "premise", "subpremise"], null]);
     } finally {
       spy.mockRestore();
     }

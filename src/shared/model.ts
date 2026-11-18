@@ -10,7 +10,8 @@ export type WineColor = (typeof COLORS)[number];
 export const DEPTHS = ["quick", "beginner", "standard", "expert"] as const;
 export type Depth = (typeof DEPTHS)[number];
 
-export const LIST_KINDS = ["winery", "trip", "dinner", "home"] as const;
+/** In the order the new-list form offers them: most tastings are at a winery, fewest on a trip. */
+export const LIST_KINDS = ["winery", "home", "dinner", "trip"] as const;
 export type ListKind = (typeof LIST_KINDS)[number];
 
 export const LANGS = ["zh-CN", "zh-TW", "en"] as const;
@@ -169,7 +170,10 @@ export interface LwinWine {
   classification: string | null;
 }
 
-/** Where a 酒单 happens. `id` is set when it was picked from Google Places; typed by hand it is null. */
+/**
+ * Where a 酒单 happens: a name (the winery, restaurant, “my home”, a park) and an address, either of
+ * them typed or picked from Google Places. `id` (and the position) come from a Google pick.
+ */
 export interface ListPlace {
   name: string;
   id: string | null;
@@ -178,8 +182,8 @@ export interface ListPlace {
   lng: number | null;
 }
 
-/** What /api/places looks for first: wineries, restaurants, or anything (towns, regions). */
-export const PLACE_KINDS = ["winery", "restaurant", "any"] as const;
+/** What /api/places looks for first: wineries, restaurants, street addresses, or anything (parks, towns). */
+export const PLACE_KINDS = ["winery", "restaurant", "address", "any"] as const;
 export type PlaceKind = (typeof PLACE_KINDS)[number];
 
 export interface WineList {
