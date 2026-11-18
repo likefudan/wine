@@ -211,7 +211,7 @@ function Shell() {
               <span>{t("酒库")}</span>
             </a>
             <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
-              <Avatar tab />
+              <Avatar />
               {waiting > 0 && (
                 <span class="dot">
                   <span class="visually-hidden">{t("{n} 人待审核", { n: waiting })}</span>

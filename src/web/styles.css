@@ -724,6 +724,102 @@ h3 {
   display: flex;
   gap: 12px;
   align-items: center;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.me-card .avatar {
+  font-size: 22px;
+}
+.me-card-text {
+  flex: 1;
+  min-width: 0;
+}
+.me-card-text > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.me-card-edit {
+  flex: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* 昵称和头像 (Profile.tsx), the badminton site's 头像 form and cropper. */
+.profile-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.avatar-form,
+.avatar-crop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.avatar-form .avatar {
+  font-size: 34px;
+}
+.avatar-form p,
+.avatar-crop p {
+  margin: 0;
+}
+.avatar-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.avatar-actions label.button.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.crop-frame {
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+  touch-action: none;
+}
+.crop-frame canvas {
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+.crop-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.5);
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+.crop-zoom {
+  width: min(260px, 100%);
+  accent-color: var(--primary);
+}
+.nick-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.nick-row input {
+  flex: 1;
+  min-width: 0;
+}
+.field-hint.bad {
+  color: var(--danger);
 }
 
 /* Forms */

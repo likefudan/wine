@@ -11,7 +11,7 @@ const worker = import.meta.glob("../src/worker/**/*.ts", { query: "?raw", import
   string
 >;
 const CALL = /\b(?:t|tx|tk)\(\s*"((?:[^"\\]|\\.)*)"/g;
-const SERVER = /(?:HttpError\(\d+, "[a-z_]+",\s*|fail\()"([^"]+)"/g;
+const SERVER = /(?:HttpError\(\d+, "[a-z_]+",\s*|fail\(|badRequest\()"([^"]+)"/g;
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
 
 describe("translations", () => {

@@ -29,6 +29,7 @@ import {
 import { type UserRow, autoApprovePerDay, isOwner, meOf, requireSameOrigin, requireUser } from "./auth";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
+import { avatarUrl, nameOf } from "./profile";
 
 /**
  * The phone keeps its own copy of everything of one person's and works offline (docs/design.zh.md
@@ -684,12 +685,15 @@ const requireOwner = async (c: Parameters<typeof requireUser>[0]) => {
 dataRoutes.get("/members", async (c) => {
   await requireOwner(c);
   const rows = await c.env.DB.prepare(
-    `SELECT id, email, name, status, created_at, approved_by FROM users
+    `SELECT id, email, name, nickname, avatar, picture, status, created_at, approved_by FROM users
      ORDER BY status = 'pending' DESC, created_at DESC LIMIT 500`,
   ).all<{
     id: string;
     email: string;
     name: string | null;
+    nickname: string | null;
+    avatar: string | null;
+    picture: string | null;
     status: Member["status"];
     created_at: string;
     approved_by: string | null;
@@ -699,7 +703,9 @@ dataRoutes.get("/members", async (c) => {
       (r): Member => ({
         id: r.id,
         email: r.email,
-        name: r.name,
+        name: nameOf(r),
+        googleName: nameOf(r) !== r.name ? r.name : null,
+        picture: avatarUrl(r),
         status: r.status,
         createdAt: r.created_at,
         approvedBy: r.approved_by,

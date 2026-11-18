@@ -530,6 +530,11 @@ export async function fillLocations() {
   }
 }
 
+/** The server's answer to a change that went straight up (昵称, 头像). */
+export function setMe(me: Me) {
+  set({ me });
+}
+
 export function updateMe(change: { locale?: Lang; depth?: Depth; labelModel?: LabelModel; locationOn?: boolean }) {
   if (!state.me) return;
   set({ me: { ...state.me, ...change } });
