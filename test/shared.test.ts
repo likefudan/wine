@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { avaOf } from "../src/shared/ava";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
 import { canonicalGrape, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, tastingNote } from "../src/shared/guide";
@@ -71,5 +72,15 @@ describe("helpers", () => {
   it("gives a glass colour without an appearance", () => {
     expect(glassColor("red", undefined, new Date().getFullYear())).toMatch(/^#/);
     expect(glassColor("white", { hue: "gold", intensity: 3 })).toBe("#c9952f");
+  });
+});
+
+describe("American appellations", () => {
+  it("knows the region people write beside an AVA", () => {
+    expect(avaOf("oakville")).toEqual({ name: "Oakville", region: "Napa Valley", states: ["CA"] });
+    expect(avaOf("Napa Valley")?.region).toBe("Napa Valley");
+    expect(avaOf("Eola-Amity Hills")?.region).toBe("Willamette Valley");
+    expect(avaOf("Los Carneros")?.region).toBe("");
+    expect(avaOf("Bordeaux")).toBeNull();
   });
 });

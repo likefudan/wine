@@ -78,6 +78,15 @@ npx wrangler r2 object put wine-photos-staging/lwin/lwin.sql --file lwin.sql --r
 
 and run **Actions → Load LWIN** (`.github/workflows/lwin.yml`) once for `staging` and once for `production`. The SQL replaces the previous load. Only live wines are kept (about 186,000; no spirits).
 
+## American appellations
+
+The 子产区 field suggests the 280 current American Viticultural Areas, and picking one fills in an empty region and country (Oakville → Napa Valley, USA). The list is TTB public data, kept in `src/shared/ava.ts`. To refresh it:
+
+```sh
+curl -o ava.csv https://dyuie4zgfxmt6.cloudfront.net/open-data/ttb_viticultural_areas.csv
+python3 scripts/ava_import.py ava.csv src/shared/ava.ts
+```
+
 ## Documents
 
 - [docs/design.zh.md](docs/design.zh.md): architecture, features, data model, visual direction and phases.
