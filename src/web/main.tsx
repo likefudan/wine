@@ -145,7 +145,9 @@ function Shell() {
 
 applyTheme();
 render(
-  <LocationProvider>
+  // The router handles in-app links only: /api links (Google sign-in, photos) must reach the Worker as
+  // real page loads, or a click just changes the address bar until the page is reloaded.
+  <LocationProvider scope={/^\/(?!api\/)/}>
     <Shell />
   </LocationProvider>,
   document.getElementById("app")!,

@@ -71,3 +71,11 @@ test("the pages switch to English", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("text=New list")).toBeVisible();
 });
+
+test("the Google button leaves the app for the sign-in route", async ({ page }) => {
+  await page.goto("/");
+  await page.click("text=用 Google 登录");
+  // Google is not set up on the test site, so the Worker sends the page back with this error; the
+  // client router must not swallow the click.
+  await expect(page).toHaveURL(/\/login\?error=not_configured/);
+});
