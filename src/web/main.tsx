@@ -6,6 +6,7 @@ import { LocationProvider, Route, Router, useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
+import { AnswersPage, BlindStart } from "./Blind";
 import { CellarIcon, GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
 import { ConfirmHost } from "./confirm";
@@ -143,7 +144,7 @@ function Shell() {
   if (!me.depth) return <Welcome />;
 
   const tab =
-    path === "/" || path.startsWith("/lists") || path.startsWith("/friends")
+    path === "/" || path.startsWith("/lists") || path.startsWith("/friends") || path.startsWith("/answers")
       ? "lists"
       : path.startsWith("/library") || path.startsWith("/wine")
         ? "library"
@@ -152,7 +153,8 @@ function Shell() {
           : path.startsWith("/me")
             ? "me"
             : "";
-  const fullScreen = path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add");
+  const fullScreen =
+    path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add") || path.startsWith("/blind");
   const waiting = usePending();
   const due = useCellarAlerts().length;
   return (
@@ -191,6 +193,8 @@ function Shell() {
           <Route path="/lists/:id" component={ListPage} />
           <Route path="/l/:id" component={JoinIn} />
           <Route path="/add" component={AddWine} />
+          <Route path="/blind" component={BlindStart} />
+          <Route path="/answers/:id" component={AnswersPage} />
           <Route path="/taste/:id" component={Taste} />
           <Route path="/library" component={Library} />
           <Route path="/wine/:id" component={WinePage} />

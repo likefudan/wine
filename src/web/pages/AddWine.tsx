@@ -24,9 +24,20 @@ import {
 } from "../../shared/model";
 import { ProducerInput } from "../ProducerInput";
 import { SuggestInput } from "../SuggestInput";
-import { BackIcon, CameraIcon, Choice, Field, Glass, WineName } from "../components";
+import { BackIcon, BlindIcon, CameraIcon, Choice, Field, Glass, WineName } from "../components";
 import { p, t, tm } from "../i18n";
-import { ApiError, addItem, addVintage, api, blankTasting, getState, saveTasting, useStore } from "../store";
+import {
+  ApiError,
+  addItem,
+  addVintage,
+  answerItem,
+  answerTasting,
+  api,
+  blankTasting,
+  getState,
+  saveTasting,
+  useStore,
+} from "../store";
 import { glassColor } from "../../shared/guide";
 import { shrink } from "../photo";
 
@@ -112,6 +123,12 @@ export function AddWine(props: { cellar?: boolean }) {
   const [photoId, setPhotoId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const key = nameKey(q);
+  const me = useStore((s) => s.me);
+  // 对答案: the wine a 盲品 glass turned out to be, for my glass on its own or a 品鉴's glass (the host).
+  const answerOf = useStore((s) => (query.answer ? s.tastings.find((x) => x.id === query.answer) : undefined));
+  const answerItemOf = useStore((s) => (query.answerItem ? s.items.find((i) => i.id === query.answerItem) : undefined));
+  const answerLabel = answerOf?.blind?.label ?? answerItemOf?.blind?.label ?? null;
+  const answering = !!(query.answer || query.answerItem);
 
   useEffect(() => {
     if (key.length < 2 || !navigator.onLine) {
@@ -139,6 +156,19 @@ export function AddWine(props: { cellar?: boolean }) {
 
   const choose = (v: VintageInfo) => {
     const info = addVintage(v);
+    if (answerOf) {
+      answerTasting(answerOf.id, info.id);
+      route(`/taste/${answerOf.id}`, true);
+      return;
+    }
+    if (answerItemOf) {
+      const l = lists.find((x) => x.id === answerItemOf.listId);
+      // Alone, or once 揭晓 has been pressed, the answer shows at once; in a group it waits for 揭晓.
+      const reveal = !l || ((l.members ?? 1) <= 1 && l.visibility !== "public") || !!l.revealedAt;
+      answerItem(answerItemOf.id, info.id, reveal);
+      route(`/answers/${answerItemOf.listId}`, true);
+      return;
+    }
     if (cellar) {
       route(`/cellar/new?v=${info.id}`, true);
       return;
@@ -249,11 +279,12 @@ export function AddWine(props: { cellar?: boolean }) {
         <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
           <BackIcon />
         </button>
-        <h1 class="page-head-title">{cellar ? t("放进酒窖") : t("记一杯")}</h1>
+        <h1 class="page-head-title">{answering ? t("对答案") : cellar ? t("放进酒窖") : t("记一杯")}</h1>
       </header>
 
+      {answering && <p class="add-to-list">{t("{label} 其实是哪款酒？", { label: answerLabel ?? "#" })}</p>}
       {/* From a 品鉴's page the wine goes into it; from the 记一杯 button it stands on its own. Never a choice. */}
-      {!cellar && (
+      {!cellar && !answering && (
         <p class="add-to-list">
           {fixedList ? (
             <>
@@ -288,6 +319,15 @@ export function AddWine(props: { cellar?: boolean }) {
             />
           </div>
           {scanError && <p class="notice">{scanError}</p>}
+          {!cellar && !answering && !q && (!fixedList?.ownerId || fixedList.ownerId === me?.id) && (
+            <a class="blind-entry" href={fixedList ? `/blind?list=${fixedList.id}` : "/blind"}>
+              <BlindIcon />
+              <span>
+                <strong>{t("盲品：先不看酒名")}</strong>
+                <span class="small muted">{t("直接开始品，记成杯号，最后再对答案")}</span>
+              </span>
+            </a>
+          )}
 
           {local.length > 0 && (
             <section>
@@ -355,7 +395,7 @@ export function AddWine(props: { cellar?: boolean }) {
         <WineForm
           draft={form}
           scanError={scanError}
-          submit={cellar ? t("下一步") : t("开始品鉴")}
+          submit={answering ? t("就是这款") : cellar ? t("下一步") : t("开始品鉴")}
           onCancel={() => setForm(null)}
           onSave={(v) => choose(v)}
         />

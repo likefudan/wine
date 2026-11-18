@@ -2315,3 +2315,168 @@ a.pro-score {
   color: var(--primary);
   font-weight: 600;
 }
+
+/* ── 盲品 (Blind.tsx) ──────────────────────────────────────────────────────────────────────── */
+.blind-entry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1.5px dashed var(--brass);
+  border-radius: var(--radius);
+  background: var(--brass-soft);
+  color: var(--ink);
+  text-decoration: none;
+}
+.blind-entry svg {
+  color: var(--brass);
+  flex: none;
+}
+.blind-entry > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.blind-label {
+  font-family: var(--serif-latin);
+  font-size: 1.25em;
+}
+.blind-label-input {
+  font-family: var(--serif-latin);
+  font-size: 22px;
+}
+.blind-colors {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.blind-color {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 2px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+.blind-color.on {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+}
+.guess-card {
+  border: 1.5px solid var(--brass);
+}
+.guess-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 8px;
+}
+.guess-table th,
+.guess-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 6px 8px 0;
+  border-top: 1px solid var(--line);
+}
+.guess-table thead th {
+  border-top: 0;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+.guess-table tbody th {
+  color: var(--muted);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.guess-table td:last-child {
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 0;
+}
+.guess-table .ok {
+  color: #2f6b3a;
+  font-weight: 600;
+}
+.guess-table .near {
+  color: var(--brass);
+  font-weight: 600;
+}
+.guess-table .miss {
+  color: var(--danger);
+  font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .guess-table .ok {
+    color: #8fd19e;
+  }
+}
+:root[data-theme="dark"] .guess-table .ok {
+  color: #8fd19e;
+}
+.blind-result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.blind-total strong {
+  font-family: var(--serif-latin);
+  font-size: 30px;
+}
+.blind-summary {
+  margin: 4px 0 12px;
+}
+.blind-answers {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+.blind-glasses {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.blind-glass {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.blind-glass-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.blind-glass-head .link {
+  margin-left: auto;
+}
+.blind-score {
+  width: 100%;
+}
+.add-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.add-row > .button {
+  flex: 1 1 140px;
+  text-align: center;
+}
+.blind-add {
+  border-style: dashed;
+  border-color: var(--brass);
+}
+.ranking .grow {
+  flex: 1;
+}

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono } from "hono";
+import { BLIND } from "../shared/blind";
 import { DESCRIPTORS } from "../shared/descriptors";
 import { ID_RE, isLang, ulid } from "../shared/model";
 import {
@@ -260,7 +261,7 @@ interface ReviewRow {
 }
 
 async function loadVintage(db: DB, rawId: string): Promise<VintageRow> {
-  if (!ID_RE.test(rawId)) throw new HttpError(404, "not_found", "找不到这款酒");
+  if (!ID_RE.test(rawId) || rawId === BLIND) throw new HttpError(404, "not_found", "找不到这款酒");
   const row = await db
     .prepare(
       `${VINTAGE_SELECT} WHERE v.id = COALESCE((SELECT vintage_id FROM vintage_aliases WHERE alias_id = ?1), ?1)`,

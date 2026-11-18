@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { BLIND } from "../shared/blind";
 import { type FriendFeed, type FriendNote, ID_RE, toDepth } from "../shared/model";
 import { requireUser } from "./auth";
 import { NAME_SQL, PICTURE_SQL } from "./profile";
@@ -43,8 +44,9 @@ export async function friendFeed(
   opts: { before?: string | null; vintage?: string | null; limit?: number } = {},
 ): Promise<FriendFeed> {
   const limit = Math.min(Math.max(opts.limit ?? FEED_PAGE, 1), 50);
-  const where: string[] = [];
-  const binds: unknown[] = [];
+  // 盲品 glasses not revealed yet: nobody is told what they are, so they are not news.
+  const where: string[] = ["i.vintage_id <> ?"];
+  const binds: unknown[] = [BLIND];
   if (opts.before) {
     // "<at>|<id>": the last note of the page before; (at, id) is unique, so nothing repeats or drops.
     const [at, id] = opts.before.split("|");

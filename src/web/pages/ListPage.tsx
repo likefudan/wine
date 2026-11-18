@@ -2,6 +2,8 @@ import { useLocation, useRoute } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import { type Board, type BoardItem, LIST_KINDS, type ListKind, type ListPlace } from "../../shared/model";
+import { BLIND, blindVintage, isBlindId } from "../../shared/blind";
+import { openBlindItem } from "../Blind";
 import { EveryoneSheet, ShareSheet } from "../Sharing";
 import { BackIcon, Choice, Field, Glass, Sheet, WineName } from "../components";
 import { ask } from "../confirm";
@@ -11,6 +13,7 @@ import {
   blankTasting,
   deleteList,
   fetchBoard,
+  flush,
   getState,
   leaveList,
   moveItem,
@@ -58,7 +61,14 @@ export function ListPage() {
     let live = true;
     const load = () =>
       fetchBoard(list.id).then(
-        (b) => live && setBoard(b),
+        (b) => {
+          if (!live) return;
+          setBoard(b);
+          // The host revealed 盲品 glasses: fetch their wines.
+          const local = getState().items;
+          if (b.items.some((bi) => bi.vintage && local.some((i) => i.id === bi.id && isBlindId(i.vintageId))))
+            void flush();
+        },
         () => {},
       );
     void load();
@@ -96,6 +106,9 @@ export function ListPage() {
     }
   };
   const everyoneItem = everyone ? boardItem(everyone) : undefined;
+  const host = !list.ownerId || list.ownerId === me?.id;
+  const blindItems = items.filter((i) => i.blind);
+  const blindWaiting = blindItems.filter((i) => isBlindId(i.vintageId)).length;
 
   return (
     <div class="page">
@@ -144,6 +157,14 @@ export function ListPage() {
               : t("盲评中：交了自己的评价才能看别人的")}
         </p>
       )}
+      {blindItems.length > 0 && (
+        <a class="button primary block blind-answers" href={`/answers/${list.id}`}>
+          <span>{t("对答案")}</span>
+          <span class="small">
+            {blindWaiting ? t("{n} 杯待揭晓", { n: blindWaiting }) : t("{n} 杯已揭晓", { n: blindItems.length })} ›
+          </span>
+        </a>
+      )}
       {items.length === 0 ? (
         <p class="empty">{t("按上酒顺序一款款加进来，喝一款记一款。")}</p>
       ) : (
@@ -156,9 +177,11 @@ export function ListPage() {
       )}
       <ol class="rows numbered">
         {items.map((i, n) => {
-          const v = vById.get(i.vintageId);
+          // 盲品: its label and colour until the wine is revealed.
+          const v = vById.get(i.vintageId) ?? (i.blind && i.vintageId === BLIND ? blindVintage(i.blind) : undefined);
           if (!v) return null;
           const mine = tastings.find((x) => x.listItemId === i.id);
+          const open = () => (i.blind ? openBlindItem(route, i.id) : openTasting(route, v.id, i.id));
           return (
             <li key={i.id} class="row-wrap">
               <span class="row-n num">{n + 1}</span>
@@ -199,7 +222,7 @@ export function ListPage() {
                 </div>
               ) : (
                 <div class="row-stack">
-                  <button type="button" class="row" onClick={() => openTasting(route, v.id, i.id)}>
+                  <button type="button" class="row" onClick={open}>
                     <Glass color={glassColor(v.color, mine?.appearance, v.year)} />
                     <WineName v={v} />
                     <span class={`row-score num${mine?.score !== null && mine?.score === best ? " best" : ""}`}>
@@ -213,9 +236,16 @@ export function ListPage() {
           );
         })}
       </ol>
-      <a class="button primary block" href={`/add?list=${list.id}`}>
-        ＋ {t("加下一款酒")}
-      </a>
+      <div class="add-row">
+        <a class="button primary" href={`/add?list=${list.id}`}>
+          ＋ {t("加下一款酒")}
+        </a>
+        {host && (
+          <a class="button blind-add" href={`/blind?list=${list.id}`}>
+            ＋ {t("加一杯盲品")}
+          </a>
+        )}
+      </div>
       {settings &&
         (list.ownerId && list.ownerId !== me?.id ? (
           <MemberSettings listId={list.id} onClose={() => setSettings(false)} onLeft={() => route("/")} />
@@ -228,7 +258,8 @@ export function ListPage() {
           item={everyoneItem}
           onTaste={() => {
             setEveryone(null);
-            openTasting(route, everyoneItem.vintage.id, everyoneItem.id);
+            if (everyoneItem.blind) openBlindItem(route, everyoneItem.id);
+            else if (everyoneItem.vintage) openTasting(route, everyoneItem.vintage.id, everyoneItem.id);
           }}
           onClose={() => setEveryone(null)}
         />

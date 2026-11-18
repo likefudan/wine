@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { type CellarLot, MAX_QTY, type ProWindow, isCurrency, parseWindow } from "../shared/cellar";
+import { BLIND, cleanBlind } from "../shared/blind";
 import { isDescriptorId } from "../shared/descriptors";
 import { tidyPlace } from "../shared/place";
 import {
@@ -129,6 +130,7 @@ interface TastingRow {
   photo_id: string | null;
   location: string | null;
   cellar_id: string | null;
+  blind: string | null;
   updated_at: string;
 }
 
@@ -177,7 +179,10 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
       .bind(user.id),
     db
       .prepare(
-        `SELECT i.* FROM list_items i JOIN list_members m ON m.list_id = i.list_id AND m.user_id = ? ORDER BY i.position`,
+        // The host's 盲品 answers go to the host only.
+        `SELECT i.*, CASE WHEN l.owner_id = ?1 THEN i.answer_vintage_id END AS answer
+         FROM list_items i JOIN list_members m ON m.list_id = i.list_id AND m.user_id = ?1
+         JOIN lists l ON l.id = i.list_id ORDER BY i.position`,
       )
       .bind(user.id),
     db.prepare("SELECT * FROM tastings WHERE user_id = ? ORDER BY tasted_at DESC").bind(user.id),
@@ -203,9 +208,11 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
       `${VINTAGE_SELECT} WHERE v.id IN (
         SELECT vintage_id FROM tastings WHERE user_id = ?1
         UNION SELECT vintage_id FROM cellar WHERE user_id = ?1
-        UNION SELECT i.vintage_id FROM list_items i JOIN list_members m ON m.list_id = i.list_id AND m.user_id = ?1)`,
+        UNION SELECT i.vintage_id FROM list_items i JOIN list_members m ON m.list_id = i.list_id AND m.user_id = ?1
+        UNION SELECT i.answer_vintage_id FROM list_items i JOIN lists l ON l.id = i.list_id AND l.owner_id = ?1)
+        AND v.id <> ?2`,
     )
-    .bind(user.id)
+    .bind(user.id, BLIND)
     .all<VintageRow>();
   const byTasting = new Map<string, { id: string; intensity: number }[]>();
   for (const d of descriptors!.results as { tasting_id: string; descriptor_id: string; intensity: number }[]) {
@@ -249,6 +256,8 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         position: i.position as number,
         priceUsd: (i.price_usd as number | null) ?? null,
         createdAt: i.created_at as string,
+        blind: i.blind ? cleanBlind(parse(i.blind as string)) : null,
+        answerVintageId: (i.answer as string | null) ?? null,
       }),
     ),
     vintages: vintages.results.map(vintageInfo),
@@ -274,6 +283,7 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         photoId: t.photo_id,
         location: t.location ? cleanLocation(parse(t.location)) : null,
         cellarId: t.cellar_id,
+        blind: t.blind ? cleanBlind(parse(t.blind)) : null,
         updatedAt: t.updated_at,
       }),
     ),
@@ -455,32 +465,69 @@ async function deleteList(db: DB, user: UserRow, listId: string) {
   ]);
 }
 
+/**
+ * A wine in a list. A 盲品 glass (`blind`) is the host's: only the host adds one, fills in its answer
+ * (`answerVintageId`, kept from everyone else) and reveals it by setting its vintage, which also gives
+ * every member's note on it that wine. Nobody else can change a blind glass's wine or label, and a
+ * revealed glass never goes back to BLIND (a phone that had not heard yet may still send that).
+ */
 async function putItem(db: DB, user: UserRow, i: ListItem) {
   const iid = id(i?.id);
   const listId = id(i.listId);
   if (!(await isMember(db, listId, user.id))) fail("你不是这次品鉴的成员");
-  const vintageId = await resolveVintage(db, id(i.vintageId));
+  const owner = await db.prepare("SELECT 1 FROM lists WHERE id = ? AND owner_id = ?").bind(listId, user.id).first();
+  let vintageId = await resolveVintage(db, id(i.vintageId));
   const position = Number.isInteger(i.position) ? i.position : 0;
   const price = optNum(i.priceUsd, 0, 100_000);
   const existing = await db
-    .prepare("SELECT list_id FROM list_items WHERE id = ?")
+    .prepare("SELECT list_id, vintage_id, blind, answer_vintage_id FROM list_items WHERE id = ?")
     .bind(iid)
-    .first<{ list_id: string }>();
+    .first<{ list_id: string; vintage_id: string; blind: string | null; answer_vintage_id: string | null }>();
+  // An older app sends neither: keep what is there.
+  const cleaned = i.blind === undefined ? null : cleanBlind(i.blind);
+  let blind = i.blind === undefined ? (existing?.blind ?? null) : cleaned ? JSON.stringify(cleaned) : null;
+  let answer =
+    i.answerVintageId === undefined
+      ? (existing?.answer_vintage_id ?? null)
+      : i.answerVintageId
+        ? await resolveVintage(db, id(i.answerVintageId))
+        : null;
+  if (!owner) {
+    if (!existing && (blind || vintageId === BLIND)) fail("只有主持人能加盲品杯");
+    if (existing && (existing.blind || existing.vintage_id === BLIND)) {
+      vintageId = existing.vintage_id;
+      blind = existing.blind;
+    }
+    answer = existing?.answer_vintage_id ?? null;
+  }
+  if (existing && existing.vintage_id !== BLIND && vintageId === BLIND) vintageId = existing.vintage_id;
+  if (vintageId === BLIND && !blind) fail("编号无效");
   if (existing) {
     if (existing.list_id !== listId) fail("编号无效");
     await db
-      .prepare("UPDATE list_items SET vintage_id = ?, position = ?, price_usd = ? WHERE id = ?")
-      .bind(vintageId, position, price, iid)
+      .prepare(
+        "UPDATE list_items SET vintage_id = ?, position = ?, price_usd = ?, blind = ?, answer_vintage_id = ? WHERE id = ?",
+      )
+      .bind(vintageId, position, price, blind, answer, iid)
       .run();
   } else {
     await db
       .prepare(
-        "INSERT INTO list_items (id, list_id, vintage_id, position, price_usd, added_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO list_items (id, list_id, vintage_id, position, price_usd, added_by, created_at, blind, answer_vintage_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .bind(iid, listId, vintageId, position, price, user.id, iso(i.createdAt))
+      .bind(iid, listId, vintageId, position, price, user.id, iso(i.createdAt), blind, answer)
       .run();
   }
-  await db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(now(), listId).run();
+  await db.batch([
+    // Revealed (or the host corrected the answer): everyone's note on the glass is now on that wine.
+    db
+      .prepare(
+        "UPDATE tastings SET vintage_id = ?1 WHERE list_item_id = ?2 AND (vintage_id = ?3 OR (?4 AND vintage_id = ?5))",
+      )
+      .bind(vintageId, iid, BLIND, blind ? 1 : 0, existing?.vintage_id ?? BLIND),
+    db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(now(), listId),
+  ]);
 }
 
 async function deleteItem(db: DB, user: UserRow, itemId: string) {
@@ -520,7 +567,7 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
   const updatedAt = iso(t.updatedAt);
   // A later edit from another phone already arrived: keep it.
   if (existing && existing.updated_at > updatedAt) return;
-  const vintageId = await resolveVintage(db, id(t.vintageId));
+  let vintageId = await resolveVintage(db, id(t.vintageId));
   let itemId: string | null = null;
   if (t.listItemId) {
     const item = await db
@@ -539,6 +586,19 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
       if (other) itemId = null;
     }
   }
+  // 盲品: a phone that has not heard of the answer yet must not take the wine away again.
+  if (vintageId === BLIND) {
+    const known = existing
+      ? await db.prepare("SELECT vintage_id FROM tastings WHERE id = ?").bind(tid).first<{ vintage_id: string }>()
+      : null;
+    const item = itemId
+      ? await db.prepare("SELECT vintage_id FROM list_items WHERE id = ?").bind(itemId).first<{ vintage_id: string }>()
+      : null;
+    vintageId = [item?.vintage_id, known?.vintage_id].find((v) => v && v !== BLIND) ?? BLIND;
+  }
+  const keepBlind = t.blind === undefined;
+  const blindInfo = keepBlind ? null : cleanBlind(t.blind);
+  if (vintageId === BLIND && !keepBlind && !blindInfo) fail("编号无效");
   const depth = toDepth(t.depth) ?? "quick";
   const score = t.score === null || t.score === undefined ? null : Math.round(optNum(t.score, MIN_SCORE, MAX_SCORE)!);
   const descriptors = Array.isArray(t.descriptors)
@@ -590,17 +650,26 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
             `UPDATE tastings SET vintage_id = ?, list_item_id = ?, tasted_at = ?, depth = ?, appearance = ?, nose = ?,
              palate = ?, extra = ?, guesses = ?, quality = ?, score = ?, buy_again = ?, bought_qty = ?, price_usd = ?,
              note = ?, photo_id = ?, updated_at = ?, location = CASE WHEN ? THEN location ELSE ? END,
-             cellar_id = CASE WHEN ? THEN cellar_id ELSE ? END WHERE id = ?`,
+             cellar_id = CASE WHEN ? THEN cellar_id ELSE ? END, blind = CASE WHEN ? THEN blind ELSE ? END WHERE id = ?`,
           )
-          .bind(...values, keepLocation ? 1 : 0, location, keepCellar ? 1 : 0, cellarId, tid)
+          .bind(
+            ...values,
+            keepLocation ? 1 : 0,
+            location,
+            keepCellar ? 1 : 0,
+            cellarId,
+            keepBlind ? 1 : 0,
+            blindInfo ? JSON.stringify(blindInfo) : null,
+            tid,
+          )
       : db
           .prepare(
             `INSERT INTO tastings (vintage_id, list_item_id, tasted_at, depth, appearance, nose, palate, extra, guesses,
              quality, score, buy_again, bought_qty, price_usd, note, photo_id, updated_at, id, user_id, created_at,
-             location, cellar_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             location, cellar_id, blind)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
-          .bind(...values, tid, user.id, now(), location, cellarId),
+          .bind(...values, tid, user.id, now(), location, cellarId, blindInfo ? JSON.stringify(blindInfo) : null),
     db.prepare("DELETE FROM tasting_descriptors WHERE tasting_id = ?").bind(tid),
     ...descriptors.map((d) =>
       db
@@ -766,7 +835,7 @@ dataRoutes.get("/catalog", async (c) => {
   const wines = await c.env.DB.prepare(
     `SELECT w.id, w.name, w.color, w.area, w.appellation, w.grapes, p.name AS producer, p.country, p.region,
        (SELECT json_group_array(json_object('id', v.id, 'year', v.year, 'abv', v.abv)) FROM vintages v WHERE v.wine_id = w.id) AS vintages
-     FROM wines w JOIN producers p ON p.id = w.producer_id WHERE ${where}
+     FROM wines w JOIN producers p ON p.id = w.producer_id WHERE ${where} AND w.id <> '${BLIND}'
      ORDER BY CASE WHEN p.name_key LIKE ? OR w.name_key LIKE ? THEN 0 ELSE 1 END, p.name, w.name LIMIT 20`,
   )
     .bind(...words, `${q}%`, `${q}%`)

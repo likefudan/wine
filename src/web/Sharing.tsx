@@ -1,3 +1,4 @@
+import { shownVintage } from "../shared/blind";
 import { Face } from "./Profile";
 import { useEffect, useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../shared/descriptors";
@@ -253,7 +254,7 @@ function CardSheet(props: { src: string; title: string; onClose: () => void }) {
 function NoteView(props: { n: BoardNote; item: BoardItem }) {
   const { n, item } = props;
   const lang = currentLang();
-  const sentence = tastingNote(lang, item.vintage.color, n.appearance, n.nose, n.palate, n.descriptors);
+  const sentence = tastingNote(lang, shownVintage(item).color, n.appearance, n.nose, n.palate, n.descriptors);
   return (
     <li class={n.mine ? "note mine" : "note"}>
       <div class="note-head">
@@ -285,8 +286,8 @@ export function EveryoneSheet(props: { item: BoardItem; onTaste: () => void; onC
     <Sheet title={t("大家的评价")} onClose={props.onClose}>
       <div class="form">
         <div class="row static">
-          <Glass color={glassColor(item.vintage.color, undefined, item.vintage.year)} />
-          <WineName v={item.vintage} />
+          <Glass color={glassColor(shownVintage(item).color, undefined, shownVintage(item).year)} />
+          <WineName v={shownVintage(item)} />
           {item.avg !== null && <span class="row-score num">{item.avg}</span>}
         </div>
         {!item.open ? (
@@ -394,7 +395,7 @@ export async function drawListCard(b: Board): Promise<string> {
   // The glasses in pouring order, white to red.
   const glasses = [...b.items].sort((x, y) => x.position - y.position).slice(0, 14);
   glasses.forEach((i, n) =>
-    drawGlass(ctx, 100 + n * 64, 350, 26, glassColor(i.vintage.color, undefined, i.vintage.year)),
+    drawGlass(ctx, 100 + n * 64, 350, 26, glassColor(shownVintage(i).color, undefined, shownVintage(i).year)),
   );
 
   let y = 460;
@@ -407,15 +408,17 @@ export async function drawListCard(b: Board): Promise<string> {
     ctx.fillStyle = n % 2 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.07)";
     roundRect(ctx, 60, top, W - 120, ROW - 10, 20);
     ctx.fill();
-    drawGlass(ctx, 120, top + 47, 24, glassColor(i.vintage.color, undefined, i.vintage.year));
+    drawGlass(ctx, 120, top + 47, 24, glassColor(shownVintage(i).color, undefined, shownVintage(i).year));
     ctx.fillStyle = "#fff7f2";
     ctx.font = `600 36px ${serif}`;
-    const v = i.vintage;
-    const name = `${v.producer}${v.wine.trim().toLowerCase() === v.producer.trim().toLowerCase() ? "" : ` ${v.wine}`}`;
+    const v = shownVintage(i);
+    const name = i.vintage
+      ? `${v.producer}${v.wine.trim().toLowerCase() === v.producer.trim().toLowerCase() ? "" : ` ${v.wine}`}`
+      : `${v.wine} · ${t("盲品")}`;
     ctx.fillText(fit(ctx, name, W - 420), 170, top + 46);
     ctx.fillStyle = "rgba(255,247,242,0.6)";
     ctx.font = `400 26px ${sans}`;
-    const tags = [v.year === 0 ? "NV" : String(v.year), i.id === debated ? t("分歧最大") : null]
+    const tags = [!i.vintage ? null : v.year === 0 ? "NV" : String(v.year), i.id === debated ? t("分歧最大") : null]
       .filter(Boolean)
       .join(" · ");
     ctx.fillText(tags, 170, top + 80);

@@ -1,9 +1,11 @@
 import { Hono } from "hono";
+import { BLIND, cleanBlind } from "../shared/blind";
 import {
   type Board,
   type BoardItem,
   type BoardNote,
   type Depth,
+  type Guesses,
   ID_RE,
   type ListKind,
   VISIBILITIES,
@@ -95,12 +97,13 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
   const open = notesOpen(l);
   const [items, notes, descriptors, members] = await db.batch([
     db
-      .prepare(`${VINTAGE_SELECT.replace("SELECT ", "SELECT i.id AS item_id, i.position, ")}
+      .prepare(`${VINTAGE_SELECT.replace("SELECT ", "SELECT i.id AS item_id, i.position, i.blind AS item_blind, ")}
         JOIN list_items i ON i.vintage_id = v.id WHERE i.list_id = ? ORDER BY i.position`)
       .bind(l.id),
     db
       .prepare(
         `SELECT t.id, t.user_id, t.list_item_id, t.depth, t.score, t.buy_again, t.appearance, t.nose, t.palate, t.note,
+           t.guesses, t.price_usd,
            ${NAME_SQL()} AS name, u.email, ${PICTURE_SQL()} AS picture
          FROM tastings t JOIN users u ON u.id = t.user_id JOIN list_items i ON i.id = t.list_item_id
          WHERE i.list_id = ? AND ${HANDED_IN} ORDER BY t.score IS NULL, t.score DESC, t.updated_at`,
@@ -130,6 +133,8 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
     nose: string;
     palate: string;
     note: string | null;
+    guesses: string;
+    price_usd: number | null;
     name: string | null;
     email: string;
     picture: string | null;
@@ -146,41 +151,44 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
     list.push(n);
     byItem.set(n.list_item_id, list);
   }
-  const boardItems = (items!.results as unknown as (VintageRow & { item_id: string; position: number })[]).map(
-    (r): BoardItem => {
-      const rows = byItem.get(r.item_id) ?? [];
-      // Members see a wine's notes once they handed in their own; visitors only when they are open.
-      const itemOpen = open || (member && rows.some((n) => n.user_id === user!.id));
-      const scores = rows.map((n) => n.score).filter((s): s is number => s !== null);
-      return {
-        id: r.item_id,
-        position: r.position,
-        vintage: vintageInfo(r),
-        rated: rows.length,
-        open: itemOpen,
-        avg:
-          itemOpen && scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null,
-        notes: itemOpen
-          ? rows.map(
-              (n): BoardNote => ({
-                userId: n.user_id,
-                name: displayName(n.name, n.email),
-                picture: n.picture,
-                mine: n.user_id === user?.id,
-                depth: n.depth as Depth,
-                score: n.score,
-                buyAgain: n.buy_again === null ? null : !!n.buy_again,
-                appearance: parse(n.appearance),
-                nose: parse(n.nose),
-                palate: parse(n.palate),
-                descriptors: words.get(n.id) ?? [],
-                note: n.note,
-              }),
-            )
-          : [],
-      };
-    },
-  );
+  type ItemRow = VintageRow & { item_id: string; position: number; item_blind: string | null };
+  const boardItems = (items!.results as unknown as ItemRow[]).map((r): BoardItem => {
+    // 盲品: the wine stays hidden until the host reveals it, and so do the guesses on it.
+    const hidden = r.id === BLIND;
+    const blind = r.item_blind ? cleanBlind(parse(r.item_blind)) : null;
+    const rows = byItem.get(r.item_id) ?? [];
+    // Members see a wine's notes once they handed in their own; visitors only when they are open.
+    const itemOpen = open || (member && rows.some((n) => n.user_id === user!.id));
+    const scores = rows.map((n) => n.score).filter((s): s is number => s !== null);
+    return {
+      id: r.item_id,
+      position: r.position,
+      vintage: hidden ? null : vintageInfo(r),
+      blind,
+      rated: rows.length,
+      open: itemOpen,
+      avg: itemOpen && scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null,
+      notes: itemOpen
+        ? rows.map(
+            (n): BoardNote => ({
+              userId: n.user_id,
+              name: displayName(n.name, n.email),
+              picture: n.picture,
+              mine: n.user_id === user?.id,
+              depth: n.depth as Depth,
+              score: n.score,
+              buyAgain: n.buy_again === null ? null : !!n.buy_again,
+              appearance: parse(n.appearance),
+              nose: parse(n.nose),
+              palate: parse(n.palate),
+              descriptors: words.get(n.id) ?? [],
+              note: n.note,
+              ...(blind && !hidden ? { guesses: parse<Guesses>(n.guesses), priceUsd: n.price_usd } : {}),
+            }),
+          )
+        : [],
+    };
+  });
   const memberRows = members!.results as {
     id: string;
     name: string | null;
@@ -304,6 +312,21 @@ sharingRoutes.post("/lists/:id/share", async (c) => {
   }
   if (typeof b.blind === "boolean") put("blind", b.blind ? 1 : 0);
   if (typeof b.revealed === "boolean") put("revealed_at", b.revealed ? (l.revealed_at ?? now()) : null);
+  // 揭晓 also gives each 盲品 glass the wine the host filled in, and everyone's note on it that wine.
+  if (b.revealed === true)
+    await db.batch([
+      db
+        .prepare(
+          "UPDATE list_items SET vintage_id = answer_vintage_id WHERE list_id = ? AND vintage_id = ? AND answer_vintage_id IS NOT NULL",
+        )
+        .bind(l.id, BLIND),
+      db
+        .prepare(
+          `UPDATE tastings SET vintage_id = (SELECT i.vintage_id FROM list_items i WHERE i.id = tastings.list_item_id)
+           WHERE vintage_id = ? AND list_item_id IN (SELECT id FROM list_items WHERE list_id = ? AND vintage_id <> ?)`,
+        )
+        .bind(BLIND, l.id, BLIND),
+    ]);
   if (typeof b.joinOpen === "boolean") put("join_open", b.joinOpen ? 1 : 0);
   if (b.newKey === true) put("share_key", randomToken());
   if (sets.length) {
