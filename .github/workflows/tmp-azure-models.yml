@@ -1,8 +1,7 @@
 name: tmp-azure-models
 # Temporary: lists which models the Azure secrets can reach. Prints secret NAMES and model names only.
 on:
-  push:
-    branches: [claude/project-thread-r5zqd1]
+  pull_request:
     paths: [.github/workflows/tmp-azure-models.yml]
 permissions:
   contents: read
