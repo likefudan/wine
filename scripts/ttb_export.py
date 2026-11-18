@@ -97,8 +97,14 @@ def search(a, b):
         print("SEARCH", a, b, "->", n, file=sys.stderr)
         print(text[:3000], file=sys.stderr)
         soup = BeautifulSoup(r.text, "html.parser")
-        for x in soup.find_all(["a", "form"]):
-            print("  ", x.name, x.get("href") or x.get("action"), x.get_text(" ", strip=True)[:50], file=sys.stderr)
+        for x in soup.find_all(onclick=True):
+            print("  ONCLICK", x.name, x.get("onclick")[:300], x.get_text(" ", strip=True)[:50], file=sys.stderr)
+        for sc in soup.find_all("script"):
+            t = sc.string or ""
+            for m in re.finditer(r".{0,200}(File|csv|save).{0,300}", t, re.I | re.S):
+                print("  SCRIPT", sc.get("src"), m.group(0).replace("\n", " ")[:500], file=sys.stderr)
+            if sc.get("src"):
+                print("  SCRIPT SRC", sc.get("src"), file=sys.stderr)
     return n, r
 
 
