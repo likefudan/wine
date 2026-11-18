@@ -1860,6 +1860,8 @@ html.standalone body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
 /* 分享图 (TastingCard.tsx) */
 .card-with-action {
   position: relative;
