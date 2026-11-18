@@ -155,8 +155,6 @@ function Shell() {
   const fullScreen = path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add");
   const waiting = usePending();
   const due = useCellarAlerts().length;
-  // 记一杯 while looking at a list adds to that list.
-  const inList = /^\/lists\/([^/?]+)/.exec(path)?.[1];
   return (
     <div class="app">
       <PullRefresh enabled={!fullScreen} />
@@ -239,7 +237,7 @@ function Shell() {
               <span>{t("我的")}</span>
             </a>
           </nav>
-          <a href={inList ? `/add?list=${inList}` : "/add"} class="dock-add" aria-label={t("记一杯")}>
+          <a href="/add" class="dock-add" aria-label={t("记一杯")}>
             <GlassIcon />
           </a>
         </div>
