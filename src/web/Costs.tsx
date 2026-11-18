@@ -17,6 +17,7 @@ const FEATURE_NAME: Record<string, string> = {
   label: tk("拍酒标识别"),
   review: tk("专业评价查询"),
   prose: tk("分享图文字"),
+  places: tk("地点查询（Google）"),
 };
 const featureName = (f: string) => (FEATURE_NAME[f] ? t(FEATURE_NAME[f]) : f);
 
@@ -100,6 +101,7 @@ export function CostsPanel() {
           </p>
         </>
       )}
+      <Budget />
       <Prices onRepriced={load} />
     </div>
   );
@@ -293,5 +295,56 @@ function PriceRow(props: { price: ModelPrice; missing: boolean; onSave: (p: Mode
         {t("保存")}
       </button>
     </form>
+  );
+}
+
+/** 全站每日上限: past it, only owners can use the paid features until the 24 hours roll on. */
+function Budget() {
+  const [b, setB] = useState<{ budget: number; spent: number } | null>(null);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    api<{ budget: number; spent: number }>("/api/admin/budget")
+      .then((r) => {
+        setB(r);
+        setDraft(String(r.budget));
+      })
+      .catch(() => {});
+  }, []);
+  if (!b) return null;
+  const save = async () => {
+    setError(null);
+    try {
+      const r = await api<{ budget: number; spent: number }>("/api/admin/budget", { body: { budget: Number(draft) } });
+      setB(r);
+    } catch (e) {
+      setError(e instanceof ApiError ? tm(e.message) : t("没有网络"));
+    }
+  };
+  return (
+    <section class="group budget">
+      <h2 class="group-title">{t("每日花费上限")}</h2>
+      <p class="small muted">
+        {t("最近 24 小时全站花了 {spent}，上限 {budget}。超过后只有站长还能用拍酒标、AI 文字、专业评价和地点查询。", {
+          spent: fmtUsd(b.spent),
+          budget: fmtUsd(b.budget),
+        })}
+      </p>
+      <div class="row-actions">
+        <input
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="1"
+          value={draft}
+          aria-label={t("每日花费上限（美元）")}
+          onInput={(e) => setDraft((e.target as HTMLInputElement).value)}
+        />
+        <button type="button" class="button" onClick={save} disabled={draft === String(b.budget)}>
+          {t("保存")}
+        </button>
+      </div>
+      {error && <p class="notice">{error}</p>}
+    </section>
   );
 }

@@ -1,9 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono } from "hono";
 import type { Usage } from "../shared/costs";
-import { COLORS, ID_RE, LABEL_MODELS, type LabelModel, isLabelModel, ulid } from "../shared/model";
-import { requireApproved, requireSameOrigin, requireUser } from "./auth";
-import { claudeUsage, logCall } from "./costs";
+import { COLORS, ID_RE, LABEL_MODELS, type LabelModel, OWNER_ONLY_MODELS, isLabelModel, ulid } from "../shared/model";
+import { isOwner, requireApproved, requireSameOrigin, requireUser } from "./auth";
+import { claudeUsage, logCall, requireBudget } from "./costs";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 
@@ -15,8 +15,9 @@ import { HttpError, now, readJson } from "./http";
  */
 
 export const AZURE_HOST = "https://happy-badminton-jay-main-1.openai.azure.com";
-/** Tried after the person's own choice, when it fails. */
+/** Tried after the person's own choice, when it fails: one more model, never a chain. */
 const FALLBACK: string[] = ["claude-sonnet-5-5", "claude-fable-5-1"];
+
 /** Labels read per person per day (§2); 专业评价 has its own limits (reviews.ts). */
 export const DAILY_AI_LIMIT = 40;
 /** The phone shrinks the photo to 1600px (about 300 KB); this stops a stray full-size one. */
@@ -135,9 +136,10 @@ async function askOpenAi(env: Env, model: string, image: string): Promise<Raw> {
 const jsonIn = (text: string) => JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
 
 /** The order to try models in: the person's choice, then the fallbacks. */
-export const modelsFor = (chosen: string | null): string[] => {
-  const first: LabelModel = isLabelModel(chosen) ? chosen : LABEL_MODELS[0].id;
-  return [first, ...FALLBACK.filter((m) => m !== first)];
+export const modelsFor = (chosen: string | null, owner = false): string[] => {
+  const first: LabelModel =
+    isLabelModel(chosen) && (owner || !OWNER_ONLY_MODELS.includes(chosen)) ? chosen : LABEL_MODELS[0].id;
+  return [first, ...FALLBACK.filter((m) => m !== first)].slice(0, 2);
 };
 
 async function readLabel(
@@ -145,9 +147,10 @@ async function readLabel(
   image: string,
   chosen: string | null,
   userId: string,
+  owner: boolean,
 ): Promise<{ reading: LabelReading; model: string; usage: Usage }> {
   let last: unknown;
-  for (const model of modelsFor(chosen)) {
+  for (const model of modelsFor(chosen, owner)) {
     let billed: Usage | null = null;
     try {
       const api = LABEL_MODELS.find((m) => m.id === model)?.api ?? "anthropic";
@@ -183,6 +186,22 @@ async function readLabel(
   throw last;
 }
 
+/**
+ * Writes a running job for this person and feature, and keeps it only if it is within today's
+ * allowance (the count includes it): one statement, so requests at the same moment cannot all pass.
+ */
+export async function claimJob(env: Env, userId: string, kind: string, jobId: string, limit = DAILY_AI_LIMIT) {
+  const since = new Date(Date.now() - 86400_000).toISOString();
+  const r = await env.DB.prepare(
+    `INSERT INTO ai_jobs (id, user_id, kind, status, created_at)
+     SELECT ?1, ?2, ?3, 'running', ?4
+     WHERE (SELECT COUNT(*) FROM ai_jobs WHERE user_id = ?2 AND kind = ?3 AND created_at > ?5) < ?6`,
+  )
+    .bind(jobId, userId, kind, now(), since, limit)
+    .run();
+  return r.meta.changes > 0;
+}
+
 export const labelRoutes = new Hono<{ Bindings: Env }>();
 
 labelRoutes.post("/label", async (c) => {
@@ -193,13 +212,11 @@ labelRoutes.post("/label", async (c) => {
   const body = await readJson(c.req.raw);
   const image = typeof body.image === "string" ? body.image.replace(/^data:image\/jpeg;base64,/, "") : "";
   if (!image || image.length > (MAX_IMAGE_BYTES * 4) / 3) throw new HttpError(400, "bad_image", "照片无效，请重拍");
-  const since = new Date(Date.now() - 86400_000).toISOString();
-  const used = await c.env.DB.prepare(
-    "SELECT COUNT(*) AS n FROM ai_jobs WHERE user_id = ? AND kind = 'label' AND created_at > ?",
-  )
-    .bind(user.id, since)
-    .first<{ n: number }>();
-  if ((used?.n ?? 0) >= DAILY_AI_LIMIT) throw new HttpError(429, "ai_limit", "今天的识别次数用完了，请手动输入");
+  await requireBudget(c.env, user);
+  // Take today's place first (a running job counts), so two photos sent at once cannot both slip in.
+  const jobId = ulid();
+  if (!(await claimJob(c.env, user.id, "label", jobId)))
+    throw new HttpError(429, "ai_limit", "今天的识别次数用完了，请手动输入");
 
   // Keep the photo first: if reading fails, the person still has their cover picture.
   let photoId: string | null = null;
@@ -212,20 +229,23 @@ labelRoutes.post("/label", async (c) => {
       .bind(photoId, user.id, key, now())
       .run();
   }
-  const jobId = ulid();
   try {
-    const { reading, model, usage } = await readLabel(c.env, image, user.label_model, user.id);
+    const { reading, model, usage } = await readLabel(
+      c.env,
+      image,
+      user.label_model,
+      user.id,
+      isOwner(c.env, user.email),
+    );
     await c.env.DB.prepare(
-      "INSERT INTO ai_jobs (id, user_id, kind, status, model, input_tokens, output_tokens, created_at) VALUES (?, ?, 'label', 'done', ?, ?, ?, ?)",
+      "UPDATE ai_jobs SET status = 'done', model = ?, input_tokens = ?, output_tokens = ? WHERE id = ?",
     )
-      .bind(jobId, user.id, model, usage.input, usage.output, now())
+      .bind(model, usage.input, usage.output, jobId)
       .run();
     return c.json({ reading, photoId });
   } catch (e) {
-    await c.env.DB.prepare(
-      "INSERT INTO ai_jobs (id, user_id, kind, status, error, created_at) VALUES (?, ?, 'label', 'failed', ?, ?)",
-    )
-      .bind(jobId, user.id, String((e as Error)?.message ?? e).slice(0, 300), now())
+    await c.env.DB.prepare("UPDATE ai_jobs SET status = 'failed', error = ? WHERE id = ?")
+      .bind(String((e as Error)?.message ?? e).slice(0, 300), jobId)
       .run();
     throw new HttpError(502, "ai_failed", "没能读出酒标，请重拍或手动输入");
   }

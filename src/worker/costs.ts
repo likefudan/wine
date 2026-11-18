@@ -87,6 +87,36 @@ export async function logCall(
   }
 }
 
+/** 全站每日花费上限 (USD, last 24 hours, every paid call) when no owner has set one. */
+export const DEFAULT_DAILY_BUDGET_USD = 10;
+
+export async function dailyBudget(env: Env): Promise<number> {
+  const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'ai_daily_budget_usd'").first<{
+    value: string;
+  }>();
+  const n = Number(row?.value);
+  return row && Number.isFinite(n) && n >= 0 ? n : DEFAULT_DAILY_BUDGET_USD;
+}
+
+/** What every paid call of the last 24 hours cost, site-wide. */
+export async function spentToday(env: Env): Promise<number> {
+  const since = new Date(Date.now() - 86400_000).toISOString();
+  const row = await env.DB.prepare("SELECT COALESCE(SUM(cost_usd), 0) AS usd FROM ai_calls WHERE created_at > ?")
+    .bind(since)
+    .first<{ usd: number }>();
+  return row?.usd ?? 0;
+}
+
+/**
+ * Once the site has spent its daily budget, paid features wait until tomorrow for everyone but the
+ * owners: a burst of sign-ups, or a script, cannot run up the bill.
+ */
+export async function requireBudget(env: Env, user: { email: string }) {
+  if (isOwner(env, user.email)) return;
+  if ((await spentToday(env)) >= (await dailyBudget(env)))
+    throw new HttpError(503, "budget_spent", "今天全站的 AI 和地图额度用完了，明天再试");
+}
+
 export const costRoutes = new Hono<{ Bindings: Env }>();
 
 const requireOwner = async (c: Parameters<typeof requireUser>[0]) => {
@@ -111,6 +141,25 @@ costRoutes.get("/admin/costs", async (c) => {
     .bind(tz >= 0 ? `+${tz}` : String(tz))
     .all<CostDay>();
   return c.json({ days: rows.results });
+});
+
+/** The daily budget and what was spent in the last 24 hours. */
+costRoutes.get("/admin/budget", async (c) => {
+  await requireOwner(c);
+  return c.json({ budget: await dailyBudget(c.env), spent: await spentToday(c.env) });
+});
+
+costRoutes.post("/admin/budget", async (c) => {
+  requireSameOrigin(c);
+  await requireOwner(c);
+  const n = Number((await readJson(c.req.raw)).budget);
+  if (!Number.isFinite(n) || n < 0 || n > 10_000) throw new HttpError(400, "bad_budget", "请填 0 到 10000 之间的数");
+  await c.env.DB.prepare(
+    "INSERT INTO settings (key, value) VALUES ('ai_daily_budget_usd', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+  )
+    .bind(String(n))
+    .run();
+  return c.json({ budget: n, spent: await spentToday(c.env) });
 });
 
 costRoutes.get("/admin/prices", async (c) => {

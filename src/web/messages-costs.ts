@@ -49,4 +49,20 @@ export const COST_MESSAGES: Record<string, { tw: string; en: string }> = {
   "还没有价格，按 $0 算": { tw: "還沒有價格，按 $0 計", en: "No price yet; counted as $0" },
   只有站长能看开销: { tw: "只有站長能看開銷", en: "Only site owners can see costs" },
   模型名称无效: { tw: "模型名稱無效", en: "Invalid model name" },
+  "地点查询（Google）": { tw: "地點查詢（Google）", en: "Place lookups (Google)" },
+  每日花费上限: { tw: "每日花費上限", en: "Daily spending limit" },
+  "最近 24 小时全站花了 {spent}，上限 {budget}。超过后只有站长还能用拍酒标、AI 文字、专业评价和地点查询。": {
+    tw: "最近 24 小時全站花了 {spent}，上限 {budget}。超過後只有站長還能用拍酒標、AI 文字、專業評價和地點查詢。",
+    en: "The site spent {spent} in the last 24 hours, limit {budget}. Past it, only owners can use label reading, AI notes, critic reviews and place lookups.",
+  },
+  "每日花费上限（美元）": { tw: "每日花費上限（美元）", en: "Daily limit (USD)" },
+  "今天全站的 AI 和地图额度用完了，明天再试": {
+    tw: "今天全站的 AI 和地圖額度用完了，明天再試",
+    en: "The site's AI and map allowance for today is used up. Please try tomorrow.",
+  },
+  "请填 0 到 10000 之间的数": { tw: "請填 0 到 10000 之間的數", en: "Enter a number from 0 to 10000" },
+  "今天查地点的次数用完了，可以直接输入文字": {
+    tw: "今天查地點的次數用完了，可以直接輸入文字",
+    en: "You've used today's place lookups. You can type the place instead.",
+  },
 };

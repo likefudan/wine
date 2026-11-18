@@ -3,7 +3,7 @@
 // rolls them up into 日 / 月 / 季 / 年 here, so the same code is tested once.
 
 /** What a request was for. Shown by name on the page; unknown ones show their key. */
-export const FEATURES = ["label", "review", "prose"] as const;
+export const FEATURES = ["label", "review", "prose", "places"] as const;
 export type Feature = (typeof FEATURES)[number];
 
 /** USD per million tokens, and per thousand web searches. */

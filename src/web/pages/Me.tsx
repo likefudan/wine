@@ -1,7 +1,7 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import { exportName, toCsv, toJson } from "../../shared/export";
-import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
+import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member, OWNER_ONLY_MODELS } from "../../shared/model";
 import { Choice, Field } from "../components";
 import { CostsPanel } from "../Costs";
 import { GrowthPanel } from "../Growth";
@@ -142,7 +142,10 @@ export function MePage() {
               label={t("拍酒标识别模型")}
               value={me.labelModel ?? LABEL_MODELS[0].id}
               clearable={false}
-              options={LABEL_MODELS.map((m) => ({ value: m.id, label: m.name }))}
+              options={LABEL_MODELS.filter((m) => me.owner || !OWNER_ONLY_MODELS.includes(m.id)).map((m) => ({
+                value: m.id,
+                label: m.name,
+              }))}
               onChange={(m) => m && updateMe({ labelModel: m })}
             />
           </Field>

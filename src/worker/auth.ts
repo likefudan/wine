@@ -120,7 +120,9 @@ export async function autoApprovePerDay(env: Env): Promise<number> {
     value: string;
   }>();
   const n = Number(row?.value);
-  return row && Number.isInteger(n) && n >= 0 && n <= 1000 ? n : DEFAULT_AUTO_APPROVE_PER_DAY;
+  if (row && Number.isInteger(n) && n >= 0 && n <= 1000) return n;
+  // The test site runs on the same paid keys: there, newcomers wait for an owner unless one opens it.
+  return env.ENVIRONMENT === "staging" ? 0 : DEFAULT_AUTO_APPROVE_PER_DAY;
 }
 
 /** A newcomer's account: an owner is in; others take one of the last 24 hours' free places, or wait. */
