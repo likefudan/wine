@@ -7,6 +7,7 @@ const TABLES = [
   "pro_review_reports",
   "pro_review_imports",
   "pro_reviews",
+  "cellar",
   "tasting_descriptors",
   "tastings",
   "list_items",
