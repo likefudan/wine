@@ -6,8 +6,7 @@ import { updateMe } from "../store";
 
 const OPTIONS: { depth: Depth; answer: string }[] = [
   { depth: "beginner", answer: tk("刚开始认真喝，想学怎么品") },
-  { depth: "standard", answer: tk("喝过不少，想有个体系") },
-  { depth: "expert", answer: tk("老手，要完整的品鉴表") },
+  { depth: "standard", answer: tk("喝过不少，要完整的品鉴表") },
   { depth: "quick", answer: tk("只想快速记个分") },
 ];
 

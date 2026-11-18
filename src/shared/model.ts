@@ -7,8 +7,11 @@
 export const COLORS = ["red", "white", "rose", "sparkling", "dessert"] as const;
 export type WineColor = (typeof COLORS)[number];
 
-export const DEPTHS = ["quick", "beginner", "standard", "expert"] as const;
+export const DEPTHS = ["quick", "beginner", "standard"] as const;
 export type Depth = (typeof DEPTHS)[number];
+/** A depth as stored or sent: 专业 was merged into 进阶 (2026-11-18), so an old "expert" is "standard". */
+export const toDepth = (d: unknown): Depth | undefined =>
+  d === "expert" ? "standard" : (DEPTHS as readonly unknown[]).includes(d) ? (d as Depth) : undefined;
 
 /** In the order the new-list form offers them: most tastings are at a winery, fewest on a trip. */
 export const LIST_KINDS = ["winery", "home", "dinner", "trip"] as const;

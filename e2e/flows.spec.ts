@@ -206,13 +206,16 @@ test("choosing an aroma lights it up in place without moving the words around it
   await expect(raspberry).toHaveAttribute("aria-pressed", "true");
   expect(await where()).toEqual(before);
   await expect(nose.locator(".family-name", { hasText: "红色水果" }).locator(".family-count")).toHaveText("1");
-  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["覆盆子"]);
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^覆盆子/]);
   await plum.click();
-  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["覆盆子", "红李子"]);
-  // Tapping it again in place takes it out.
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^覆盆子/, /^红李子/]);
+  // 进阶 taps cycle the strength in place; the third tap takes it out.
+  await raspberry.click();
+  await expect(raspberry.locator(".dots")).toHaveText("•••");
+  expect(await where()).toEqual(before);
   await raspberry.click();
   await expect(raspberry).toHaveAttribute("aria-pressed", "false");
-  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["红李子"]);
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^红李子/]);
 
   // The palate's flavours use the same words, and can start from what the nose found.
   await page.click("text=和闻到的一样");

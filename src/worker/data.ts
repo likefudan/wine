@@ -3,7 +3,7 @@ import { isDescriptorId } from "../shared/descriptors";
 import { tidyPlace } from "../shared/place";
 import {
   COLORS,
-  DEPTHS,
+  toDepth,
   ID_RE,
   LIST_KINDS,
   type ListItem,
@@ -210,7 +210,7 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         vintageId: t.vintage_id,
         listItemId: t.list_item_id,
         tastedAt: t.tasted_at,
-        depth: t.depth as Tasting["depth"],
+        depth: toDepth(t.depth) ?? "quick",
         appearance: parse(t.appearance),
         nose: parse(t.nose),
         palate: parse(t.palate),
@@ -485,7 +485,7 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
       if (other) itemId = null;
     }
   }
-  const depth = (DEPTHS as readonly string[]).includes(t.depth) ? t.depth : "quick";
+  const depth = toDepth(t.depth) ?? "quick";
   const score = t.score === null || t.score === undefined ? null : Math.round(optNum(t.score, MIN_SCORE, MAX_SCORE)!);
   const descriptors = Array.isArray(t.descriptors)
     ? [...new Map(t.descriptors.filter((d) => isDescriptorId(d?.id)).map((d) => [d.id, d])).values()].slice(0, 40)
@@ -552,8 +552,8 @@ async function deleteTasting(db: DB, user: UserRow, tastingId: string) {
 async function putMe(db: DB, user: UserRow, o: Extract<Op, { op: "putMe" }>) {
   if (o.locale !== undefined && isLang(o.locale))
     await db.prepare("UPDATE users SET locale = ? WHERE id = ?").bind(o.locale, user.id).run();
-  if (o.depth !== undefined && (DEPTHS as readonly string[]).includes(o.depth))
-    await db.prepare("UPDATE users SET depth = ? WHERE id = ?").bind(o.depth, user.id).run();
+  if (o.depth !== undefined && toDepth(o.depth))
+    await db.prepare("UPDATE users SET depth = ? WHERE id = ?").bind(toDepth(o.depth), user.id).run();
   if (o.labelModel !== undefined && isLabelModel(o.labelModel))
     await db.prepare("UPDATE users SET label_model = ? WHERE id = ?").bind(o.labelModel, user.id).run();
   if (typeof o.locationOn === "boolean")
