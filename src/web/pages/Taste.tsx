@@ -464,7 +464,11 @@ function CompareAnswers(props: {
     { dir: 0, label: t("差不多") },
     { dir: 1, label: p(words.more) },
   ];
-  const name = prev.v ? `${prev.v.producer} ${prev.v.wine}` : t("上一款");
+  const name = !prev.v
+    ? t("上一款")
+    : prev.v.wine.toLowerCase().includes(prev.v.producer.toLowerCase())
+      ? prev.v.wine
+      : `${prev.v.producer} ${prev.v.wine}`;
   return (
     <div class="compare-prev">
       <p class="small muted">{t("说不准的话，和上一款（{wine}）比：", { wine: name })}</p>
