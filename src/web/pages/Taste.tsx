@@ -12,7 +12,6 @@ import {
   BODY_WORDS,
   DEPTH_WORDS,
   DEVELOPMENT_WORDS,
-  FAULT_WORDS,
   FINISH_WORDS,
   type GuideQuestion,
   HUE_WORDS,
@@ -22,7 +21,6 @@ import {
   READINESS_WORDS,
   REASON_WORDS,
   SWEETNESS_WORDS,
-  TEXTURE_WORDS,
   beginnerQuestions,
   glassColor,
   huesFor,
@@ -823,7 +821,6 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
     list?.includes(k) ? list.filter((s) => s !== k) : [...(list ?? []), k];
   const red = v.color === "red";
   const num = (val: string) => (val === "" || !Number.isFinite(Number(val)) ? undefined : Number(val));
-  const [custom, setCustom] = useState("");
   const flavours: Words = {
     value: (pl.flavours ?? []).map((id) => ({ id, intensity: 2 })),
     set: (d) => setP({ flavours: d.map((s) => s.id) }),
@@ -855,14 +852,6 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
           />
         </Field>
         <div class="checks">
-          <label class="check">
-            <input
-              type="checkbox"
-              checked={!!a.rim}
-              onChange={(e) => setA({ rim: (e.target as HTMLInputElement).checked || undefined })}
-            />
-            {t("杯沿颜色变化明显")}
-          </label>
           <label class="check">
             <input
               type="checkbox"
@@ -915,40 +904,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
             onChange={(val) => setN({ development: val })}
           />
         </Field>
-        <AromaPicker x={x} v={v} w={aromasOf(x, patch)} strength />
-        <div class="custom-words">
-          <div class="chips">
-            {(n.custom ?? []).map((w) => (
-              <button
-                key={w}
-                type="button"
-                class="chip on"
-                onClick={() => setN({ custom: (n.custom ?? []).filter((s) => s !== w) })}
-              >
-                {w} ✕
-              </button>
-            ))}
-          </div>
-          <form
-            class="inline-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const w = custom.trim();
-              if (w && !(n.custom ?? []).includes(w) && (n.custom ?? []).length < 20)
-                setN({ custom: [...(n.custom ?? []), w.slice(0, 40)] });
-              setCustom("");
-            }}
-          >
-            <input
-              placeholder={t("词表里没有的香气")}
-              value={custom}
-              onInput={(e) => setCustom((e.target as HTMLInputElement).value)}
-            />
-            <button type="submit" class="button small">
-              {t("添加")}
-            </button>
-          </form>
-        </div>
+        <AromaPicker x={x} v={v} w={aromasOf(x, patch)} />
       </section>
 
       <section class="step">
@@ -979,19 +935,6 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
               value={pl.tannin}
               options={levels(LEVEL_WORDS) as { value: 1 | 2 | 3 | 4 | 5; label: string }[]}
               onChange={(val) => setP({ tannin: val })}
-            />
-          </Field>
-        )}
-        {(red || pl.tanninTexture) && (
-          <Field label={t("单宁质感")} group>
-            <Choice
-              label={t("单宁质感")}
-              value={pl.tanninTexture}
-              options={Object.entries(TEXTURE_WORDS).map(([k, w]) => ({
-                value: k as NonNullable<typeof pl.tanninTexture>,
-                label: p(w),
-              }))}
-              onChange={(val) => setP({ tanninTexture: val })}
             />
           </Field>
         )}
@@ -1054,7 +997,6 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
             onChange={(val) => setP({ finish: val })}
           />
         </Field>
-        <FinishTimer value={pl.finishSeconds} onChange={(s) => setP({ finishSeconds: s })} />
       </section>
 
       <Note x={x} v={v} prev={props.prev} />
@@ -1094,6 +1036,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
       </section>
 
       <section class="step">
+        <span class="field-label">{t("陈年潜力")}</span>
         <div class="field-row">
           <Field label={t("适饮期从")}>
             <input
@@ -1112,91 +1055,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
             />
           </Field>
         </div>
-        <Field label={t("缺陷")} group>
-          <div class="chips">
-            {Object.entries(FAULT_WORDS).map(([k, w]) => (
-              <button
-                key={k}
-                type="button"
-                class={ex.faults?.includes(k) ? "chip on warn" : "chip"}
-                onClick={() => setE({ faults: toggleIn(ex.faults, k) })}
-              >
-                {p(w)}
-              </button>
-            ))}
-          </div>
-        </Field>
-        <h3 class="sub-title">{t("侍酒条件")}</h3>
-        <div class="field-row">
-          <Field label={t("醒酒（分钟）")}>
-            <input
-              inputMode="numeric"
-              value={ex.decantMinutes ?? ""}
-              onInput={(e) => setE({ decantMinutes: num((e.target as HTMLInputElement).value) })}
-            />
-          </Field>
-          <Field label={t("酒温 °C")}>
-            <input
-              inputMode="numeric"
-              value={ex.tempC ?? ""}
-              onInput={(e) => setE({ tempC: num((e.target as HTMLInputElement).value) })}
-            />
-          </Field>
-        </div>
-        <div class="field-row">
-          <Field label={t("杯型")}>
-            <input
-              value={ex.glass ?? ""}
-              maxLength={40}
-              onInput={(e) => setE({ glass: (e.target as HTMLInputElement).value || undefined })}
-            />
-          </Field>
-          <Field label={t("开瓶第几天")}>
-            <input
-              inputMode="numeric"
-              value={ex.dayOpen ?? ""}
-              onInput={(e) => setE({ dayOpen: num((e.target as HTMLInputElement).value) })}
-            />
-          </Field>
-        </div>
       </section>
-    </div>
-  );
-}
-
-/** 余味精确到秒: tap when you swallow, tap again when it fades. */
-function FinishTimer(props: { value: number | undefined; onChange: (s: number | undefined) => void }) {
-  const [start, setStart] = useState<number | null>(null);
-  const [, tick] = useState(0);
-  useEffect(() => {
-    if (start === null) return;
-    const i = setInterval(() => tick((n) => n + 1), 250);
-    return () => clearInterval(i);
-  }, [start]);
-  const running = start !== null ? Math.floor((Date.now() - start) / 1000) : null;
-  return (
-    <div class="finish-timer">
-      <button
-        type="button"
-        class={start === null ? "button" : "button primary"}
-        onClick={() => {
-          if (start === null) setStart(Date.now());
-          else {
-            props.onChange(Math.round((Date.now() - start) / 1000));
-            setStart(null);
-          }
-        }}
-      >
-        {start === null ? t("咽下时点这里开始计时") : t("味道消失时点这里：{n} 秒", { n: running ?? 0 })}
-      </button>
-      {props.value !== undefined && start === null && (
-        <span class="num">
-          {t("{n} 秒", { n: props.value })}{" "}
-          <button type="button" class="link small" onClick={() => props.onChange(undefined)}>
-            {t("清除")}
-          </button>
-        </span>
-      )}
     </div>
   );
 }

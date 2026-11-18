@@ -348,10 +348,11 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Which of balance, length, intensity and complexity it does well",
   },
   适饮程度: { tw: "適飲程度", en: "Readiness for drinking" },
-  "想建立体系：完整的 WSET 品鉴表，加缺陷和侍酒条件": {
-    tw: "想建立體系：完整的 WSET 品飲表，加缺陷和侍酒條件",
-    en: "Building a system: the full WSET tasting grid, plus faults and serving",
+  "想建立体系：按 WSET 三级品鉴表，外加适饮期判断": {
+    tw: "想建立體系：按 WSET 三級品飲表，外加適飲期判斷",
+    en: "Building a system: the WSET Level 3 grid, plus when to drink it",
   },
+  陈年潜力: { tw: "陳年潛力", en: "Ageing potential" },
   "3–5 分钟": { tw: "3–5 分鐘", en: "3–5 min" },
   "喝过不少，要完整的品鉴表": { tw: "喝過不少，要完整的品飲表", en: "I've tasted a fair bit and want the full grid" },
   "找香气，例如 雪松": { tw: "找香氣，例如 雪松", en: "Find an aroma, e.g. cedar" },
