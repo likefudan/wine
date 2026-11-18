@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { avaOf } from "../src/shared/ava";
-import { placePath, tidyPlace } from "../src/shared/place";
+import { appellationsIn, areasIn, placePath, tidyPlace } from "../src/shared/place";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
@@ -102,21 +102,29 @@ describe("helpers", () => {
 });
 
 describe("American appellations", () => {
-  it("knows the AVA each one sits in, and its state", () => {
-    expect(avaOf("oakville")).toEqual({ name: "Oakville", parent: "Napa Valley", state: "California", states: ["CA"] });
-    expect(avaOf("Napa Valley")?.parent).toBe("");
-    expect(avaOf("Eola-Amity Hills")?.parent).toBe("Willamette Valley");
-    expect(avaOf("Los Carneros")?.parent).toBe("");
+  it("knows each AVA's 大区 and state", () => {
+    expect(avaOf("oakville")).toEqual({ name: "Oakville", area: "Napa Valley", state: "California", states: ["CA"] });
+    expect(avaOf("Napa Valley")?.area).toBe("Napa Valley");
+    expect(avaOf("Russian River Valley")?.area).toBe("Sonoma County");
+    expect(avaOf("Petaluma Gap")?.area).toBe("Sonoma County");
+    expect(avaOf("Sta. Rita Hills")?.area).toBe("Santa Barbara County");
+    expect(avaOf("Adelaida District")?.area).toBe("Paso Robles");
+    expect(avaOf("Eola-Amity Hills")?.area).toBe("Willamette Valley");
+    expect(avaOf("Los Carneros")?.area).toBe("");
     expect(avaOf("Columbia Valley")?.state).toBe("");
     expect(avaOf("Bordeaux")).toBeNull();
   });
 });
 
 describe("产区 levels", () => {
-  const tidy = (country: string | null, region: string | null, appellation: string | null) =>
-    tidyPlace({ country, region, appellation });
+  const tidy = (
+    country: string | null,
+    region: string | null,
+    appellation: string | null,
+    area: string | null = null,
+  ) => tidyPlace({ country, region, area, appellation });
 
-  it("puts Napa Valley and Pauillac at the same level", () => {
+  it("puts Napa Valley and Médoc at the same level", () => {
     expect(placePath({ region: "California", appellation: "Oakville" })).toEqual([
       "California",
       "Napa Valley",
@@ -129,6 +137,11 @@ describe("产区 levels", () => {
       "Gevrey-Chambertin",
     ]);
     expect(placePath({ region: "California", appellation: "Napa Valley" })).toEqual(["California", "Napa Valley"]);
+    expect(placePath({ region: "Tuscany", area: "Chianti", appellation: "Chianti Classico" })).toEqual([
+      "Tuscany",
+      "Chianti",
+      "Chianti Classico",
+    ]);
     expect(placePath({ region: "Bordeaux", appellation: "Bordeaux" })).toEqual(["Bordeaux"]);
     expect(placePath({ region: null, appellation: null })).toEqual([]);
   });
@@ -139,39 +152,78 @@ describe("产区 levels", () => {
     expect(placePath({ region: "Rhone", appellation: "Cote Rotie" })[1]).toBe("Northern Rhône");
   });
 
-  it("moves an AVA typed as the 产区 down a level, and keeps what was typed", () => {
+  it("moves a 大区 or AVA typed as the 产区 to its own level, and keeps what was typed", () => {
     expect(tidy("", "Napa Valley", "Oakville")).toEqual({
       country: "USA",
       region: "California",
+      area: "Napa Valley",
       appellation: "Oakville",
     });
-    expect(tidy(null, "Napa Valley", null)).toEqual({
+    expect(tidy(null, "Sonoma County", null)).toEqual({
       country: "USA",
       region: "California",
-      appellation: "Napa Valley",
+      area: "Sonoma County",
+      appellation: null,
+    });
+    expect(tidy(null, "Oakville", null)).toEqual({
+      country: "USA",
+      region: "California",
+      area: "Napa Valley",
+      appellation: "Oakville",
     });
     expect(tidy("France", "Médoc", "Pauillac")).toEqual({
       country: "France",
       region: "Bordeaux",
+      area: "Médoc",
       appellation: "Pauillac",
     });
     // Sonoma Coast is not in Napa Valley: nothing is thrown away.
     expect(tidy("USA", "Napa Valley", "Sonoma Coast")).toEqual({
       country: "USA",
       region: "Napa Valley",
+      area: null,
       appellation: "Sonoma Coast",
     });
   });
 
-  it("fills the big region and country from the appellation", () => {
-    expect(tidy(null, null, "Oakville")).toEqual({ country: "USA", region: "California", appellation: "Oakville" });
-    expect(tidy(null, null, "Pauillac")).toEqual({ country: "France", region: "Bordeaux", appellation: "Pauillac" });
+  it("fills 大区, 产区 and country from the 子产区, but keeps a 大区 typed by hand", () => {
+    expect(tidy(null, null, "Oakville")).toEqual({
+      country: "USA",
+      region: "California",
+      area: "Napa Valley",
+      appellation: "Oakville",
+    });
+    expect(tidy(null, null, "Pauillac")).toEqual({
+      country: "France",
+      region: "Bordeaux",
+      area: "Médoc",
+      appellation: "Pauillac",
+    });
     expect(tidy("United States", "California", "Oakville").country).toBe("USA");
-    expect(tidy("Italy", "Tuscany", "Bolgheri")).toEqual({
+    expect(tidy("Italy", "Tuscany", "Chianti Classico", "Chianti")).toEqual({
       country: "Italy",
       region: "Tuscany",
-      appellation: "Bolgheri",
+      area: "Chianti",
+      appellation: "Chianti Classico",
     });
-    expect(tidy(null, null, null)).toEqual({ country: null, region: null, appellation: null });
+    expect(tidy(null, "Tuscany", null).country).toBe("Italy");
+    expect(tidy(null, null, null)).toEqual({ country: null, region: null, area: null, appellation: null });
+  });
+});
+
+describe("子产区 suggestions", () => {
+  it("narrow to the 产区 and 大区 already filled in", () => {
+    const ca = appellationsIn("California");
+    expect(ca).toContain("Oakville");
+    expect(ca).not.toContain("Willamette Valley");
+    expect(ca).not.toContain("Pauillac");
+    const napa = appellationsIn("California", "Napa Valley");
+    expect(napa).toContain("Rutherford");
+    expect(napa).not.toContain("Russian River Valley");
+    expect(appellationsIn("Bordeaux")).toContain("Pauillac");
+    expect(appellationsIn("Bordeaux")).not.toContain("Oakville");
+    expect(appellationsIn(null).length).toBeGreaterThan(300);
+    expect(areasIn("California")).toEqual(expect.arrayContaining(["Napa Valley", "Sonoma County", "Paso Robles"]));
+    expect(areasIn("Bordeaux")).toEqual(["Graves", "Médoc", "Rive Droite"]);
   });
 });

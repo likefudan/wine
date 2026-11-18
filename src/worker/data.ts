@@ -75,6 +75,7 @@ export interface VintageRow {
   abv: number | null;
   wine: string;
   color: string;
+  area: string | null;
   appellation: string | null;
   grapes: string;
   producer: string;
@@ -85,7 +86,7 @@ export interface VintageRow {
   lat: number | null;
   lng: number | null;
 }
-export const VINTAGE_SELECT = `SELECT v.id, v.wine_id, v.year, v.abv, w.name AS wine, w.color, w.appellation, w.grapes,
+export const VINTAGE_SELECT = `SELECT v.id, v.wine_id, v.year, v.abv, w.name AS wine, w.color, w.area, w.appellation, w.grapes,
   p.name AS producer, p.country, p.region, p.place_id, p.address, p.lat, p.lng
   FROM vintages v JOIN wines w ON w.id = v.wine_id JOIN producers p ON p.id = w.producer_id`;
 
@@ -98,6 +99,7 @@ export const vintageInfo = (r: VintageRow): VintageInfo => ({
   color: r.color as VintageInfo["color"],
   country: r.country,
   region: r.region,
+  area: r.area,
   appellation: r.appellation,
   grapes: parse<string[]>(r.grapes),
   abv: r.abv,
@@ -270,6 +272,7 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   const where = tidyPlace({
     country: clampText(o.country, 60),
     region: clampText(o.region, 80),
+    area: clampText(o.area, 80),
     appellation: clampText(o.appellation, 80),
   });
   const at = now();
@@ -290,9 +293,10 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   }
   await db
     .prepare(
-      `INSERT INTO wines (id, producer_id, name, name_key, color, appellation, grapes, created_by, created_at, lwin)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (producer_id, name_key) DO UPDATE SET lwin = coalesce(wines.lwin, excluded.lwin)`,
+      `INSERT INTO wines (id, producer_id, name, name_key, color, area, appellation, grapes, created_by, created_at, lwin)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (producer_id, name_key) DO UPDATE SET lwin = coalesce(wines.lwin, excluded.lwin),
+         area = coalesce(wines.area, excluded.area)`,
     )
     .bind(
       ulid(),
@@ -300,6 +304,7 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
       wine,
       wKey,
       o.color,
+      clampText(where.area, 80),
       clampText(where.appellation, 80),
       JSON.stringify(grapes),
       user.id,
@@ -610,7 +615,7 @@ dataRoutes.get("/catalog", async (c) => {
   const words = q.split(" ").slice(0, 4);
   const where = words.map(() => "instr(p.name_key || ' ' || w.name_key, ?) > 0").join(" AND ");
   const wines = await c.env.DB.prepare(
-    `SELECT w.id, w.name, w.color, w.appellation, w.grapes, p.name AS producer, p.country, p.region,
+    `SELECT w.id, w.name, w.color, w.area, w.appellation, w.grapes, p.name AS producer, p.country, p.region,
        (SELECT json_group_array(json_object('id', v.id, 'year', v.year, 'abv', v.abv)) FROM vintages v WHERE v.wine_id = w.id) AS vintages
      FROM wines w JOIN producers p ON p.id = w.producer_id WHERE ${where}
      ORDER BY CASE WHEN p.name_key LIKE ? OR w.name_key LIKE ? THEN 0 ELSE 1 END, p.name, w.name LIMIT 20`,
@@ -626,6 +631,7 @@ dataRoutes.get("/catalog", async (c) => {
       color: w.color,
       country: w.country,
       region: w.region,
+      area: w.area,
       appellation: w.appellation,
       grapes: parse<string[]>(w.grapes ?? null),
       vintages: (parse<{ id: string; year: number; abv: number | null }[]>(w.vintages ?? null) || []).sort(

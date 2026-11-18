@@ -1,7 +1,15 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { AVA_NAMES } from "../../shared/ava";
-import { APPELLATION_NAMES, appellationOf, areaOf, tidyPlace } from "../../shared/place";
+import {
+  REGION_NAMES,
+  appellationOf,
+  appellationsIn,
+  areaNamed,
+  areaOf,
+  areasIn,
+  countryOfRegion,
+  tidyPlace,
+} from "../../shared/place";
 import { canonicalGrape } from "../../shared/grapes";
 import { GrapePicker } from "../GrapePicker";
 import { COLOR_WORDS } from "../../shared/guide";
@@ -32,6 +40,7 @@ interface CatalogWine {
   color: WineColor;
   country: string | null;
   region: string | null;
+  area: string | null;
   appellation: string | null;
   grapes: string[];
   vintages: { id: string; year: number; abv: number | null }[];
@@ -45,6 +54,7 @@ interface Draft {
   color: WineColor | undefined;
   region: string;
   country: string;
+  area: string;
   appellation: string;
   grapes: string[];
   abv: string;
@@ -59,19 +69,22 @@ const EMPTY: Draft = {
   color: undefined,
   region: "",
   country: "",
+  area: "",
   appellation: "",
   grapes: [],
   abv: "",
 };
 
-/** 国家 / 产区 / 子产区 for the form, each at its own level (src/shared/place.ts). */
-function placeDraft(p: { country: string | null; region: string | null; appellation: string | null }) {
-  const x = tidyPlace(p);
-  return { country: x.country ?? "", region: x.region ?? "", appellation: x.appellation ?? "" };
+/** 国家 / 产区 / 大区 / 子产区 for the form, each at its own level (src/shared/place.ts). */
+function placeDraft(p: {
+  country: string | null;
+  region: string | null;
+  area?: string | null;
+  appellation: string | null;
+}) {
+  const x = tidyPlace({ country: p.country, region: p.region, area: p.area ?? null, appellation: p.appellation });
+  return { country: x.country ?? "", region: x.region ?? "", area: x.area ?? "", appellation: x.appellation ?? "" };
 }
-
-/** American AVAs, then the appellations of Bordeaux, Burgundy, the Rhône and South Australia. */
-const APPELLATION_LIST = [...AVA_NAMES, ...APPELLATION_NAMES];
 
 /** Shrinks a photo to 1600px on its long side, as a JPEG, base64 (about 300 KB). */
 async function shrink(file: File): Promise<string> {
@@ -148,6 +161,7 @@ export function AddWine() {
       color: w.color,
       country: w.country,
       region: w.region,
+      area: w.area,
       appellation: w.appellation,
       grapes: w.grapes,
       abv: w.vintages.find((v) => v.year === year)?.abv ?? null,
@@ -404,19 +418,33 @@ function WineForm(props: {
 }) {
   const [d, setD] = useState<Draft>(props.draft);
   const set = (k: keyof Draft) => (e: Event) => setD({ ...d, [k]: (e.target as HTMLInputElement).value });
-  // Picking a known appellation fills in the region and country if they are empty (Oakville: California,
-  // USA). The area between them (Napa Valley) is shown under the field, not typed.
+  // Each level fills the empty ones above it: Oakville gives Napa Valley, California and USA; Sonoma County
+  // gives California and USA; California gives USA. A 大区 that came from the old 子产区 follows the new one.
+  const setRegion = (e: Event) => {
+    const region = (e.target as HTMLInputElement).value;
+    setD((x) => ({ ...x, region, country: x.country || countryOfRegion(region) || "" }));
+  };
+  const setArea = (e: Event) => {
+    const area = (e.target as HTMLInputElement).value;
+    const known = areaNamed(area);
+    setD((x) => ({
+      ...x,
+      area,
+      region: x.region || known?.region || "",
+      country: x.country || known?.country || countryOfRegion(known?.region) || "",
+    }));
+  };
   const setAppellation = (e: Event) => {
     const appellation = (e.target as HTMLInputElement).value;
     const known = appellationOf(appellation);
     setD((x) => ({
       ...x,
       appellation,
+      area: !x.area || x.area === areaOf(x.appellation) ? (known?.area ?? "") : x.area,
       region: x.region || known?.region || "",
       country: x.country || known?.country || "",
     }));
   };
-  const area = areaOf(d.appellation);
   const year = d.nv ? 0 : Number(d.year);
   const yearOk = d.nv || (Number.isInteger(year) && year >= 1900 && year <= new Date().getFullYear() + 1);
   const ok = d.producer.trim() && d.color && yearOk;
@@ -432,6 +460,7 @@ function WineForm(props: {
       color: d.color!,
       country: d.country.trim() || null,
       region: d.region.trim() || null,
+      area: d.area.trim() || null,
       appellation: d.appellation.trim() || null,
       grapes: d.grapes,
       abv: Number(d.abv) > 0 ? Number(d.abv) : null,
@@ -495,32 +524,46 @@ function WineForm(props: {
         />
       </Field>
       <div class="field-row">
-        <Field label={t("产区")}>
-          <input value={d.region} maxLength={80} onInput={set("region")} placeholder="Bordeaux / California" />
-        </Field>
         <Field label={t("国家")}>
           <input value={d.country} maxLength={60} onInput={set("country")} placeholder="USA" />
         </Field>
+        <Field label={t("产区")}>
+          <input value={d.region} maxLength={80} onInput={setRegion} placeholder="California" list="region-list" />
+        </Field>
       </div>
-      <datalist id="ava-list">
-        {APPELLATION_LIST.map((n) => (
+      {/* Suggestions narrow as the levels above are filled: California lists its 大区 and AVAs only. */}
+      <datalist id="region-list">
+        {REGION_NAMES.map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
+      <datalist id="area-list">
+        {areasIn(d.region).map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
+      <datalist id="appellation-list">
+        {appellationsIn(d.region, d.area).map((n) => (
           <option key={n} value={n} />
         ))}
       </datalist>
       <div class="field-row top">
-        <Field label={t("子产区")} hint={area ? t("属于 {area}", { area }) : t("酒标上最小的产区")}>
+        <Field label={t("大区")} hint={t("选了子产区会自动填")}>
+          <input value={d.area} maxLength={80} onInput={setArea} placeholder="Napa Valley" list="area-list" />
+        </Field>
+        <Field label={t("子产区")} hint={t("酒标上最小的产区")}>
           <input
             value={d.appellation}
             maxLength={80}
             onInput={setAppellation}
-            placeholder="Pauillac / Oakville"
-            list="ava-list"
+            placeholder="Oakville"
+            list="appellation-list"
           />
         </Field>
-        <Field label={t("酒精度 %")}>
-          <input inputMode="decimal" value={d.abv} maxLength={5} onInput={set("abv")} placeholder="14.5" />
-        </Field>
       </div>
+      <Field label={t("酒精度 %")}>
+        <input inputMode="decimal" value={d.abv} maxLength={5} onInput={set("abv")} placeholder="14.5" />
+      </Field>
       <button type="submit" class="button primary" disabled={!ok}>
         {t("开始品鉴")}
       </button>

@@ -137,6 +137,8 @@ export interface VintageInfo {
   color: WineColor;
   country: string | null;
   region: string | null;
+  /** 大区 (Napa Valley, Médoc); src/shared/place.ts. Older clients do not send it. */
+  area?: string | null;
   appellation: string | null;
   grapes: string[];
   abv: number | null;
@@ -341,6 +343,7 @@ export type Op =
       color: WineColor;
       country?: string | null;
       region?: string | null;
+      area?: string | null;
       appellation?: string | null;
       grapes?: string[];
       abv?: number | null;
