@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { ulid } from "../src/shared/model";
+import { modelsFor } from "../src/worker/label";
 import { Client, signIn, tasting, vintageOp } from "./helpers";
 
 describe("sign-in", () => {
@@ -72,6 +73,37 @@ describe("wines", () => {
     expect(r.data.wines[0].vintages.map((v: { year: number }) => v.year)).toEqual([2019, 2018]);
     expect((await c.call("/api/catalog?q=ridge%20bello")).data.wines).toHaveLength(1);
     expect((await c.call("/api/catalog?q=opus")).data.wines[0].producer).toBe("Opus One");
+  });
+
+  it("suggests LWIN wines by the start of their words, and remembers the one picked", async () => {
+    const rows: [number, string, string, string | null, string | null, string[]][] = [
+      [1011768, "Chateau Kirwan", "Chateau Kirwan", "red", "Margaux", ["kirwan"]],
+      [1008049, "Chateau Kirwan", "Charmes de Kirwan", "red", "Margaux", ["kirwan", "charmes"]],
+      [
+        1262258,
+        "Silverado Vineyards",
+        "Miller Ranch Sauvignon Blanc",
+        "white",
+        null,
+        ["silverado", "miller", "ranch", "sauvignon", "blanc"],
+      ],
+    ];
+    for (const [lwin, producer, wine, color, appellation, words] of rows) {
+      await env.DB.prepare("INSERT INTO lwin VALUES (?, ?, ?, ?, 'France', 'Bordeaux', ?, NULL)")
+        .bind(lwin, producer, wine, color, appellation)
+        .run();
+      for (const w of words) await env.DB.prepare("INSERT INTO lwin_words VALUES (?, ?)").bind(w, lwin).run();
+    }
+    const c = await signIn();
+    const kir = (await c.call("/api/catalog?q=Château%20Kirw")).data.lwin;
+    expect(kir.map((w: { lwin: number }) => w.lwin)).toEqual([1011768, 1008049]);
+    expect((await c.call("/api/catalog?q=charm%20kirwan")).data.lwin).toHaveLength(1);
+    expect((await c.call("/api/catalog?q=silverado%20sauv")).data.lwin[0].appellation).toBeNull();
+    expect((await c.call("/api/catalog?q=k")).data.lwin).toEqual([]);
+
+    await c.ops([vintageOp({ producer: "Chateau Kirwan", wine: "Chateau Kirwan", year: 2022, lwin: 1011768 })]);
+    const w = await env.DB.prepare("SELECT lwin FROM wines WHERE name = 'Chateau Kirwan'").first<{ lwin: number }>();
+    expect(w!.lwin).toBe(1011768);
   });
 
   it("refuses a wine without producer or with a bad year", async () => {
@@ -230,6 +262,21 @@ describe("lists and tastings", () => {
 });
 
 describe("label", () => {
+  it("keeps the label model each person picks, and tries it first", async () => {
+    const c = await signIn();
+    expect((await c.call("/api/sync")).data.me.labelModel).toBeNull();
+    await c.ops([{ op: "putMe", labelModel: "DeepSeek-V4.1-Flash-1017" }]);
+    expect((await c.call("/api/sync")).data.me.labelModel).toBe("DeepSeek-V4.1-Flash-1017");
+    await c.ops([{ op: "putMe", labelModel: "gpt-nope" as never }]);
+    expect((await c.call("/api/sync")).data.me.labelModel).toBe("DeepSeek-V4.1-Flash-1017");
+    expect(modelsFor("DeepSeek-V4.1-Flash-1017")).toEqual([
+      "DeepSeek-V4.1-Flash-1017",
+      "claude-sonnet-5-5",
+      "claude-fable-5-1",
+    ]);
+    expect(modelsFor(null)).toEqual(["claude-sonnet-5-5", "claude-fable-5-1"]);
+  });
+
   it("says so when reading labels is not set up", async () => {
     const c = await signIn();
     const r = await c.call("/api/label", { image: "abc" });

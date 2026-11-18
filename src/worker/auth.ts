@@ -1,7 +1,7 @@
 import { type Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { type Depth, type Lang, type Me, isLang, ulid } from "../shared/model";
+import { type Depth, type Lang, type Me, isLabelModel, isLang, ulid } from "../shared/model";
 import type { Env } from "./env";
 import { HttpError, now, randomToken, sha256, timingSafeEqual } from "./http";
 
@@ -34,6 +34,7 @@ export interface UserRow {
   picture: string | null;
   locale: string | null;
   depth: string | null;
+  label_model: string | null;
   role: string;
   created_at: string;
 }
@@ -53,6 +54,7 @@ export function meOf(env: Env, u: UserRow): Me {
     picture: u.picture,
     locale: isLang(u.locale) ? (u.locale as Lang) : null,
     depth: (u.depth as Depth | null) ?? null,
+    labelModel: isLabelModel(u.label_model) ? u.label_model : null,
     owner: isOwner(env, u.email),
   };
 }

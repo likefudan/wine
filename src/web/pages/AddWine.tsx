@@ -2,7 +2,7 @@ import { useLocation } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { GRAPES, canonicalGrape, grapeName } from "../../shared/grapes";
 import { COLOR_WORDS } from "../../shared/guide";
-import { COLORS, type VintageInfo, type WineColor, nameKey, yearLabel } from "../../shared/model";
+import { COLORS, type LwinWine, type VintageInfo, type WineColor, nameKey, yearLabel } from "../../shared/model";
 import { BackIcon, CameraIcon, Choice, Field, Glass, WineName } from "../components";
 import { currentLang, p, t, tm } from "../i18n";
 import { ApiError, addItem, addVintage, api, blankTasting, getState, saveTasting, useStore } from "../store";
@@ -36,6 +36,7 @@ interface Draft {
   appellation: string;
   grapes: string;
   abv: string;
+  lwin?: number | null;
 }
 const EMPTY: Draft = {
   producer: "",
@@ -75,6 +76,7 @@ export function AddWine() {
   const [listId, setListId] = useState<string | null>(query.list ?? fresh);
   const [q, setQ] = useState("");
   const [catalog, setCatalog] = useState<CatalogWine[]>([]);
+  const [lwin, setLwin] = useState<LwinWine[]>([]);
   const [form, setForm] = useState<Draft | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -85,15 +87,17 @@ export function AddWine() {
   useEffect(() => {
     if (key.length < 2 || !navigator.onLine) {
       setCatalog([]);
+      setLwin([]);
       return;
     }
     const ctl = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const r = await api<{ wines: CatalogWine[] }>(`/api/catalog?q=${encodeURIComponent(q)}`, {
+        const r = await api<{ wines: CatalogWine[]; lwin?: LwinWine[] }>(`/api/catalog?q=${encodeURIComponent(q)}`, {
           signal: ctl.signal,
         });
         setCatalog(r.wines);
+        setLwin(r.lwin ?? []);
       } catch {
         // offline: my own wines still show
       }
@@ -181,6 +185,20 @@ export function AddWine() {
   const shownCatalog = catalog
     .map((w) => ({ ...w, vintages: w.vintages.filter((v) => !localIds.has(v.id)) }))
     .filter((w) => w.vintages.length > 0 || !local.some((v) => v.wineId === w.wineId));
+  // LWIN wines that are not already above (same producer and name).
+  const known = new Set([...local, ...catalog].map((w) => `${nameKey(w.producer, true)}|${nameKey(w.wine)}`));
+  const shownLwin = lwin.filter((w) => !known.has(`${nameKey(w.producer, true)}|${nameKey(w.wine)}`));
+  const fromLwin = (w: LwinWine) =>
+    setForm({
+      ...EMPTY,
+      producer: w.producer,
+      wine: w.wine === w.producer ? "" : w.wine,
+      color: w.color ?? undefined,
+      country: w.country ?? "",
+      region: w.region ?? "",
+      appellation: w.appellation ?? "",
+      lwin: w.lwin,
+    });
 
   return (
     <div class="page">
@@ -259,6 +277,28 @@ export function AddWine() {
                   <CatalogRow key={w.wineId} w={w} onPick={(year, id) => fromCatalog(w, year, id)} />
                 ))}
               </ul>
+            </section>
+          )}
+          {shownLwin.length > 0 && (
+            <section>
+              <h2 class="section-title">{t("酒款库")}</h2>
+              <ul class="rows">
+                {shownLwin.map((w) => (
+                  <li key={w.lwin}>
+                    <button type="button" class="row" onClick={() => fromLwin(w)}>
+                      <Glass color={glassColor(w.color ?? "red", undefined, 0)} />
+                      <span class="wine-name">
+                        <span class="wine-producer">{w.producer}</span>
+                        <span class="wine-title">{w.wine === w.producer ? "" : w.wine}</span>
+                        <span class="wine-sub">
+                          {[w.appellation ?? w.region, w.classification].filter(Boolean).join(" · ")}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p class="muted small">{t("酒款库来自 LWIN（Liv-ex）")}</p>
             </section>
           )}
           <button type="button" class="button block" onClick={() => setForm({ ...EMPTY, producer: q.trim() })}>
@@ -348,6 +388,7 @@ function WineForm(props: {
         .filter(Boolean)
         .map(canonicalGrape),
       abv: Number(d.abv) > 0 ? Number(d.abv) : null,
+      lwin: d.lwin ?? null,
     });
   };
   return (
