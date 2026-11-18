@@ -38,6 +38,8 @@ export interface State {
   rejected: string | null;
   /** Wine ids the server replaced with the one it already had (remapVintage). */
   aliases: Record<string, string>;
+  /** Uploading failed while online (server down, not just no signal); cleared by the next success. */
+  stuck: boolean;
 }
 
 const EMPTY: State = {
@@ -50,6 +52,7 @@ const EMPTY: State = {
   syncedAt: null,
   rejected: null,
   aliases: {},
+  stuck: false,
 };
 let state: State = EMPTY;
 const listeners = new Set<() => void>();
@@ -98,7 +101,7 @@ function save() {
     const db = await idb();
     if (!db) return;
     try {
-      const { rejected: _, ...keep } = state;
+      const { rejected: _, stuck: __, ...keep } = state;
       db.transaction("kv", "readwrite").objectStore("kv").put(keep, "state");
     } catch {
       // storage full or gone: the server still has everything already sent
@@ -141,9 +144,10 @@ export class ApiError extends Error {
 
 export async function api<T>(
   path: string,
-  init?: { method?: string; body?: unknown; signal?: AbortSignal },
+  init?: { method?: string; body?: unknown; signal?: AbortSignal; keepalive?: boolean },
 ): Promise<T> {
   const res = await fetch(path, {
+    keepalive: init?.keepalive,
     method: init?.method ?? (init?.body ? "POST" : "GET"),
     headers: init?.body ? { "Content-Type": "application/json" } : undefined,
     body: init?.body ? JSON.stringify(init.body) : undefined,
@@ -171,19 +175,30 @@ export function applySync(data: SyncData) {
 let flushing: Promise<void> | null = null;
 /** How many ops of the queue's head are on their way up: they must not be replaced. */
 let inFlight = 0;
+/** Set while the page is being hidden: the upload must survive the tab closing. */
+let leaving = false;
 
 /** Sends the queue, then fetches the server's copy. Safe to call any time. */
 export function flush(): Promise<void> {
-  flushing ??= (async () => {
+  if (flushing) return flushing;
+  cancelScheduled();
+  flushing = (async () => {
     try {
       while (state.queue.length && navigator.onLine !== false) {
         const batch = state.queue.slice(0, 50);
+        const body = { ops: batch };
+        // keepalive lets the request outlive a closed tab, but only for small bodies (64 KB).
+        const keepalive = leaving && JSON.stringify(body).length < 60_000;
         inFlight = batch.length;
         let results: OpResult[];
         try {
-          ({ results } = await api<{ results: OpResult[] }>("/api/ops", { body: { ops: batch } }));
+          ({ results } = await api<{ results: OpResult[] }>("/api/ops", { body, keepalive }));
         } catch (e) {
           if (e instanceof ApiError && e.status === 401) set({ me: null });
+          else if ((navigator as { onLine?: boolean }).onLine !== false) {
+            set({ stuck: true }, false);
+            scheduleFlush(RETRY_MS);
+          }
           return;
         } finally {
           inFlight = 0;
@@ -194,9 +209,9 @@ export function flush(): Promise<void> {
           if (o.op === "putVintage" && r?.vintageId && r.vintageId !== o.id) remapVintage(o.id, r.vintageId);
           if (r && !r.ok) rejected = r.error ?? "error";
         });
-        set({ queue: state.queue.slice(batch.length), ...(rejected ? { rejected } : {}) });
+        set({ queue: state.queue.slice(batch.length), stuck: false, ...(rejected ? { rejected } : {}) });
       }
-      if (!state.queue.length) {
+      if (!state.queue.length && !leaving) {
         const data = await api<SyncData>("/api/sync");
         applySync(data);
       }
@@ -204,27 +219,92 @@ export function flush(): Promise<void> {
       // offline or the server is down: try again later
     } finally {
       flushing = null;
+      // Changes made while this upload was running wait for the next one.
+      if (
+        state.me &&
+        state.queue.length &&
+        !flushTimer &&
+        !leaving &&
+        (navigator as { onLine?: boolean }).onLine !== false
+      )
+        scheduleFlush(SHARED_MS);
     }
   })();
   return flushing;
 }
 
+/**
+ * Changes stay on the phone (IndexedDB) and go up in batches, not on every tap:
+ * - my own notes: at most PRIVATE_MS after the first unsent change, or sooner when I leave the
+ *   page, finish a note (完成), or switch away from the app;
+ * - anything in a list shared with others: within SHARED_MS, so friends tasting together see it.
+ * The timer is not pushed back by later changes, so steady tapping still uploads on time.
+ */
+export const PRIVATE_MS = 30_000;
+export const SHARED_MS = 3_000;
+const RETRY_MS = 60_000;
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
-function scheduleFlush() {
-  if (flushTimer) clearTimeout(flushTimer);
+let flushDue = 0;
+function scheduleFlush(ms: number) {
+  const due = Date.now() + ms;
+  if (flushTimer && flushDue <= due) return;
+  cancelScheduled();
+  flushDue = due;
   flushTimer = setTimeout(() => {
     flushTimer = null;
     void flush();
-  }, 800);
+  }, ms);
+}
+function cancelScheduled() {
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = null;
+}
+
+/** Uploads now if anything is waiting (完成, leaving a page). */
+export function flushPending() {
+  if (state.queue.length) void flush();
 }
 
 addEventListener("online", () => void flush());
 addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") void flush();
+  leaving = document.visibilityState === "hidden";
+  // Coming back fetches friends' changes too; going away sends mine before the phone sleeps.
+  if (!leaving) void flush();
+  else flushPending();
+});
+addEventListener("pagehide", () => {
+  leaving = true;
+  flushPending();
 });
 
+/** A list with other people in it (or open to join): its changes go up quickly. */
+function isSharedList(listId: string | null | undefined): boolean {
+  const l = listId ? state.lists.find((x) => x.id === listId) : undefined;
+  if (!l) return false;
+  return (l.members ?? 1) > 1 || l.visibility === "public" || (!!l.ownerId && l.ownerId !== state.me?.id);
+}
+function isShared(op: Op): boolean {
+  switch (op.op) {
+    case "putTasting": {
+      const itemId = op.tasting.listItemId;
+      return !!itemId && isSharedList(state.items.find((i) => i.id === itemId)?.listId);
+    }
+    case "putList":
+      return isSharedList(op.list.id);
+    case "putItem":
+      return isSharedList(op.item.listId);
+    case "reorder":
+      return isSharedList(op.listId);
+    // Language, depth and model choices are rare and follow me to my other devices: send soon.
+    case "putMe":
+      return true;
+    default:
+      return false;
+  }
+}
+
 /** Queues a change; a newer version of the same record replaces one not yet sent. */
-function enqueue(op: Op) {
+function enqueue(op: Op, shared = isShared(op)) {
   const key = opKey(op);
   let queue = state.queue;
   if (key) {
@@ -233,7 +313,7 @@ function enqueue(op: Op) {
     else queue = [...queue, op];
   } else queue = [...queue, op];
   set({ queue });
-  scheduleFlush();
+  scheduleFlush(shared ? SHARED_MS : PRIVATE_MS);
 }
 const opKey = (o: Op): string | null =>
   o.op === "putTasting"
@@ -318,8 +398,9 @@ export function newList(
 }
 
 export function deleteList(id: string) {
+  const shared = isSharedList(id);
   dropList(id);
-  enqueue({ op: "deleteList", id });
+  enqueue({ op: "deleteList", id }, shared);
 }
 
 export function addItem(listId: string, vintageId: string): ListItem {
@@ -338,11 +419,12 @@ export function addItem(listId: string, vintageId: string): ListItem {
 }
 
 export function removeItem(id: string) {
+  const shared = isSharedList(state.items.find((i) => i.id === id)?.listId);
   set({
     items: state.items.filter((i) => i.id !== id),
     tastings: state.tastings.map((t) => (t.listItemId === id ? { ...t, listItemId: null } : t)),
   });
-  enqueue({ op: "deleteItem", id });
+  enqueue({ op: "deleteItem", id }, shared);
 }
 
 export function moveItem(listId: string, id: string, by: -1 | 1) {
@@ -392,8 +474,10 @@ export function saveTasting(t: Tasting) {
 }
 
 export function deleteTasting(id: string) {
+  const itemId = state.tastings.find((t) => t.id === id)?.listItemId;
+  const shared = isSharedList(state.items.find((i) => i.id === itemId)?.listId);
   set({ tastings: state.tastings.filter((t) => t.id !== id) });
-  enqueue({ op: "deleteTasting", id });
+  enqueue({ op: "deleteTasting", id }, shared);
 }
 
 export function updateMe(change: { locale?: Lang; depth?: Depth; labelModel?: LabelModel }) {
@@ -405,14 +489,19 @@ export function updateMe(change: { locale?: Lang; depth?: Depth; labelModel?: La
 // ── Sharing (needs the network) ──────────────────────────────────────────────────────────────
 
 /** A shared list as I may see it; `k` is the QR code's key when I have not joined yet. */
-export const fetchBoard = (listId: string, k?: string | null) =>
-  api<Board>(`/api/lists/${listId}/board${k ? `?k=${encodeURIComponent(k)}` : ""}`);
+export async function fetchBoard(listId: string, k?: string | null): Promise<Board> {
+  // My own unsent changes first, so the board shows them (and a brand-new list exists there).
+  if (state.queue.length) await flush();
+  return api<Board>(`/api/lists/${listId}/board${k ? `?k=${encodeURIComponent(k)}` : ""}`);
+}
 
 /** The owner's switches; the server answers with the list as it now is. */
 export async function shareList(
   listId: string,
   change: { visibility?: Visibility; blind?: boolean; revealed?: boolean; joinOpen?: boolean; newKey?: boolean },
 ): Promise<Board> {
+  // 揭晓 and the switches act on what everyone has sent, mine included: send it first.
+  if (state.queue.length) await flush();
   const b = await api<Board>(`/api/lists/${listId}/share`, { body: change });
   set({
     lists: state.lists.map((l) =>

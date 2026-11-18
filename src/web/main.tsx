@@ -25,6 +25,7 @@ import {
   clearLocal,
   clearRejected,
   flush,
+  flushPending,
   getState,
   loadLocal,
   takePendingJoin,
@@ -46,10 +47,15 @@ function Shell() {
   const [boot, setBoot] = useState<Boot>({ state: "loading" });
   const me = useStore((s) => s.me);
   const queue = useStore((s) => s.queue.length);
+  const stuck = useStore((s) => s.stuck);
   const rejected = useStore((s) => s.rejected);
   const [online, setOnline] = useState(navigator.onLine);
   useLang();
   const { path, route } = useLocation();
+  // Leaving a screen sends what was changed on it.
+  useEffect(() => {
+    if (boot.state === "in") flushPending();
+  }, [path]);
 
   useEffect(() => {
     const on = () => setOnline(navigator.onLine);
@@ -138,16 +144,16 @@ function Shell() {
   const fullScreen = path.startsWith("/taste") || path.startsWith("/add");
   return (
     <div class="app">
-      {(!online || queue > 0) && (
+      {/* Uploading is silent; only no signal, or uploads that keep failing, are worth a line. */}
+      {!online ? (
         <div class="sync-bar" role="status">
-          {!online ? t("没有网络，记录先存在手机上") : null}
-          {queue > 0 ? (
-            <span>
-              {online ? t("正在备份 {n} 条记录…", { n: queue }) : t("{n} 条记录等有网后自动上传", { n: queue })}
-            </span>
-          ) : null}
+          {t("没有网络，记录先存在手机上")}
         </div>
-      )}
+      ) : stuck && queue > 0 ? (
+        <div class="sync-bar" role="status">
+          {t("有 {n} 条记录暂时没能上传，会自动重试", { n: queue })}
+        </div>
+      ) : null}
       {rejected && (
         <div class="sync-bar warn" role="alert">
           <span>{t("有一条修改没能保存：{msg}", { msg: tm(rejected) })}</span>
