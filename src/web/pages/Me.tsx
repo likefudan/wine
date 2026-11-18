@@ -87,6 +87,25 @@ export function MePage() {
     clearLocal();
     location.href = "/";
   };
+  const deleteAccount = async () => {
+    if (
+      !(await ask(
+        t(
+          "删除后，你的所有品鉴记录、酒窖、酒标照片和你创建的品鉴都会永久删除，无法恢复。建议先在上面导出一份。确定删除？",
+        ),
+      ))
+    )
+      return;
+    if (!(await ask(t("最后确认：真的永久删除这个账号？")))) return;
+    try {
+      await api("/api/me/delete", { body: { confirm: true } });
+    } catch (e) {
+      await ask(e instanceof ApiError ? tm(e.message) : t("没有网络，请联网后再删除"));
+      return;
+    }
+    clearLocal();
+    location.href = "/";
+  };
   const tabs: { id: MeTab; label: string }[] = [
     { id: "growth", label: t("成长") },
     { id: "taste", label: t("口味") },
@@ -226,6 +245,9 @@ export function MePage() {
           <ExportData />
           <button type="button" class="button danger block" onClick={logout}>
             {t("退出登录")}
+          </button>
+          <button type="button" class="link danger delete-account" onClick={deleteAccount}>
+            {t("删除账号和全部数据")}
           </button>
         </>
       )}

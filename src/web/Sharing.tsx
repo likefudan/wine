@@ -204,9 +204,9 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
         <ul class="members">
           {b.members.map((m) => (
             <li key={m.id}>
-              <Initial name={m.name} picture={m.picture} />
+              <Initial name={m.name || t("品鉴者")} picture={m.picture} />
               <span>
-                {m.name}
+                {m.name || t("品鉴者")}
                 {m.owner ? <span class="muted small"> · {t("创建者")}</span> : null}
                 {m.id === getState().me?.id ? <span class="muted small"> · {t("我")}</span> : null}
               </span>
@@ -258,8 +258,8 @@ function NoteView(props: { n: BoardNote; item: BoardItem }) {
   return (
     <li class={n.mine ? "note mine" : "note"}>
       <div class="note-head">
-        <Initial name={n.name} picture={n.picture} />
-        <strong>{n.mine ? t("我") : n.name}</strong>
+        <Initial name={n.name || t("品鉴者")} picture={n.picture} />
+        <strong>{n.mine ? t("我") : n.name || t("品鉴者")}</strong>
         <span class="muted small">{t(DEPTH_INFO[n.depth]?.name ?? "快记")}</span>
         <span class="row-score num">{n.score ?? "–"}</span>
       </div>

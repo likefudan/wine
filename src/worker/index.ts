@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { accountRoutes } from "./account";
 import { authRoutes } from "./auth";
 import { dataRoutes } from "./data";
 import type { Env } from "./env";
@@ -53,6 +54,7 @@ app.route("/api", friendRoutes);
 app.route("/api", reviewRoutes);
 app.route("/api", profileRoutes);
 app.route("/api", recsRoutes);
+app.route("/api", accountRoutes);
 app.all("/api/*", (c) => c.json({ error: "not_found", message: "Not found" }, 404));
 
 /**

@@ -2591,3 +2591,9 @@ a.pro-score {
 .cellar-recs {
   align-self: flex-start;
 }
+
+.delete-account {
+  display: block;
+  margin: 18px auto 0;
+  font-size: 14px;
+}
