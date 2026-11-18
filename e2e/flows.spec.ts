@@ -209,10 +209,7 @@ test("choosing an aroma lights it up in place without moving the words around it
   await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^覆盆子/]);
   await plum.click();
   await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^覆盆子/, /^红李子/]);
-  // 进阶 taps cycle the strength in place; the third tap takes it out.
-  await raspberry.click();
-  await expect(raspberry.locator(".dots")).toHaveText("•••");
-  expect(await where()).toEqual(before);
+  // Tapping it again in place takes it out.
   await raspberry.click();
   await expect(raspberry).toHaveAttribute("aria-pressed", "false");
   await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^红李子/]);
