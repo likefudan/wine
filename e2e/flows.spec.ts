@@ -199,8 +199,8 @@ test("choosing an aroma lights it up in place without moving the words around it
   const [nose, palate] = [page.locator(".aroma-picker").nth(0), page.locator(".aroma-picker").nth(1)];
   const raspberry = nose.locator(".aroma-family .chip >> text=覆盆子");
   const plum = nose.locator(".aroma-family .chip >> text=红李子");
-  // Page coordinates, not viewport ones: the tap may scroll the chip into view.
-  const where = () => plum.evaluate((e) => [e.getBoundingClientRect().left, e.getBoundingClientRect().top + scrollY]);
+  // Layout position, not on-screen: a tap may scroll the page or the family's row to bring a chip into view.
+  const where = () => plum.evaluate((e) => [(e as HTMLElement).offsetLeft, e.getBoundingClientRect().top + scrollY]);
   const before = await where();
   await raspberry.click();
   await expect(raspberry).toHaveAttribute("aria-pressed", "true");
