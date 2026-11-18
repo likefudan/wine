@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono } from "hono";
-import { COLORS, ID_RE, ulid } from "../shared/model";
+import { COLORS, ID_RE, LABEL_MODELS, type LabelModel, isLabelModel, ulid } from "../shared/model";
 import { requireSameOrigin, requireUser } from "./auth";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
@@ -13,7 +13,8 @@ import { HttpError, now, readJson } from "./http";
  */
 
 const AZURE_HOST = "https://happy-badminton-jay-main-1.openai.azure.com";
-const MODELS = ["claude-sonnet-5-5", "claude-fable-5-1"];
+/** Tried after the person's own choice, when it fails. */
+const FALLBACK: string[] = ["claude-sonnet-5-5", "claude-fable-5-1"];
 /** Per person per day (§2): reading labels is the only thing here that costs money. */
 export const DAILY_AI_LIMIT = 40;
 /** The phone shrinks the photo to 1600px (about 300 KB); this stops a stray full-size one. */
@@ -63,35 +64,92 @@ const PROMPT = `This is a phone photo of a wine bottle's label. Read what the la
 - confident: false when the photo is not a wine label, is unreadable, or you are guessing the producer.
 Only use what is on the label or follows directly from it. Never invent a vintage.`;
 
-async function readLabel(
-  env: Env,
-  image: string,
-): Promise<{ reading: LabelReading; model: string; usage: { input: number; output: number } }> {
+type Raw = { text: string; usage: { input: number; output: number } };
+
+/** Claude, through Foundry's Anthropic endpoint, with the answer held to SCHEMA. */
+async function askClaude(env: Env, model: string, image: string): Promise<Raw> {
   const client = new Anthropic({
     apiKey: env.AZURE_FOUNDRY_API_KEY!,
     baseURL: `${AZURE_HOST}/anthropic`,
     timeout: 45_000,
     maxRetries: 0,
   });
-  let last: unknown;
-  for (const model of MODELS) {
-    try {
-      const response = await client.messages.create({
-        model,
-        max_tokens: 2000,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "image", source: { type: "base64", media_type: "image/jpeg", data: image } },
-              { type: "text", text: PROMPT },
-            ],
-          },
+  const response = await client.messages.create({
+    model,
+    max_tokens: 2000,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: image } },
+          { type: "text", text: PROMPT },
         ],
-        output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
-      } as Anthropic.MessageCreateParamsNonStreaming);
-      const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-      const r = JSON.parse(text) as LabelReading;
+      },
+    ],
+    output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
+  } as Anthropic.MessageCreateParamsNonStreaming);
+  return {
+    text: response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""),
+    usage: { input: response.usage.input_tokens, output: response.usage.output_tokens },
+  };
+}
+
+/** Other models, through Foundry's OpenAI-style endpoint; they are asked for JSON in words. */
+async function askOpenAi(env: Env, model: string, image: string): Promise<Raw> {
+  const res = await fetch(`${AZURE_HOST}/openai/v1/chat/completions`, {
+    method: "POST",
+    headers: { "api-key": env.AZURE_FOUNDRY_API_KEY!, "content-type": "application/json" },
+    signal: AbortSignal.timeout(45_000),
+    body: JSON.stringify({
+      model,
+      max_tokens: 2000,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `${PROMPT}\nReply with one JSON object only, with exactly these keys: ${SCHEMA.required.join(", ")}.`,
+            },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${image}` } },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`${model}: HTTP ${res.status}`);
+  const out = (await res.json()) as {
+    choices: { message: { content: string } }[];
+    usage?: { prompt_tokens: number; completion_tokens: number };
+  };
+  return {
+    text: out.choices[0]?.message.content ?? "",
+    usage: { input: out.usage?.prompt_tokens ?? 0, output: out.usage?.completion_tokens ?? 0 },
+  };
+}
+
+/** The JSON object in a model's answer, even when it is wrapped in a ```json fence. */
+const jsonIn = (text: string) => JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+
+/** The order to try models in: the person's choice, then the fallbacks. */
+export const modelsFor = (chosen: string | null): string[] => {
+  const first: LabelModel = isLabelModel(chosen) ? chosen : LABEL_MODELS[0].id;
+  return [first, ...FALLBACK.filter((m) => m !== first)];
+};
+
+async function readLabel(
+  env: Env,
+  image: string,
+  chosen: string | null,
+): Promise<{ reading: LabelReading; model: string; usage: { input: number; output: number } }> {
+  let last: unknown;
+  for (const model of modelsFor(chosen)) {
+    try {
+      const api = LABEL_MODELS.find((m) => m.id === model)?.api ?? "anthropic";
+      const { text, usage } =
+        api === "openai" ? await askOpenAi(env, model, image) : await askClaude(env, model, image);
+      const r = jsonIn(text) as LabelReading;
       return {
         reading: {
           producer: String(r.producer ?? "").slice(0, 120),
@@ -106,7 +164,7 @@ async function readLabel(
           confident: r.confident === true,
         },
         model,
-        usage: { input: response.usage.input_tokens, output: response.usage.output_tokens },
+        usage,
       };
     } catch (e) {
       last = e;
@@ -143,7 +201,7 @@ labelRoutes.post("/label", async (c) => {
   }
   const jobId = ulid();
   try {
-    const { reading, model, usage } = await readLabel(c.env, image);
+    const { reading, model, usage } = await readLabel(c.env, image, user.label_model);
     await c.env.DB.prepare(
       "INSERT INTO ai_jobs (id, user_id, kind, status, model, input_tokens, output_tokens, created_at) VALUES (?, ?, 'label', 'done', ?, ?, ?, ?)",
     )

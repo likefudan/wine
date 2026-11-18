@@ -66,6 +66,19 @@ Repository secrets (Settings → Secrets and variables → Actions):
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The same OAuth client as jaysbadminton. Its redirect URIs must include `https://wine.llmat.dev/api/auth/google/callback` and `https://wine-staging.llmat.dev/api/auth/google/callback`. |
 | `AZURE_FOUNDRY_API_KEY` | Reading wine labels (Claude on Azure, the same key as jaysbadminton). Label scanning is hidden behind a message while it is missing. |
 
+## LWIN wine directory
+
+Typing a producer or wine also suggests wines from [LWIN](https://www.liv-ex.com/lwin/), Liv-ex's free wine list (Creative Commons; the app credits it under the suggestions). The rows are not in this repository. To load or refresh them, download the spreadsheet from Liv-ex, then:
+
+```sh
+pip install openpyxl
+python3 scripts/lwin_import.py LWINdatabase.xlsx lwin.sql
+npx wrangler d1 execute DB --remote --env staging --file lwin.sql   # test site
+npx wrangler d1 execute DB --remote --file lwin.sql                 # production
+```
+
+The SQL replaces the previous load. Only live wines are kept (about 186,000; no spirits).
+
 ## Documents
 
 - [docs/design.zh.md](docs/design.zh.md): architecture, features, data model, visual direction and phases.

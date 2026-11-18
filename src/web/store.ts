@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import {
   type Depth,
+  type LabelModel,
   type Lang,
   type ListItem,
   type Me,
@@ -274,6 +275,7 @@ export function addVintage(v: Omit<VintageInfo, "id" | "wineId"> & { id?: string
     appellation: info.appellation,
     grapes: info.grapes,
     abv: info.abv,
+    lwin: info.lwin ?? null,
   });
   return info;
 }
@@ -376,7 +378,7 @@ export function deleteTasting(id: string) {
   enqueue({ op: "deleteTasting", id });
 }
 
-export function updateMe(change: { locale?: Lang; depth?: Depth }) {
+export function updateMe(change: { locale?: Lang; depth?: Depth; labelModel?: LabelModel }) {
   if (!state.me) return;
   set({ me: { ...state.me, ...change } });
   enqueue({ op: "putMe", ...change });

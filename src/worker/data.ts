@@ -15,9 +15,12 @@ import {
   type VintageInfo,
   type WineList,
   clampText,
+  isLabelModel,
   isLang,
   nameKey,
   ulid,
+  type LwinWine,
+  searchWords,
 } from "../shared/model";
 import { type UserRow, isOwner, meOf, requireSameOrigin, requireUser } from "./auth";
 import type { Env } from "./env";
@@ -236,6 +239,7 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   const grapes = Array.isArray(o.grapes)
     ? o.grapes.flatMap((g) => (typeof g === "string" && g.trim() ? [g.trim().slice(0, 60)] : [])).slice(0, 8)
     : [];
+  const lwin = Number.isInteger(o.lwin) && o.lwin! > 0 ? o.lwin! : null;
   const pKey = nameKey(producer, true) || nameKey(producer);
   const wKey = nameKey(wine);
   if (!pKey || !wKey) fail("请填写酒庄和酒名");
@@ -249,10 +253,11 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   const p = (await db.prepare("SELECT id FROM producers WHERE name_key = ?").bind(pKey).first<{ id: string }>())!;
   await db
     .prepare(
-      `INSERT INTO wines (id, producer_id, name, name_key, color, appellation, grapes, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (producer_id, name_key) DO NOTHING`,
+      `INSERT INTO wines (id, producer_id, name, name_key, color, appellation, grapes, created_by, created_at, lwin)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (producer_id, name_key) DO UPDATE SET lwin = coalesce(wines.lwin, excluded.lwin)`,
     )
-    .bind(ulid(), p.id, wine, wKey, o.color, clampText(o.appellation, 80), JSON.stringify(grapes), user.id, at)
+    .bind(ulid(), p.id, wine, wKey, o.color, clampText(o.appellation, 80), JSON.stringify(grapes), user.id, at, lwin)
     .run();
   const w = (await db
     .prepare("SELECT id FROM wines WHERE producer_id = ? AND name_key = ?")
@@ -461,6 +466,8 @@ async function putMe(db: DB, user: UserRow, o: Extract<Op, { op: "putMe" }>) {
     await db.prepare("UPDATE users SET locale = ? WHERE id = ?").bind(o.locale, user.id).run();
   if (o.depth !== undefined && (DEPTHS as readonly string[]).includes(o.depth))
     await db.prepare("UPDATE users SET depth = ? WHERE id = ?").bind(o.depth, user.id).run();
+  if (o.labelModel !== undefined && isLabelModel(o.labelModel))
+    await db.prepare("UPDATE users SET label_model = ? WHERE id = ?").bind(o.labelModel, user.id).run();
 }
 
 export async function applyOp(db: DB, user: UserRow, o: Op): Promise<OpResult> {
@@ -525,7 +532,7 @@ dataRoutes.post("/ops", async (c) => {
 dataRoutes.get("/catalog", async (c) => {
   await requireUser(c);
   const q = nameKey(c.req.query("q") ?? "");
-  if (q.length < 2) return c.json({ wines: [] });
+  if (q.length < 2) return c.json({ wines: [], lwin: [] });
   const words = q.split(" ").slice(0, 4);
   const where = words.map(() => "instr(p.name_key || ' ' || w.name_key, ?) > 0").join(" AND ");
   const wines = await c.env.DB.prepare(
@@ -537,6 +544,7 @@ dataRoutes.get("/catalog", async (c) => {
     .bind(...words, `${q}%`, `${q}%`)
     .all<Record<string, string | null>>();
   return c.json({
+    lwin: await searchLwin(c.env.DB, c.req.query("q") ?? ""),
     wines: wines.results.map((w) => ({
       wineId: w.id,
       producer: w.producer,
@@ -552,6 +560,24 @@ dataRoutes.get("/catalog", async (c) => {
     })),
   });
 });
+
+/**
+ * 公共酒款库 (LWIN): wines with every typed word as the start of one of their words. The longest word
+ * reads its index range first; grand vins and short names come first.
+ */
+export async function searchLwin(db: DB, q: string): Promise<LwinWine[]> {
+  const words = searchWords(q).sort((a, b) => b.length - a.length);
+  if (!words.length || words[0]!.length < 2) return [];
+  const match = words.map(() => "lwin IN (SELECT lwin FROM lwin_words WHERE word >= ? AND word < ?)").join(" AND ");
+  const rows = await db
+    .prepare(
+      `SELECT lwin, producer, wine, color, country, region, appellation, classification FROM lwin
+       WHERE ${match} ORDER BY wine = producer DESC, length(producer) + length(wine), lwin LIMIT 12`,
+    )
+    .bind(...words.flatMap((w) => [w, `${w}\uffff`]))
+    .all<LwinWine>();
+  return rows.results;
+}
 
 // ── Invites ──────────────────────────────────────────────────────────────────────────────────
 

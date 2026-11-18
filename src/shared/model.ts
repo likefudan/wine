@@ -129,6 +129,20 @@ export interface VintageInfo {
   appellation: string | null;
   grapes: string[];
   abv: number | null;
+  /** The LWIN it was picked from, if any (only sent with putVintage). */
+  lwin?: number | null;
+}
+
+/** A wine from the public LWIN list (/api/catalog), not yet in our own catalogue. */
+export interface LwinWine {
+  lwin: number;
+  producer: string;
+  wine: string;
+  color: WineColor | null;
+  country: string | null;
+  region: string | null;
+  appellation: string | null;
+  classification: string | null;
 }
 
 export interface WineList {
@@ -150,6 +164,19 @@ export interface ListItem {
   createdAt: string;
 }
 
+/**
+ * The models a person can pick to read labels (设置). All are on the same Azure resource; the first is
+ * the default. `api`: which protocol the Worker speaks to it.
+ */
+export const LABEL_MODELS = [
+  { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", api: "anthropic" },
+  { id: "claude-fable-5-2", name: "Claude Fable 5.2", api: "anthropic" },
+  { id: "claude-opus-5-5", name: "Claude Opus 5.5", api: "anthropic" },
+  { id: "DeepSeek-V4.1-Flash-1017", name: "DeepSeek V4.1 Flash", api: "openai" },
+] as const;
+export type LabelModel = (typeof LABEL_MODELS)[number]["id"];
+export const isLabelModel = (v: unknown): v is LabelModel => LABEL_MODELS.some((m) => m.id === v);
+
 export interface Me {
   id: string;
   email: string;
@@ -157,6 +184,8 @@ export interface Me {
   picture: string | null;
   locale: Lang | null;
   depth: Depth | null;
+  /** null = the default (LABEL_MODELS[0]). */
+  labelModel: LabelModel | null;
   owner: boolean;
 }
 
@@ -183,6 +212,7 @@ export type Op =
       appellation?: string | null;
       grapes?: string[];
       abv?: number | null;
+      lwin?: number | null;
     }
   | { op: "putList"; list: WineList }
   | { op: "deleteList"; id: string }
@@ -191,7 +221,7 @@ export type Op =
   | { op: "reorder"; listId: string; ids: string[] }
   | { op: "putTasting"; tasting: Tasting }
   | { op: "deleteTasting"; id: string }
-  | { op: "putMe"; locale?: Lang; depth?: Depth };
+  | { op: "putMe"; locale?: Lang; depth?: Depth; labelModel?: LabelModel };
 
 export interface OpResult {
   ok: boolean;
@@ -234,6 +264,16 @@ export function nameKey(name: string, producer = false): string {
     if (stripped) s = stripped;
   }
   return s.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * The words a search for `q` looks up in the LWIN word index: nameKey() words without the filler ones,
+ * as scripts/lwin_import.py makes them. Falls back to every word when all of them are filler.
+ */
+export function searchWords(q: string): string[] {
+  const all = nameKey(q).split(" ").filter(Boolean);
+  const kept = all.filter((w) => !w.match(new RegExp(`^(?:${NOISE.source})$`)) && w.length >= 2);
+  return (kept.length ? kept : all).slice(0, 4);
 }
 
 export const MIN_SCORE = 50;

@@ -1,11 +1,19 @@
 import { useEffect, useState } from "preact/hooks";
-import { DEPTHS, type Depth } from "../../shared/model";
+import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel } from "../../shared/model";
 import { Choice, Field } from "../components";
 import { LangSwitch } from "../LangSwitch";
 import { DEPTH_INFO } from "../depths";
 import { fmtDate, t, tm } from "../i18n";
 import { ApiError, api, clearLocal, flush, getState, updateMe, useStore } from "../store";
 import { type Theme, savedTheme, setTheme } from "../theme";
+
+/** One line on each label model, from reading the same cellar photos with each (2026-11). */
+const LABEL_MODEL_HINT: Record<LabelModel, string> = {
+  "claude-sonnet-5-5": "默认，又准又不太慢",
+  "claude-fable-5-2": "最准，但要多等一会儿",
+  "claude-opus-5-5": "很准，比较慢",
+  "DeepSeek-V4.1-Flash-1017": "最快，几秒出结果，小字偶尔认错",
+};
 
 export function Avatar() {
   const me = useStore((s) => s.me);
@@ -62,6 +70,15 @@ export function MePage() {
             clearable={false}
             options={DEPTHS.map((d: Depth) => ({ value: d, label: t(DEPTH_INFO[d].name) }))}
             onChange={(d) => d && updateMe({ depth: d })}
+          />
+        </Field>
+        <Field label={t("拍酒标识别模型")} hint={t(LABEL_MODEL_HINT[me.labelModel ?? LABEL_MODELS[0].id])} group>
+          <Choice
+            label={t("拍酒标识别模型")}
+            value={me.labelModel ?? LABEL_MODELS[0].id}
+            clearable={false}
+            options={LABEL_MODELS.map((m) => ({ value: m.id, label: m.name }))}
+            onChange={(m) => m && updateMe({ labelModel: m })}
           />
         </Field>
         <Field label={t("外观")} group>
