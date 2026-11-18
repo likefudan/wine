@@ -10,6 +10,9 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   取消: { tw: "取消", en: "Cancel" },
   删除: { tw: "刪除", en: "Delete" },
   酒单: { tw: "酒單", en: "Lists" },
+  我的酒单: { tw: "我的酒單", en: "My lists" },
+  品鉴: { tw: "品飲", en: "Tasting" },
+  通用: { tw: "一般", en: "General" },
   "没有网络，记录先存在手机上": { tw: "沒有網路，紀錄先存在手機上", en: "Offline: notes are saved on this phone" },
   "有一条修改没能保存：{msg}": { tw: "有一筆修改沒能儲存：{msg}", en: "A change couldn't be saved: {msg}" },
   "{n} 条记录等有网后自动上传": {

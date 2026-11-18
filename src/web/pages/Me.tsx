@@ -1,3 +1,4 @@
+import { useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
 import { Choice, Field } from "../components";
@@ -16,16 +17,26 @@ const LABEL_MODEL_HINT: Record<LabelModel, string> = {
   "DeepSeek-V4.1-Flash-1017": "最快，几秒出结果，小字偶尔认错",
 };
 
-export function Avatar() {
+/** My picture: a link to 我的, or (`tab`) the icon of the 我的 tab, which is already a link. */
+export function Avatar(props: { tab?: boolean }) {
   const me = useStore((s) => s.me);
   if (!me) return null;
   const initial = (me.name ?? me.email).trim()[0]?.toUpperCase() ?? "?";
+  const face = me.picture ? <img src={me.picture} alt="" referrerpolicy="no-referrer" /> : <span>{initial}</span>;
+  if (props.tab)
+    return (
+      <span class="avatar tab-avatar" aria-hidden="true">
+        {face}
+      </span>
+    );
   return (
     <a href="/me" class="avatar" aria-label={t("我的")}>
-      {me.picture ? <img src={me.picture} alt="" referrerpolicy="no-referrer" /> : <span>{initial}</span>}
+      {face}
     </a>
   );
 }
+
+type MeTab = "tasting" | "general" | "members";
 
 export function MePage() {
   const me = useStore((s) => s.me)!;
@@ -34,6 +45,7 @@ export function MePage() {
   const count = useStore((s) => s.tastings.length);
   const [theme, setT] = useState<Theme>(savedTheme());
   const [syncing, setSyncing] = useState(false);
+  const { query, route } = useLocation();
   const logout = async () => {
     if (getState().queue.length && !(await ask(t("还有记录没备份到云端，退出后会丢失。确定退出？")))) return;
     try {
@@ -44,97 +56,123 @@ export function MePage() {
     clearLocal();
     location.href = "/";
   };
+  const tabs: { id: MeTab; label: string }[] = [
+    { id: "tasting", label: t("品鉴") },
+    { id: "general", label: t("通用") },
+    ...(me.owner ? [{ id: "members" as const, label: t("成员") }] : []),
+  ];
+  const tab: MeTab = tabs.some((x) => x.id === query.tab) ? (query.tab as MeTab) : "tasting";
+  const pick = (id: MeTab) => route(id === "tasting" ? "/me" : `/me?tab=${id}`, true);
   return (
     <div class="page">
-      <header class="page-head">
-        <a href="/" class="link">
-          ← {t("酒单")}
-        </a>
-        <h1 class="page-head-title">{t("我的")}</h1>
-      </header>
-      <section class="card me-card">
-        <Avatar />
+      <h1 class="visually-hidden">{t("我的")}</h1>
+      <section class="me-card">
+        <Avatar tab />
         <div>
           <strong>{me.name ?? me.email}</strong>
           <div class="muted small">{me.email}</div>
           <div class="muted small">{t("已记录 {n} 款", { n: count })}</div>
         </div>
       </section>
-      <section class="step">
-        <Field label={t("语言")} group>
-          <LangSwitch />
-        </Field>
-        <Field label={t("默认品鉴深度")} hint={t(DEPTH_INFO[me.depth ?? "quick"].who)} group>
-          <Choice
-            label={t("默认品鉴深度")}
-            value={me.depth ?? undefined}
-            clearable={false}
-            options={DEPTHS.map((d: Depth) => ({ value: d, label: t(DEPTH_INFO[d].name) }))}
-            onChange={(d) => d && updateMe({ depth: d })}
-          />
-        </Field>
-        <Field label={t("拍酒标识别模型")} hint={t(LABEL_MODEL_HINT[me.labelModel ?? LABEL_MODELS[0].id])} group>
-          <Choice
-            label={t("拍酒标识别模型")}
-            value={me.labelModel ?? LABEL_MODELS[0].id}
-            clearable={false}
-            options={LABEL_MODELS.map((m) => ({ value: m.id, label: m.name }))}
-            onChange={(m) => m && updateMe({ labelModel: m })}
-          />
-        </Field>
-        <Field label={t("外观")} group>
-          <Choice
-            label={t("外观")}
-            value={theme}
-            clearable={false}
-            options={[
-              { value: "auto" as const, label: t("跟随系统") },
-              { value: "light" as const, label: t("浅色") },
-              { value: "dark" as const, label: t("深色") },
-            ]}
-            onChange={(v) => {
-              if (!v) return;
-              setT(v);
-              setTheme(v);
-            }}
-          />
-        </Field>
-      </section>
-      <section class="step">
-        <h2 class="step-title">{t("离线与备份")}</h2>
-        <p class="small muted">
-          {t("记录先存在这部手机上，有网时自动备份到云端。在酒庄没信号也能照常记，有网后会自动补传，不用手动操作。")}
-        </p>
-        <p class="small sync-status">
-          {queue > 0
-            ? navigator.onLine
-              ? t("正在备份 {n} 条记录…", { n: queue })
-              : t("有 {n} 条记录还在手机上，有网后会自动上传", { n: queue })
-            : syncedAt
-              ? t("✓ 都已备份到云端（{time}）", {
-                  time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                })
-              : t("✓ 都已备份到云端")}
-        </p>
-        {queue > 0 && (
+      <div class="segmented" role="tablist" aria-label={t("设置")}>
+        {tabs.map((x) => (
           <button
+            key={x.id}
             type="button"
-            class="button"
-            disabled={syncing}
-            onClick={async () => {
-              setSyncing(true);
-              await flush();
-              setSyncing(false);
-            }}
+            role="tab"
+            aria-selected={tab === x.id}
+            class={tab === x.id ? "on" : ""}
+            onClick={() => pick(x.id)}
           >
-            {syncing ? t("上传中…") : t("现在上传")}
+            {x.label}
           </button>
-        )}
-      </section>
-      {me.owner && <Members />}
-      <button type="button" class="button danger block" onClick={logout}>
-        {t("退出登录")}
-      </button>
+        ))}
+      </div>
+      {tab === "tasting" && (
+        <section class="group" role="tabpanel">
+          <Field label={t("默认品鉴深度")} hint={t(DEPTH_INFO[me.depth ?? "quick"].who)} group>
+            <Choice
+              label={t("默认品鉴深度")}
+              value={me.depth ?? undefined}
+              clearable={false}
+              options={DEPTHS.map((d: Depth) => ({ value: d, label: t(DEPTH_INFO[d].name) }))}
+              onChange={(d) => d && updateMe({ depth: d })}
+            />
+          </Field>
+          <Field label={t("拍酒标识别模型")} hint={t(LABEL_MODEL_HINT[me.labelModel ?? LABEL_MODELS[0].id])} group>
+            <Choice
+              label={t("拍酒标识别模型")}
+              value={me.labelModel ?? LABEL_MODELS[0].id}
+              clearable={false}
+              options={LABEL_MODELS.map((m) => ({ value: m.id, label: m.name }))}
+              onChange={(m) => m && updateMe({ labelModel: m })}
+            />
+          </Field>
+        </section>
+      )}
+      {tab === "general" && (
+        <>
+          <section class="group" role="tabpanel">
+            <Field label={t("语言")} group>
+              <LangSwitch />
+            </Field>
+            <Field label={t("外观")} group>
+              <Choice
+                label={t("外观")}
+                value={theme}
+                clearable={false}
+                options={[
+                  { value: "auto" as const, label: t("跟随系统") },
+                  { value: "light" as const, label: t("浅色") },
+                  { value: "dark" as const, label: t("深色") },
+                ]}
+                onChange={(v) => {
+                  if (!v) return;
+                  setT(v);
+                  setTheme(v);
+                }}
+              />
+            </Field>
+          </section>
+          <section class="group">
+            <h2 class="group-title">{t("离线与备份")}</h2>
+            <p class="small muted">
+              {t(
+                "记录先存在这部手机上，有网时自动备份到云端。在酒庄没信号也能照常记，有网后会自动补传，不用手动操作。",
+              )}
+            </p>
+            <p class="small sync-status">
+              {queue > 0
+                ? navigator.onLine
+                  ? t("正在备份 {n} 条记录…", { n: queue })
+                  : t("有 {n} 条记录还在手机上，有网后会自动上传", { n: queue })
+                : syncedAt
+                  ? t("✓ 都已备份到云端（{time}）", {
+                      time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+                    })
+                  : t("✓ 都已备份到云端")}
+            </p>
+            {queue > 0 && (
+              <button
+                type="button"
+                class="button"
+                disabled={syncing}
+                onClick={async () => {
+                  setSyncing(true);
+                  await flush();
+                  setSyncing(false);
+                }}
+              >
+                {syncing ? t("上传中…") : t("现在上传")}
+              </button>
+            )}
+          </section>
+          <button type="button" class="button danger block" onClick={logout}>
+            {t("退出登录")}
+          </button>
+        </>
+      )}
+      {tab === "members" && <Members />}
     </div>
   );
 }
@@ -188,8 +226,7 @@ function Members() {
     </li>
   );
   return (
-    <section class="step">
-      <h2 class="step-title">{t("成员")}</h2>
+    <section class="group" role="tabpanel">
       <form class="inline-form" onSubmit={savePerDay}>
         <label class="field grow">
           <span class="field-label">{t("每天免审核名额")}</span>
