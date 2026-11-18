@@ -192,6 +192,73 @@ export interface WineList {
   note: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Sharing, set by the server (POST /api/lists/:id/share); a change sent by the phone leaves them. */
+  ownerId?: string;
+  visibility?: Visibility;
+  blind?: boolean;
+  revealedAt?: string | null;
+  /** How many people have joined, the owner included. */
+  members?: number;
+}
+
+/** 私密: members only. 公开: anyone with the link may look, without signing in. */
+export const VISIBILITIES = ["private", "public"] as const;
+export type Visibility = (typeof VISIBILITIES)[number];
+
+/** One person's note on a wine in a shared list, as others see it. */
+export interface BoardNote {
+  userId: string;
+  name: string;
+  picture: string | null;
+  mine: boolean;
+  depth: Depth;
+  score: number | null;
+  buyAgain: boolean | null;
+  appearance: Appearance;
+  nose: Nose;
+  palate: Palate;
+  descriptors: string[];
+  note: string | null;
+}
+
+export interface BoardItem {
+  id: string;
+  position: number;
+  vintage: VintageInfo;
+  /** How many people have handed in a note on it. */
+  rated: number;
+  /** false while 盲评 hides the others' notes: only `rated` is known. */
+  open: boolean;
+  avg: number | null;
+  notes: BoardNote[];
+}
+
+/** A shared list as one person may see it (GET /api/lists/:id/board). */
+export interface Board {
+  list: {
+    id: string;
+    title: string;
+    kind: ListKind;
+    startsOn: string | null;
+    place: ListPlace | null;
+    note: string | null;
+    ownerName: string;
+    visibility: Visibility;
+    blind: boolean;
+    revealedAt: string | null;
+    joinOpen: boolean;
+  };
+  signedIn: boolean;
+  member: boolean;
+  owner: boolean;
+  /** The link in the QR code would let this person in. */
+  canJoin: boolean;
+  /** The QR code's key: members only. */
+  key: string | null;
+  memberCount: number;
+  /** Members only, or everyone once the list is public and its notes open. */
+  members: { id: string; name: string; picture: string | null; owner: boolean }[];
+  items: BoardItem[];
 }
 
 export interface ListItem {

@@ -10,6 +10,7 @@ import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
 import { Home } from "./pages/Home";
 import { Library } from "./pages/Library";
+import { JoinPage } from "./pages/JoinPage";
 import { ListPage } from "./pages/ListPage";
 import { Login } from "./pages/Login";
 import { MePage } from "./pages/Me";
@@ -17,7 +18,17 @@ import { Taste } from "./pages/Taste";
 import { Welcome } from "./pages/Welcome";
 import { WinePage } from "./pages/WinePage";
 import { applyTheme } from "./theme";
-import { api, applySync, clearLocal, clearRejected, flush, getState, loadLocal, useStore } from "./store";
+import {
+  api,
+  applySync,
+  clearLocal,
+  clearRejected,
+  flush,
+  getState,
+  loadLocal,
+  takePendingJoin,
+  useStore,
+} from "./store";
 
 interface Session {
   google: boolean;
@@ -27,6 +38,9 @@ interface Session {
 
 type Boot = { state: "loading" } | { state: "out"; session: Session | null } | { state: "in" };
 
+const JoinOut = () => <JoinPage signedIn={false} />;
+const JoinIn = () => <JoinPage signedIn />;
+
 function Shell() {
   const [boot, setBoot] = useState<Boot>({ state: "loading" });
   const me = useStore((s) => s.me);
@@ -34,7 +48,7 @@ function Shell() {
   const rejected = useStore((s) => s.rejected);
   const [online, setOnline] = useState(navigator.onLine);
   useLang();
-  const { path } = useLocation();
+  const { path, route } = useLocation();
 
   useEffect(() => {
     const on = () => setOnline(navigator.onLine);
@@ -64,7 +78,25 @@ function Shell() {
       }
       if (local.me && local.me.id !== session.me.id) clearLocal();
       if (session.me.locale && !hasSavedLang()) setLang(session.me.locale);
-      if (!getState().me) {
+      // Back from Google after scanning a list's QR code: finish joining, then open the list.
+      const join = takePendingJoin();
+      let joined = false;
+      if (join) {
+        try {
+          await api(`/api/lists/${join.listId}/join`, { body: { k: join.k } });
+          joined = true;
+        } catch {
+          route(`/l/${join.listId}?k=${encodeURIComponent(join.k)}`, true);
+        }
+      }
+      if (joined) {
+        try {
+          if (!getState().queue.length) applySync(await api("/api/sync"));
+        } catch {
+          // filled in by the next flush
+        }
+        route(`/lists/${join!.listId}`, true);
+      } else if (!getState().me) {
         // First time on this phone: wait for my copy so the pages don't start empty.
         try {
           applySync(await api("/api/sync"));
@@ -83,7 +115,17 @@ function Shell() {
   }, [me, boot.state]);
 
   if (boot.state === "loading") return <div class="splash" aria-busy="true" />;
-  if (boot.state === "out" || !me) return <Login session={boot.state === "out" ? boot.session : null} />;
+  if (boot.state === "out" || !me) {
+    // A scanned QR code opens the list even when signed out.
+    if (path.startsWith("/l/"))
+      return (
+        <Router>
+          <Route path="/l/:id" component={JoinOut} />
+          <Route default component={JoinOut} />
+        </Router>
+      );
+    return <Login session={boot.state === "out" ? boot.session : null} />;
+  }
   if (!me.depth) return <Welcome />;
 
   const tab =
@@ -117,6 +159,7 @@ function Shell() {
         <Router>
           <Route path="/" component={Home} />
           <Route path="/lists/:id" component={ListPage} />
+          <Route path="/l/:id" component={JoinIn} />
           <Route path="/add" component={AddWine} />
           <Route path="/taste/:id" component={Taste} />
           <Route path="/library" component={Library} />

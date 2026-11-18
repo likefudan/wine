@@ -4,8 +4,8 @@ import { LangSwitch } from "../LangSwitch";
 import { t, tk } from "../i18n";
 import { api } from "../store";
 
-const inWeChat = () => /MicroMessenger/i.test(navigator.userAgent);
-const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+export const inWeChat = () => /MicroMessenger/i.test(navigator.userAgent);
+export const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 const ERRORS: Record<string, string> = {
   disabled: tk("这个账号已被停用。"),
