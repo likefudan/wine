@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { env, exports } from "cloudflare:workers";
 import { describe, expect, it, vi } from "vitest";
 import { ulid } from "../src/shared/model";
 import { VINTAGE_SELECT, vintageInfo } from "../src/worker/data";
@@ -8,6 +8,21 @@ import { suggestPlaces } from "../src/worker/places";
 import { Client, signIn, tasting, vintageOp } from "./helpers";
 
 describe("sign-in", () => {
+  it("extends a session that is in use, and leaves a fresh one alone", async () => {
+    const c = await signIn();
+    const soon = new Date(Date.now() + 3 * 86400_000).toISOString();
+    await env.DB.prepare("UPDATE sessions SET expires_at = ?").bind(soon).run();
+    const before = c.cookie;
+    const r = await c.call("/api/sync");
+    expect(r.status).toBe(200);
+    expect(c.cookie).toBe(before);
+    const row = await env.DB.prepare("SELECT MIN(expires_at) AS at FROM sessions").first<{ at: string }>();
+    expect(Date.parse(row!.at)).toBeGreaterThan(Date.now() + 25 * 86400_000);
+    // Already far from expiry: nothing is written.
+    const res = await exports.default.fetch("https://wine.test/api/sync", { headers: { Cookie: c.cookie } });
+    expect(res.headers.get("Set-Cookie")).toBeNull();
+  });
+
   it("needs a session for everything personal", async () => {
     const c = new Client();
     expect((await c.call("/api/sync")).status).toBe(401);
@@ -284,6 +299,19 @@ describe("lists and tastings", () => {
     const s = (await c.call("/api/sync")).data;
     expect(s.tastings).toHaveLength(1);
     expect(s.tastings[0].score).toBe(88);
+  });
+
+  it("does not let an edit from a phone whose clock runs fast beat later edits", async () => {
+    const c = await signIn();
+    const v = vintageOp();
+    const t = tasting(v.id);
+    // A phone a day ahead: its edit counts as made now, not tomorrow.
+    const ahead = { ...t, score: 80, updatedAt: new Date(Date.now() + 86400_000).toISOString() };
+    await c.ops([v, { op: "putTasting", tasting: ahead }]);
+    const later = { ...t, score: 92, updatedAt: new Date(Date.now() + 5_000).toISOString() };
+    await c.ops([{ op: "putTasting", tasting: later }]);
+    const s = (await c.call("/api/sync")).data;
+    expect(s.tastings[0].score).toBe(92);
   });
 
   it("keeps where a glass was tasted: an older app leaves it, null removes it", async () => {

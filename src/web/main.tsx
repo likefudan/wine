@@ -30,7 +30,9 @@ import { applyTheme } from "./theme";
 import {
   api,
   applySync,
-  clearLocal,
+  sessionEnded,
+  setMe,
+  signedInAs,
   clearRejected,
   flush,
   flushPending,
@@ -89,11 +91,12 @@ function Shell() {
         return;
       }
       if (!session.me) {
-        if (local.me) clearLocal();
+        // Signed out (the session ran out): notes not uploaded yet wait here for the same person.
+        if (local.me) sessionEnded();
         setBoot({ state: "out", session });
         return;
       }
-      if (local.me && local.me.id !== session.me.id) clearLocal();
+      await signedInAs(session.me);
       if (session.me.locale && !hasSavedLang()) setLang(session.me.locale);
       // Back from Google after scanning a list's QR code: finish joining, then open the list.
       const join = takePendingJoin();
@@ -121,6 +124,8 @@ function Shell() {
           // shown empty, filled in by the next flush
         }
       }
+      // Notes still waiting to go up keep the server's copy out until they have: sign in with what we know.
+      if (!getState().me) setMe(session.me);
       setBoot({ state: "in" });
       void flush();
       if (getState().me?.owner) void refreshPending();
@@ -174,6 +179,16 @@ function Shell() {
       {rejected && (
         <div class="sync-bar warn" role="alert">
           <span>{t("有一条修改没能保存：{msg}", { msg: tm(rejected) })}</span>
+          <button
+            type="button"
+            class="link"
+            onClick={() => {
+              clearRejected();
+              route("/me?tab=general");
+            }}
+          >
+            {t("查看")}
+          </button>
           <button type="button" class="link" onClick={clearRejected}>
             {t("知道了")}
           </button>

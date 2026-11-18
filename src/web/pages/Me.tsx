@@ -11,7 +11,18 @@ import { LangSwitch } from "../LangSwitch";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, fmtDate, t, tm } from "../i18n";
-import { ApiError, api, clearLocal, flush, getState, updateMe, useStore } from "../store";
+import {
+  ApiError,
+  api,
+  clearLocal,
+  dropFailed,
+  flush,
+  getState,
+  retryFailed,
+  unsentCount,
+  updateMe,
+  useStore,
+} from "../store";
 import { type Theme, savedTheme, setTheme } from "../theme";
 
 /** One line on each label model, from reading the same cellar photos with each (2026-11). */
@@ -54,6 +65,7 @@ export function usePending(): number {
 export function MePage() {
   const me = useStore((s) => s.me)!;
   const queue = useStore((s) => s.queue.length);
+  const failedCount = useStore((s) => s.failed.length);
   const syncedAt = useStore((s) => s.syncedAt);
   const count = useStore((s) => s.tastings.length);
   const [theme, setT] = useState<Theme>(savedTheme());
@@ -66,7 +78,7 @@ export function MePage() {
   }, [me.owner]);
   const logout = async () => {
     if (getState().queue.length) await flush();
-    if (getState().queue.length && !(await ask(t("还有记录没备份到云端，退出后会丢失。确定退出？")))) return;
+    if (unsentCount() && !(await ask(t("还有记录没备份到云端，退出后会丢失。确定退出？")))) return;
     try {
       await api("/api/auth/logout", { body: {} });
     } catch {
@@ -184,11 +196,13 @@ export function MePage() {
                 ? navigator.onLine
                   ? t("有 {n} 条修改在手机上，稍后自动上传", { n: queue })
                   : t("有 {n} 条记录还在手机上，有网后会自动上传", { n: queue })
-                : syncedAt
-                  ? t("✓ 都已备份到云端（{time}）", {
-                      time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                    })
-                  : t("✓ 都已备份到云端")}
+                : failedCount > 0
+                  ? t("有 {n} 条修改没能保存，见下方", { n: failedCount })
+                  : syncedAt
+                    ? t("✓ 都已备份到云端（{time}）", {
+                        time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+                      })
+                    : t("✓ 都已备份到云端")}
             </p>
             {queue > 0 && (
               <button
@@ -205,6 +219,7 @@ export function MePage() {
               </button>
             )}
           </section>
+          <FailedChanges />
           <ExportData />
           <button type="button" class="button danger block" onClick={logout}>
             {t("退出登录")}
@@ -408,6 +423,35 @@ function Members() {
           ),
         )}
       </ul>
+    </section>
+  );
+}
+
+/** Changes the server refused: kept on the phone until I send them again or let them go. */
+function FailedChanges() {
+  const failed = useStore((s) => s.failed);
+  if (!failed.length) return null;
+  const errors = [...new Set(failed.map((f) => tm(f.error)))];
+  return (
+    <section class="group failed-changes" id="failed">
+      <h2 class="group-title">{t("没能保存的修改")}</h2>
+      <p class="small">
+        {t("有 {n} 条修改云端没有收下，还留在这部手机上：{why}", { n: failed.length, why: errors.join("；") })}
+      </p>
+      <div class="row-actions">
+        <button type="button" class="button" onClick={retryFailed}>
+          {t("再试一次")}
+        </button>
+        <button
+          type="button"
+          class="button danger"
+          onClick={async () => {
+            if (await ask(t("放弃后，这些修改会从手机上删掉，以云端为准。确定放弃？"))) dropFailed();
+          }}
+        >
+          {t("放弃这些修改")}
+        </button>
+      </div>
     </section>
   );
 }
