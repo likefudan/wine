@@ -276,6 +276,7 @@ export function addVintage(v: Omit<VintageInfo, "id" | "wineId"> & { id?: string
     grapes: info.grapes,
     abv: info.abv,
     lwin: info.lwin ?? null,
+    place: info.place ?? null,
   });
   return info;
 }

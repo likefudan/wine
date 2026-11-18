@@ -1,7 +1,9 @@
 import { env } from "cloudflare:workers";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ulid } from "../src/shared/model";
+import { VINTAGE_SELECT, vintageInfo } from "../src/worker/data";
 import { modelsFor } from "../src/worker/label";
+import { suggestPlaces } from "../src/worker/places";
 import { Client, signIn, tasting, vintageOp } from "./helpers";
 
 describe("sign-in", () => {
@@ -258,6 +260,50 @@ describe("lists and tastings", () => {
     await c.ops([{ op: "putMe", locale: "zh-TW", depth: "beginner" }]);
     const me = (await c.call("/api/auth/session")).data.me;
     expect(me).toMatchObject({ locale: "zh-TW", depth: "beginner" });
+  });
+});
+
+describe("producer places", () => {
+  it("is plain text without a Google key", async () => {
+    const c = await signIn();
+    expect((await c.call("/api/places?q=ridge")).data.places).toEqual([]);
+    expect((await c.call("/api/places/ChIJabcdefghij")).data.place).toBeNull();
+  });
+
+  it("asks Google for wineries first, then anything", async () => {
+    const seen: unknown[] = [];
+    const spy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const body = JSON.parse(String(init?.body));
+      seen.push(body.includedPrimaryTypes ?? null);
+      const hit = {
+        placePrediction: {
+          placeId: "ChIJridge12345",
+          text: { text: "Ridge Vineyards, Cupertino" },
+          structuredFormat: { mainText: { text: "Ridge Vineyards" }, secondaryText: { text: "Cupertino, CA, USA" } },
+        },
+      };
+      return Response.json({ suggestions: body.includedPrimaryTypes ? [] : [hit] });
+    });
+    try {
+      const r = await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "ridge", "abcdefgh-1234");
+      expect(r).toEqual([{ id: "ChIJridge12345", name: "Ridge Vineyards", detail: "Cupertino, CA, USA" }]);
+      expect(seen).toEqual([["winery"], null]);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("keeps the first place a producer was pinned to", async () => {
+    const c = await signIn();
+    const place = { id: "ChIJridge12345", address: "17100 Montebello Rd, Cupertino, CA", lat: 37.3, lng: -122.1 };
+    await c.ops([vintageOp({ place })]);
+    await c.ops([vintageOp({ year: 2018, place: { ...place, id: "ChIJsomewhere1", address: "Elsewhere" } })]);
+    const p = await env.DB.prepare("SELECT place_id, address, lat FROM producers").first();
+    expect(p).toEqual({ place_id: place.id, address: place.address, lat: 37.3 });
+    const row = await env.DB.prepare("SELECT v.id FROM vintages v LIMIT 1").first<{ id: string }>();
+    expect(
+      vintageInfo((await env.DB.prepare(`${VINTAGE_SELECT} WHERE v.id = ?`).bind(row!.id).first())!).place?.address,
+    ).toBe(place.address);
   });
 });
 

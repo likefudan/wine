@@ -77,9 +77,13 @@ interface VintageRow {
   producer: string;
   country: string | null;
   region: string | null;
+  place_id: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
 }
-const VINTAGE_SELECT = `SELECT v.id, v.wine_id, v.year, v.abv, w.name AS wine, w.color, w.appellation, w.grapes,
-  p.name AS producer, p.country, p.region
+export const VINTAGE_SELECT = `SELECT v.id, v.wine_id, v.year, v.abv, w.name AS wine, w.color, w.appellation, w.grapes,
+  p.name AS producer, p.country, p.region, p.place_id, p.address, p.lat, p.lng
   FROM vintages v JOIN wines w ON w.id = v.wine_id JOIN producers p ON p.id = w.producer_id`;
 
 export const vintageInfo = (r: VintageRow): VintageInfo => ({
@@ -94,6 +98,7 @@ export const vintageInfo = (r: VintageRow): VintageInfo => ({
   appellation: r.appellation,
   grapes: parse<string[]>(r.grapes),
   abv: r.abv,
+  place: r.place_id ? { id: r.place_id, address: r.address ?? "", lat: r.lat, lng: r.lng } : null,
 });
 
 interface TastingRow {
@@ -251,6 +256,14 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
     .bind(ulid(), producer, pKey, clampText(o.country, 60), clampText(o.region, 80), at)
     .run();
   const p = (await db.prepare("SELECT id FROM producers WHERE name_key = ?").bind(pKey).first<{ id: string }>())!;
+  const place = o.place;
+  if (place && typeof place.id === "string" && /^[A-Za-z0-9_-]{10,300}$/.test(place.id)) {
+    // The first person to pin a producer on the map decides where it is.
+    await db
+      .prepare("UPDATE producers SET place_id = ?, address = ?, lat = ?, lng = ? WHERE id = ? AND place_id IS NULL")
+      .bind(place.id, clampText(place.address, 200), optNum(place.lat, -90, 90), optNum(place.lng, -180, 180), p.id)
+      .run();
+  }
   await db
     .prepare(
       `INSERT INTO wines (id, producer_id, name, name_key, color, appellation, grapes, created_by, created_at, lwin)

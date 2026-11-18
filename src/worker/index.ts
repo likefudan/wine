@@ -4,6 +4,7 @@ import { dataRoutes } from "./data";
 import type { Env } from "./env";
 import { HttpError } from "./http";
 import { aiEnabled, labelRoutes } from "./label";
+import { placesRoutes } from "./places";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -30,6 +31,7 @@ app.get("/api/health", (c) =>
 app.route("/api/auth", authRoutes);
 app.route("/api", dataRoutes);
 app.route("/api", labelRoutes);
+app.route("/api", placesRoutes);
 app.all("/api/*", (c) => c.json({ error: "not_found", message: "Not found" }, 404));
 
 /**

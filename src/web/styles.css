@@ -1086,3 +1086,57 @@ h3 {
 .filters {
   margin-top: -4px;
 }
+
+/* 酒庄地址联想 (ProducerInput) */
+.suggest {
+  position: relative;
+}
+.suggestions {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 4px 0 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.suggestions button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+}
+.suggestions button:active,
+.suggestions button:hover {
+  background: var(--surface-2);
+}
+.suggestions strong,
+.suggestions span {
+  display: block;
+}
+.suggestions span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.searching {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 400;
+}
+.place-address {
+  margin-top: -6px;
+}
+.place-link {
+  color: var(--muted);
+}

@@ -41,6 +41,18 @@ export function WinePage() {
           <WineName v={v} />
         </div>
       </header>
+      {v.place?.address && (
+        <p class="small">
+          <a
+            class="place-link"
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.producer)}&query_place_id=${encodeURIComponent(v.place.id)}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {v.place.address}
+          </a>
+        </p>
+      )}
       {others.length > 0 && (
         <p class="muted small">
           {t("这款酒你还喝过 {n} 个年份", { n: others.length })}:{" "}

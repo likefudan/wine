@@ -2,7 +2,16 @@ import { useLocation } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { GRAPES, canonicalGrape, grapeName } from "../../shared/grapes";
 import { COLOR_WORDS } from "../../shared/guide";
-import { COLORS, type LwinWine, type VintageInfo, type WineColor, nameKey, yearLabel } from "../../shared/model";
+import {
+  COLORS,
+  type LwinWine,
+  type ProducerPlace,
+  type VintageInfo,
+  type WineColor,
+  nameKey,
+  yearLabel,
+} from "../../shared/model";
+import { ProducerInput } from "../ProducerInput";
 import { BackIcon, CameraIcon, Choice, Field, Glass, WineName } from "../components";
 import { currentLang, p, t, tm } from "../i18n";
 import { ApiError, addItem, addVintage, api, blankTasting, getState, saveTasting, useStore } from "../store";
@@ -37,6 +46,7 @@ interface Draft {
   grapes: string;
   abv: string;
   lwin?: number | null;
+  place?: ProducerPlace | null;
 }
 const EMPTY: Draft = {
   producer: "",
@@ -389,14 +399,25 @@ function WineForm(props: {
         .map(canonicalGrape),
       abv: Number(d.abv) > 0 ? Number(d.abv) : null,
       lwin: d.lwin ?? null,
+      place: d.place ?? null,
     });
   };
   return (
     <form class="form" onSubmit={submit}>
       {props.scanError && <p class="notice">{props.scanError}</p>}
-      <Field label={t("酒庄")}>
-        <input value={d.producer} maxLength={120} onInput={set("producer")} placeholder="Ridge Vineyards" />
-      </Field>
+      <ProducerInput
+        value={d.producer}
+        onInput={(producer) => setD((x) => ({ ...x, producer, place: null }))}
+        onPlace={(pl) =>
+          setD((x) => ({
+            ...x,
+            producer: pl.name || x.producer,
+            country: x.country || pl.country || "",
+            place: { id: pl.id, address: pl.address, lat: pl.lat, lng: pl.lng },
+          }))
+        }
+      />
+      {d.place?.address && <p class="field-hint place-address">{d.place.address}</p>}
       <Field label={t("酒名")} hint={t("没有单独的酒名就留空")}>
         <input value={d.wine} maxLength={160} onInput={set("wine")} placeholder="Monte Bello" />
       </Field>
