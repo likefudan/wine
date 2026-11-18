@@ -31,7 +31,7 @@ function haystack(v: VintageInfo, tastings: Tasting[], listTitles: string[]): st
       v.wine,
       yearLabel(v.year),
       v.region,
-      areaOf(v.appellation),
+      v.area || areaOf(v.appellation),
       v.appellation,
       v.country,
       ...grapes,

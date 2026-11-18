@@ -88,7 +88,7 @@ describe("wines", () => {
     expect(n!.n).toBe(1);
   });
 
-  it("stores 产区 at the same level for every country", async () => {
+  it("stores 产区 and 大区 at the same level for every country", async () => {
     const c = await signIn();
     await c.ops([
       vintageOp({ producer: "Opus One", wine: "Opus One", country: "United States", region: "Napa Valley" }),
@@ -106,16 +106,26 @@ describe("wines", () => {
         region: "Napa Valley",
         appellation: "Stags Leap District",
       }),
+      vintageOp({
+        producer: "Antinori",
+        wine: "Tignanello",
+        country: "Italy",
+        region: "Tuscany",
+        area: "Chianti Classico",
+      }),
     ]);
     const rows = await env.DB.prepare(
-      "SELECT p.name, p.country, p.region, w.appellation FROM wines w JOIN producers p ON p.id = w.producer_id",
-    ).all<{ name: string; country: string; region: string; appellation: string }>();
-    const where = Object.fromEntries(rows.results.map((r) => [r.name, [r.country, r.region, r.appellation]]));
+      "SELECT p.name, p.country, p.region, w.area, w.appellation FROM wines w JOIN producers p ON p.id = w.producer_id",
+    ).all<{ name: string; country: string; region: string; area: string; appellation: string }>();
+    const where = Object.fromEntries(rows.results.map((r) => [r.name, [r.country, r.region, r.area, r.appellation]]));
     expect(where).toEqual({
-      "Opus One": ["USA", "California", "Napa Valley"],
-      "Chateau Latour": ["France", "Bordeaux", "Pauillac"],
-      Shafer: ["USA", "California", "Stags Leap District"],
+      "Opus One": ["USA", "California", "Napa Valley", null],
+      "Chateau Latour": ["France", "Bordeaux", "Médoc", "Pauillac"],
+      Shafer: ["USA", "California", "Napa Valley", "Stags Leap District"],
+      Antinori: ["Italy", "Tuscany", "Chianti Classico", null],
     });
+    const sync = (await c.call("/api/catalog?q=shafer")).data;
+    expect(sync.wines[0].area).toBe("Napa Valley");
   });
 
   it("finds wines in the shared catalogue by any part of the name", async () => {

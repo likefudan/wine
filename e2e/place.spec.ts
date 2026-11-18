@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("picking Oakville fills California and shows Napa Valley between them", async ({ page }) => {
+test("picking California narrows the 子产区 list, and Oakville fills in Napa Valley", async ({ page }) => {
   await page.goto("/");
   await page.fill('input[type="email"]', `place${Date.now()}@example.com`);
   await page.click("text=Dev login");
@@ -13,10 +13,15 @@ test("picking Oakville fills California and shows Napa Valley between them", asy
   await page.click("text=新酒：Far Niente");
   await page.fill('input[placeholder="2019"]', "2019");
   await page.click(".choice >> text=红");
-  await page.fill('input[placeholder="Pauillac / Oakville"]', "Oakville");
-  await expect(page.locator('input[placeholder="Bordeaux / California"]')).toHaveValue("California");
+
+  await page.fill('input[list="region-list"]', "California");
+  await expect(page.locator("#appellation-list option[value='Oakville']")).toHaveCount(1);
+  await expect(page.locator("#appellation-list option[value='Pauillac']")).toHaveCount(0);
+  await expect(page.locator("#area-list option[value='Sonoma County']")).toHaveCount(1);
+
+  await page.fill('input[list="appellation-list"]', "Oakville");
+  await expect(page.locator('input[list="area-list"]')).toHaveValue("Napa Valley");
   await expect(page.locator('input[placeholder="USA"]')).toHaveValue("USA");
-  await expect(page.locator(".field-hint", { hasText: "属于 Napa Valley" })).toBeVisible();
   await page.click("text=开始品鉴");
   await expect(page.locator(".q-ask")).toBeVisible();
   await page.goBack();

@@ -355,6 +355,7 @@ export function addVintage(v: Omit<VintageInfo, "id" | "wineId"> & { id?: string
     color: info.color,
     country: info.country,
     region: info.region,
+    area: info.area ?? null,
     appellation: info.appellation,
     grapes: info.grapes,
     abv: info.abv,
