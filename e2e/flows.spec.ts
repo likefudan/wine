@@ -222,20 +222,21 @@ test("choosing an aroma lights it up in place without moving the words around it
   await expect(page.locator(".tasting-note p")).toContainText("口中有红李子和黑樱桃");
 });
 
-test("adding a wine from inside a list puts it in that list, with no other choice", async ({ page }) => {
+test("a wine added from a tasting goes into it; the 记一杯 button always records one on its own", async ({ page }) => {
   await signIn(page);
   await page.click("text=只想快速记个分");
   await page.click("text=新建品鉴");
-  await page.fill('.sheet input[placeholder^="例如"]', "Friday at home");
+  await page.fill('.sheet input[placeholder="例如：Napa 第一天 · Opus One"]', "Friday at home");
   await page.click("text=建好了");
-  for (const open of ["text=加下一款酒", ".dock-add"]) {
-    await page.click(open);
-    await expect(page.locator(".add-to-list")).toContainText("Friday at home");
-    await expect(page.locator("text=不属于任何品鉴")).toHaveCount(0);
+  await page.click("text=加下一款酒");
+  await expect(page.locator(".add-to-list")).toContainText("Friday at home");
+  await page.goBack();
+  // Even on the tasting's page, the floating button is for a glass outside any tasting, with no choice.
+  for (const where of ["here", "/"]) {
+    if (where === "/") await page.goto("/");
+    await page.click(".dock-add");
+    await expect(page.locator(".add-to-list")).toHaveText("单独记一杯，不属于任何品鉴");
+    await expect(page.locator(".chips >> text=Friday at home")).toHaveCount(0);
     await page.goBack();
   }
-  // From the tab bar outside a list, the choice is still there.
-  await page.goto("/");
-  await page.click(".dock-add");
-  await expect(page.locator("text=不属于任何品鉴")).toBeVisible();
 });

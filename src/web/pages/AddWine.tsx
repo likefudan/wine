@@ -97,9 +97,7 @@ export function AddWine() {
   const { route, query } = useLocation();
   const lists = useStore((s) => s.lists);
   const mine = useStore((s) => s.vintages);
-  const recent = [...lists].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const fresh = recent[0] && Date.now() - Date.parse(recent[0].updatedAt) < 12 * 3600_000 ? recent[0].id : null;
-  const [listId, setListId] = useState<string | null>(query.list ?? fresh);
+  const listId = query.list ?? null;
   /** Came from a list's page (加下一款酒, or 记一杯 while on it): the wine belongs to that list. */
   const fixedList = query.list ? lists.find((l) => l.id === query.list) : undefined;
   const [q, setQ] = useState("");
@@ -247,33 +245,16 @@ export function AddWine() {
         <h1 class="page-head-title">{t("记一杯")}</h1>
       </header>
 
-      {fixedList ? (
-        // Opened from inside a list: the wine goes into that list, nothing to choose.
-        <p class="add-to-list">
-          {t("属于")} <strong>{fixedList.title}</strong>
-        </p>
-      ) : (
-        lists.length > 0 && (
-          <div class="field">
-            <span class="field-label">{t("属于哪次品鉴")}</span>
-            <div class="chips scroll">
-              {recent.slice(0, 6).map((l) => (
-                <button
-                  key={l.id}
-                  type="button"
-                  class={listId === l.id ? "chip on" : "chip"}
-                  onClick={() => setListId(l.id)}
-                >
-                  {l.title}
-                </button>
-              ))}
-              <button type="button" class={listId === null ? "chip on" : "chip"} onClick={() => setListId(null)}>
-                {t("不属于任何品鉴")}
-              </button>
-            </div>
-          </div>
-        )
-      )}
+      {/* From a 品鉴's page the wine goes into it; from the 记一杯 button it stands on its own. Never a choice. */}
+      <p class="add-to-list">
+        {fixedList ? (
+          <>
+            {t("属于")} <strong>{fixedList.title}</strong>
+          </>
+        ) : (
+          t("单独记一杯，不属于任何品鉴")
+        )}
+      </p>
 
       {!form && (
         <>
