@@ -74,8 +74,8 @@ export const BLIND_MESSAGES: Record<string, { tw: string; en: string }> = {
   填答案: { tw: "填答案", en: "Fill in the answer" },
   "这杯 {got} / 10 分": { tw: "這杯 {got} / 10 分", en: "{got} / 10 on this glass" },
   猜酒排行: { tw: "猜酒排行", en: "Guessing ranking" },
-  "每杯 10 分，只算交了品鉴的杯。": {
-    tw: "每杯 10 分，只算交了品飲的杯。",
-    en: "10 points a glass; only glasses with a handed-in note count.",
+  "每杯 10 分，只算猜过的杯。": {
+    tw: "每杯 10 分，只算猜過的杯。",
+    en: "10 points a glass; only glasses someone guessed count.",
   },
 };

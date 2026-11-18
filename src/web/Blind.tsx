@@ -390,9 +390,11 @@ export function AnswersPage() {
               {error}
             </p>
           )}
-          <button type="button" class="button primary block" disabled={busy || ready === 0} onClick={reveal}>
-            {ready < waiting.length ? t("揭晓已填答案的 {k} 杯", { k: ready }) : t("揭晓答案")}
-          </button>
+          {ready > 0 && (
+            <button type="button" class="button primary block" disabled={busy} onClick={reveal}>
+              {ready < waiting.length ? t("揭晓已填答案的 {k} 杯", { k: ready }) : t("揭晓答案")}
+            </button>
+          )}
         </section>
       )}
       {!host && waiting.length > 0 && <p class="notice">{t("等主持人揭晓答案。先把每杯的「猜一猜」填好吧。")}</p>}
@@ -426,7 +428,10 @@ export function AnswersPage() {
               <p class="muted small">{host ? t("还没填答案") : t("等主持人揭晓")}</p>
             )}
             {host && (
-              <a class="button small" href={`/add?answerItem=${g.itemId}`}>
+              <a
+                class="button small"
+                href={`/add?answerItem=${g.itemId}${shared && !list.revealedAt && !board?.list.revealedAt ? "&wait=1" : ""}`}
+              >
                 {g.answer ? t("改答案") : t("填答案")}
               </a>
             )}
@@ -483,7 +488,7 @@ function Ranking(props: { board: Board }) {
           </li>
         ))}
       </ol>
-      <p class="muted small">{t("每杯 10 分，只算交了品鉴的杯。")}</p>
+      <p class="muted small">{t("每杯 10 分，只算猜过的杯。")}</p>
     </section>
   );
 }

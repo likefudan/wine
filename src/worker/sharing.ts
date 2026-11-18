@@ -106,7 +106,8 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
            t.guesses, t.price_usd,
            ${NAME_SQL()} AS name, u.email, ${PICTURE_SQL()} AS picture
          FROM tastings t JOIN users u ON u.id = t.user_id JOIN list_items i ON i.id = t.list_item_id
-         WHERE i.list_id = ? AND ${HANDED_IN} ORDER BY t.score IS NULL, t.score DESC, t.updated_at`,
+         WHERE i.list_id = ? AND (${HANDED_IN} OR (i.blind IS NOT NULL AND t.guesses NOT IN ('', '{}')))
+         ORDER BY t.score IS NULL, t.score DESC, t.updated_at`,
       )
       .bind(l.id),
     db

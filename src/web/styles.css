@@ -2378,13 +2378,17 @@ a.pro-score {
   flex-direction: column;
   gap: 2px;
 }
+/* Sans: Cormorant's old-style 1 reads as an I. */
 .blind-label {
-  font-family: var(--serif-latin);
-  font-size: 1.25em;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 1.1em;
+  font-variant-numeric: lining-nums;
 }
 .blind-label-input {
-  font-family: var(--serif-latin);
-  font-size: 22px;
+  font-family: var(--sans);
+  font-size: 20px;
+  font-weight: 600;
 }
 .blind-colors {
   display: grid;

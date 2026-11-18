@@ -164,7 +164,9 @@ export function AddWine(props: { cellar?: boolean }) {
     if (answerItemOf) {
       const l = lists.find((x) => x.id === answerItemOf.listId);
       // Alone, or once 揭晓 has been pressed, the answer shows at once; in a group it waits for 揭晓.
-      const reveal = !l || ((l.members ?? 1) <= 1 && l.visibility !== "public") || !!l.revealedAt;
+      // (The 对答案 page knows the list's members better than this phone's copy: it says `wait`.)
+      const reveal =
+        query.wait !== "1" && (!l || ((l.members ?? 1) <= 1 && l.visibility !== "public") || !!l.revealedAt);
       answerItem(answerItemOf.id, info.id, reveal);
       route(`/answers/${answerItemOf.listId}`, true);
       return;

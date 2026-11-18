@@ -518,6 +518,17 @@ async function putItem(db: DB, user: UserRow, i: ListItem) {
     answer = existing?.answer_vintage_id ?? null;
   }
   if (existing && existing.vintage_id !== BLIND && vintageId === BLIND) vintageId = existing.vintage_id;
+  // The host answering a glass that is still blind: it shows at once when nobody else is in the list
+  // (or 揭晓 was pressed already); otherwise the answer waits for 揭晓, whatever the phone thought.
+  if (owner && blind && (existing?.vintage_id ?? BLIND) === BLIND && (answer || vintageId !== BLIND)) {
+    const l = await db
+      .prepare(
+        "SELECT revealed_at, (SELECT COUNT(*) FROM list_members m WHERE m.list_id = lists.id) AS n FROM lists WHERE id = ?",
+      )
+      .bind(listId)
+      .first<{ revealed_at: string | null; n: number }>();
+    vintageId = l && (l.n <= 1 || l.revealed_at) ? (answer ?? vintageId) : BLIND;
+  }
   if (vintageId === BLIND && !blind) fail("编号无效");
   if (existing) {
     if (existing.list_id !== listId) fail("编号无效");
