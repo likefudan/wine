@@ -34,7 +34,7 @@ import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { GrapePicker } from "../GrapePicker";
 import { currentLang, p, t, tk } from "../i18n";
-import { deleteTasting, getState, saveTasting, updateMe, useStore } from "../store";
+import { deleteTasting, flushPending, getState, saveTasting, updateMe, useStore } from "../store";
 
 /**
  * 品鉴: one sheet, four depths over the same fields (docs/design.zh.md §3.3, §3.4). Switching depth
@@ -70,6 +70,7 @@ export function Taste() {
         clearTimeout(timer.current);
         if (latest.current) saveTasting(latest.current);
       }
+      flushPending();
     },
     [],
   );
@@ -105,6 +106,8 @@ export function Taste() {
       timer.current = null;
       saveTasting(x);
     }
+    // 完成 uploads now: in a shared list friends see it, and nothing waits on the phone.
+    flushPending();
     route(backOf(x), true);
   };
 

@@ -15,8 +15,10 @@ test("a tasting is deleted after confirming in the app's own box", async ({ page
   await page.fill('.sheet input[placeholder^="例如"]', "Napa");
   await page.click("text=建好了");
   await page.click("text=加下一款酒");
-  await page.fill("input.search", "Opus One");
-  await page.click("text=新酒：Opus One");
+  // Its own wine: the shared catalogue keeps the first version of a wine, and the other tests add
+  // Opus One with its grapes.
+  await page.fill("input.search", "Ridge Monte Bello");
+  await page.click("text=新酒：Ridge Monte Bello");
   await page.fill('input[placeholder="2019"]', "2019");
   await page.click(".choice >> text=红");
   await page.click("text=开始品鉴");

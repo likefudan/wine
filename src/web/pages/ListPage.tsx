@@ -32,6 +32,8 @@ export function openTasting(route: (url: string) => void, vintageId: string, ite
   route(`/taste/${x.id}?new=1`);
 }
 
+const BOARD_POLL_MS = 10_000;
+
 export function ListPage() {
   const { params } = useRoute();
   const { route } = useLocation();
@@ -47,18 +49,29 @@ export function ListPage() {
   const [shareError, setShareError] = useState("");
   const syncedAt = useStore((s) => s.syncedAt);
   const me = useStore((s) => s.me);
-  // Everyone's notes come from the server, which applies 盲评; refreshed after each upload.
+  // Everyone's notes come from the server, which applies 盲评; refreshed after each upload, and
+  // every BOARD_POLL_MS while a list with friends in it is on screen, so their notes show up too.
+  const sharedNow =
+    !!list && ((list.members ?? 1) > 1 || list.visibility === "public" || (!!list.ownerId && list.ownerId !== me?.id));
   useEffect(() => {
     if (!list || navigator.onLine === false) return;
     let live = true;
-    fetchBoard(list.id).then(
-      (b) => live && setBoard(b),
-      () => {},
-    );
+    const load = () =>
+      fetchBoard(list.id).then(
+        (b) => live && setBoard(b),
+        () => {},
+      );
+    void load();
+    const poll = sharedNow
+      ? setInterval(() => {
+          if (document.visibilityState === "visible" && navigator.onLine !== false) void load();
+        }, BOARD_POLL_MS)
+      : null;
     return () => {
       live = false;
+      if (poll) clearInterval(poll);
     };
-  }, [list?.id, syncedAt]);
+  }, [list?.id, syncedAt, sharedNow]);
   if (!list)
     return (
       <div class="page">

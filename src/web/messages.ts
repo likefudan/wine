@@ -12,11 +12,14 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   酒单: { tw: "酒單", en: "Lists" },
   "没有网络，记录先存在手机上": { tw: "沒有網路，紀錄先存在手機上", en: "Offline: notes are saved on this phone" },
   "有一条修改没能保存：{msg}": { tw: "有一筆修改沒能儲存：{msg}", en: "A change couldn't be saved: {msg}" },
-  "{n} 条记录等有网后自动上传": {
-    tw: "{n} 筆紀錄等有網路後自動上傳",
-    en: "{n} notes will upload when you're back online",
+  "有 {n} 条记录暂时没能上传，会自动重试": {
+    tw: "有 {n} 筆紀錄暫時沒能上傳，會自動重試",
+    en: "{n} changes couldn't upload yet; retrying automatically",
   },
-  "正在备份 {n} 条记录…": { tw: "正在備份 {n} 筆紀錄…", en: "Backing up {n} notes…" },
+  "有 {n} 条修改在手机上，稍后自动上传": {
+    tw: "有 {n} 筆修改在手機上，稍後自動上傳",
+    en: "{n} changes are on this phone; they'll upload shortly",
+  },
   离线与备份: { tw: "離線與備份", en: "Offline & backup" },
   "记录先存在这部手机上，有网时自动备份到云端。在酒庄没信号也能照常记，有网后会自动补传，不用手动操作。": {
     tw: "紀錄先存在這支手機上，有網路時自動備份到雲端。在酒莊沒訊號也能照常記，有網路後會自動補傳，不用手動操作。",

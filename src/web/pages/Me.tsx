@@ -35,6 +35,7 @@ export function MePage() {
   const [theme, setT] = useState<Theme>(savedTheme());
   const [syncing, setSyncing] = useState(false);
   const logout = async () => {
+    if (getState().queue.length) await flush();
     if (getState().queue.length && !(await ask(t("还有记录没备份到云端，退出后会丢失。确定退出？")))) return;
     try {
       await api("/api/auth/logout", { body: {} });
@@ -108,7 +109,7 @@ export function MePage() {
         <p class="small sync-status">
           {queue > 0
             ? navigator.onLine
-              ? t("正在备份 {n} 条记录…", { n: queue })
+              ? t("有 {n} 条修改在手机上，稍后自动上传", { n: queue })
               : t("有 {n} 条记录还在手机上，有网后会自动上传", { n: queue })
             : syncedAt
               ? t("✓ 都已备份到云端（{time}）", {
