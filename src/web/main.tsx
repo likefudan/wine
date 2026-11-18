@@ -7,6 +7,7 @@ import { useEffect, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
 import { ConfirmHost } from "./confirm";
+import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
 import { Home } from "./pages/Home";
@@ -144,6 +145,7 @@ function Shell() {
   const fullScreen = path.startsWith("/taste") || path.startsWith("/add");
   return (
     <div class="app">
+      <PullRefresh enabled={!fullScreen} />
       {/* Uploading is silent; only no signal, or uploads that keep failing, are worth a line. */}
       {!online ? (
         <div class="sync-bar" role="status">
