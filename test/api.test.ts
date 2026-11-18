@@ -88,6 +88,36 @@ describe("wines", () => {
     expect(n!.n).toBe(1);
   });
 
+  it("stores 产区 at the same level for every country", async () => {
+    const c = await signIn();
+    await c.ops([
+      vintageOp({ producer: "Opus One", wine: "Opus One", country: "United States", region: "Napa Valley" }),
+      vintageOp({
+        producer: "Chateau Latour",
+        wine: "Grand Vin",
+        country: "France",
+        region: "Bordeaux",
+        appellation: "Pauillac",
+      }),
+      vintageOp({
+        producer: "Shafer",
+        wine: "Hillside Select",
+        country: "",
+        region: "Napa Valley",
+        appellation: "Stags Leap District",
+      }),
+    ]);
+    const rows = await env.DB.prepare(
+      "SELECT p.name, p.country, p.region, w.appellation FROM wines w JOIN producers p ON p.id = w.producer_id",
+    ).all<{ name: string; country: string; region: string; appellation: string }>();
+    const where = Object.fromEntries(rows.results.map((r) => [r.name, [r.country, r.region, r.appellation]]));
+    expect(where).toEqual({
+      "Opus One": ["USA", "California", "Napa Valley"],
+      "Chateau Latour": ["France", "Bordeaux", "Pauillac"],
+      Shafer: ["USA", "California", "Stags Leap District"],
+    });
+  });
+
   it("finds wines in the shared catalogue by any part of the name", async () => {
     const c = await signIn();
     await c.ops([
@@ -216,6 +246,11 @@ describe("lists and tastings", () => {
       lat: null,
       lng: null,
     });
+    // An address with no name, typed by hand.
+    await c.ops([
+      { op: "putList", list: { ...again, place: { name: "", id: null, address: "1 Park Ave", lat: null, lng: null } } },
+    ]);
+    expect((await c.call("/api/sync")).data.lists[0].place).toMatchObject({ name: "", address: "1 Park Ave" });
     expect(s.items[0]).toMatchObject({ id: itemId, vintageId: v.id, priceUsd: 60 });
     expect(s.tastings[0]).toMatchObject({
       id: t.id,
@@ -249,11 +284,13 @@ describe("lists and tastings", () => {
         { id: "cedar", intensity: 9 },
         { id: "unicorn", intensity: 2 },
       ],
+      palate: { acidity: 3, flavours: ["cedar", "unicorn", "cedar", "vanilla"] },
     });
     const r = await c.ops([v, { op: "putTasting", tasting: bad }, { op: "putTasting", tasting: odd }]);
     expect(r.data.results.map((x) => x.ok)).toEqual([true, false, true]);
     const s = (await c.call("/api/sync")).data;
     expect(s.tastings[0].descriptors).toEqual([{ id: "cedar", intensity: 2 }]);
+    expect(s.tastings[0].palate).toEqual({ acidity: 3, flavours: ["cedar", "vanilla"] });
   });
 
   it("keeps people apart", async () => {
@@ -394,6 +431,9 @@ describe("producer places", () => {
       seen.length = 0;
       await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "french laundry", "abcdefgh-1234", "restaurant");
       expect(seen).toEqual([["restaurant"], null]);
+      seen.length = 0;
+      await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "123 main st", "abcdefgh-1234", "address");
+      expect(seen).toEqual([["street_address", "premise", "subpremise"], null]);
     } finally {
       spy.mockRestore();
     }

@@ -9,57 +9,73 @@ import { newList, useStore } from "../store";
 
 export const KIND_NAMES: Record<ListKind, string> = {
   winery: tk("酒庄品鉴"),
-  trip: tk("旅行"),
-  dinner: tk("饭局"),
   home: tk("在家"),
+  dinner: tk("饭局"),
+  trip: tk("旅行"),
 };
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-/** The place field of each kind of list: what it is called and what Google Places looks for first. */
-const PLACE_FIELD: Record<ListKind, { label: string; placeholder: string; kind: PlaceKind } | null> = {
-  winery: { label: tk("酒庄"), placeholder: "Opus One", kind: "winery" },
-  trip: { label: tk("地点"), placeholder: "Napa Valley", kind: "any" },
-  dinner: { label: tk("餐厅"), placeholder: "", kind: "restaurant" },
-  home: null,
+/** The place fields of each kind of list: what the name is called, and what Google looks for first. */
+const PLACE_FIELD: Record<ListKind, { label: string; placeholder: string; kind: PlaceKind; suggest: boolean }> = {
+  winery: { label: tk("酒庄"), placeholder: "Opus One", kind: "winery", suggest: true },
+  home: { label: tk("谁家"), placeholder: tk("例如：我家、小王家"), kind: "any", suggest: false },
+  dinner: { label: tk("餐厅"), placeholder: "The French Laundry", kind: "restaurant", suggest: true },
+  trip: { label: tk("地点"), placeholder: tk("例如：金门公园"), kind: "any", suggest: true },
 };
 
-/** Where the list happens; a home tasting has no place. `onPicked`: a Google Places pick. */
-export function ListPlaceField(props: {
+const NO_PLACE: ListPlace = { name: "", id: null, address: null, lat: null, lng: null };
+
+/**
+ * Where the list happens: a name and an address. Typing a name looks it up on Google Maps (a home's
+ * name does not) and picking one fills the address; the address field always looks up addresses.
+ * Both can be typed by hand when Google has nothing. `onPicked`: a name picked from Google.
+ */
+export function ListPlaceFields(props: {
   kind: ListKind;
   value: ListPlace | null;
   onChange: (p: ListPlace | null) => void;
   onPicked?: (name: string) => void;
 }) {
   const f = PLACE_FIELD[props.kind];
-  if (!f) return null;
+  const v = props.value ?? NO_PLACE;
+  const put = (p: ListPlace) => props.onChange(p.name.trim() || p.address?.trim() ? p : null);
   return (
     <>
       <PlaceInput
         label={t(f.label)}
         kind={f.kind}
-        placeholder={f.placeholder}
-        value={props.value?.name ?? ""}
-        onInput={(name) => props.onChange(name.trim() ? { name, id: null, address: null, lat: null, lng: null } : null)}
+        suggest={f.suggest}
+        placeholder={t(f.placeholder)}
+        value={v.name}
+        onInput={(name) => put({ ...v, name })}
         onPlace={(p) => {
-          props.onChange({ name: p.name, id: p.id, address: p.address || null, lat: p.lat, lng: p.lng });
+          put({ name: p.name || v.name, id: p.id, address: p.address || v.address, lat: p.lat, lng: p.lng });
           props.onPicked?.(p.name);
         }}
       />
-      {props.value?.address ? (
-        <p class="field-hint place-address">{props.value.address}</p>
-      ) : (
-        <p class="field-hint place-address">{t("打几个字，会从 Google 地图联想")}</p>
-      )}
+      <PlaceInput
+        label={t("地址")}
+        kind="address"
+        maxLength={200}
+        placeholder={t("打几个字，会从 Google 地图联想")}
+        value={v.address ?? ""}
+        // A typed address is no longer the place Google found.
+        onInput={(address) => put({ ...v, address, id: null, lat: null, lng: null })}
+        onPlace={(p) => put({ ...v, id: p.id, address: p.address || null, lat: p.lat, lng: p.lng })}
+      />
     </>
   );
 }
 
-/** A list's place as saved: home tastings have none, and a name typed then cleared is none. */
-export const placeFor = (kind: ListKind, p: ListPlace | null): ListPlace | null =>
-  kind === "home" || !p?.name.trim() ? null : { ...p, name: p.name.trim() };
+/** A list's place as saved: trimmed, and none when both fields are empty. */
+export const placeFor = (p: ListPlace | null): ListPlace | null => {
+  const name = p?.name.trim() ?? "";
+  const address = p?.address?.trim() || null;
+  return p && (name || address) ? { ...p, name, address } : null;
+};
 
 export function NewListSheet(props: { onClose: () => void; onCreated: (id: string) => void }) {
   const [title, setTitle] = useState("");
@@ -69,7 +85,7 @@ export function NewListSheet(props: { onClose: () => void; onCreated: (id: strin
   const submit = (e: Event) => {
     e.preventDefault();
     if (!title.trim()) return;
-    const l = newList(title.trim(), kind, date || null, placeFor(kind, place));
+    const l = newList(title.trim(), kind, date || null, placeFor(place));
     props.onCreated(l.id);
   };
   return (
@@ -84,7 +100,7 @@ export function NewListSheet(props: { onClose: () => void; onCreated: (id: strin
             onChange={(v) => v && setKind(v)}
           />
         </Field>
-        <ListPlaceField
+        <ListPlaceFields
           kind={kind}
           value={place}
           onChange={setPlace}
@@ -92,7 +108,7 @@ export function NewListSheet(props: { onClose: () => void; onCreated: (id: strin
             if (!title.trim()) setTitle(name);
           }}
         />
-        <Field label={t("名称")}>
+        <Field label={t("酒单名称")}>
           <input
             value={title}
             maxLength={80}
@@ -151,7 +167,7 @@ export function Home() {
                   <strong class="list-title">{l.title}</strong>
                   <span class="muted small">
                     {t(KIND_NAMES[l.kind])}
-                    {l.place ? ` · ${l.place.name}` : ""}
+                    {l.place ? ` · ${l.place.name || l.place.address}` : ""}
                     {l.startsOn ? ` · ${fmtDate(l.startsOn, false)}` : ""}
                   </span>
                 </div>

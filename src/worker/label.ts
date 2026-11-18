@@ -58,7 +58,7 @@ const PROMPT = `This is a phone photo of a wine bottle's label. Read what the la
 - wine: the wine's own name or cuvée (e.g. "Monte Bello", "Reserve Cabernet Sauvignon"). If the label has no separate name, use the grape or style printed most prominently; if none, repeat the producer.
 - year: the vintage printed on the label, or null when none is visible (also for non-vintage wines).
 - color: red, white, rose, sparkling or dessert, judged from the label's words and the bottle; null if you can't tell.
-- country, region, appellation: as printed or clearly implied by the appellation (e.g. "Oakville" → country "USA", region "Napa Valley", appellation "Oakville"). Empty string when unknown.
+- country, region, appellation: as printed or clearly implied by the appellation. region is the big region (for the USA and Australia, the state); appellation is the most precise appellation on the label (e.g. "Oakville" → country "USA", region "California", appellation "Oakville"; "Pauillac" → country "France", region "Bordeaux", appellation "Pauillac"). Empty string when unknown.
 - grapes: grape varieties printed on the label, in English. Empty array when none.
 - abv: alcohol % as a number if printed, else null.
 - confident: false when the photo is not a wine label, is unreadable, or you are guessing the producer.

@@ -199,9 +199,21 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
       title: l.title,
       kind: l.kind as ListKind,
       startsOn: l.starts_on,
-      place: l.place_name
-        ? { name: l.place_name, id: l.place_id, address: l.place_address, lat: l.place_lat, lng: l.place_lng }
-        : null,
+      // Someone's home address is for the people in the list, not whoever opens a public link.
+      place:
+        member || l.kind !== "home"
+          ? l.place_name || l.place_address
+            ? {
+                name: l.place_name ?? "",
+                id: l.place_id,
+                address: l.place_address,
+                lat: l.place_lat,
+                lng: l.place_lng,
+              }
+            : null
+          : l.place_name
+            ? { name: l.place_name, id: null, address: null, lat: null, lng: null }
+            : null,
       note: l.note,
       ownerName: displayName(l.owner_name, ""),
       visibility: l.visibility as Visibility,

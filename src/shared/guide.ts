@@ -1,5 +1,5 @@
 import { DESCRIPTOR_BY_ID, type Tri } from "./descriptors";
-import { type Appearance, type Lang, type Nose, type Palate, type WineColor, hueFamily } from "./model";
+import { type Appearance, HUES, type Lang, type Nose, type Palate, type WineColor, hueFamily } from "./model";
 
 /**
  * 入门's questions, the words for every scale, and the step that turns answers into a tasting note
@@ -53,6 +53,7 @@ export const HUE_WORDS: Record<string, Tri> = {
   lemon: T("柠檬黄", "檸檬黃", "lemon"),
   gold: T("金黄", "金黃", "gold"),
   amber: T("琥珀", "琥珀", "amber"),
+  brown: T("棕褐", "棕褐", "brown"),
   pink: T("粉红", "粉紅", "pink"),
   salmon: T("三文鱼色", "鮭魚色", "salmon"),
   orange: T("橙红", "橙紅", "orange"),
@@ -70,6 +71,12 @@ export const DEVELOPMENT_WORDS: Record<string, Tri> = {
   developing: T("发展中", "發展中", "developing"),
   developed: T("成熟", "成熟", "fully developed"),
   tired: T("已过巅峰", "已過巔峰", "tired"),
+};
+export const READINESS_WORDS: Record<string, Tri> = {
+  "too-young": T("太年轻", "太年輕", "too young"),
+  "can-age": T("现在能喝，也能再陈", "現在能喝，也能再陳", "can drink now, has potential for ageing"),
+  "drink-now": T("现在喝，不宜再陈", "現在喝，不宜再陳", "drink now: not suitable for ageing"),
+  "too-old": T("太老了", "太老了", "too old"),
 };
 export const TEXTURE_WORDS: Record<string, Tri> = {
   fine: T("细腻", "細緻", "fine-grained"),
@@ -115,6 +122,7 @@ const GLASS: Record<string, [string, string, string]> = {
   lemon: ["#f1e3a0", "#e8d27a", "#dcbf55"],
   gold: ["#e9c86c", "#dcb04a", "#c9952f"],
   amber: ["#d99a45", "#c47f2e", "#a6631d"],
+  brown: ["#8f5a33", "#734424", "#523017"],
   pink: ["#f2b5bd", "#e8919e", "#d96f80"],
   salmon: ["#f3b49a", "#ea9878", "#dc7d5c"],
   orange: ["#eea06a", "#e2854a", "#cc6a32"],
@@ -144,12 +152,7 @@ export function glassColor(color: WineColor, appearance?: Appearance, year?: num
 }
 
 /** The hues offered for this wine, in the order they get older. */
-export const huesFor = (color: WineColor, hue?: string) =>
-  ({
-    red: ["purple", "ruby", "garnet", "tawny"],
-    white: ["lemon-green", "lemon", "gold", "amber"],
-    rose: ["pink", "salmon", "orange"],
-  })[hueFamily(color, hue)];
+export const huesFor = (color: WineColor, hue?: string) => HUES[hueFamily(color, hue)];
 
 export const swatch = (hue: string, depth: 1 | 2 | 3 = 2) => GLASS[hue]?.[depth - 1] ?? "#888";
 
@@ -421,17 +424,23 @@ export function tastingNote(
     const hue = HUE_WORDS[appearance.hue] ? w(HUE_WORDS[appearance.hue]!) : appearance.hue;
     parts.push(lang === "en" ? `${depth ? `${depth} ` : ""}${hue}` : `${depth === "中等" ? "" : depth}${hue}`);
   }
-  const aromas = descriptorIds.map((id) => DESCRIPTOR_BY_ID.get(id)).filter((d) => !!d);
-  if (aromas.length) {
-    const names = aromas.slice(0, 5).map((d) => w(d!.name));
-    const listed =
-      lang === "en"
-        ? names.length > 1
-          ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
-          : names[0]!
-        : names.length > 1
-          ? `${names.slice(0, -1).join("、")}和${names[names.length - 1]}`
-          : names[0]!;
+  const listOf = (ids: readonly string[]) => {
+    const names = ids
+      .map((id) => DESCRIPTOR_BY_ID.get(id))
+      .filter((d) => !!d)
+      .slice(0, 5)
+      .map((d) => w(d!.name));
+    if (!names.length) return "";
+    return lang === "en"
+      ? names.length > 1
+        ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
+        : names[0]!
+      : names.length > 1
+        ? `${names.slice(0, -1).join("、")}和${names[names.length - 1]}`
+        : names[0]!;
+  };
+  const listed = listOf(descriptorIds);
+  if (listed) {
     const strong = nose.intensity && nose.intensity >= 4;
     parts.push(
       lang === "en"
@@ -469,6 +478,8 @@ export function tastingNote(
         : `${lang === "zh-TW" ? "酒體" : "酒体"}${w(BODY_WORDS[palate.body - 1]!)}`,
     );
   level(palate.alcohol, "酒精", "酒精", "alcohol");
+  const flavours = listOf(palate.flavours ?? []);
+  if (flavours) parts.push(lang === "en" ? `flavours of ${flavours.toLowerCase()}` : `口中有${flavours}`);
   if (palate.finish)
     parts.push(
       lang === "en"

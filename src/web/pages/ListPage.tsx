@@ -20,7 +20,7 @@ import {
   useStore,
 } from "../store";
 import { mapsUrl } from "../PlaceInput";
-import { KIND_NAMES, ListPlaceField, placeFor } from "./Home";
+import { KIND_NAMES, ListPlaceFields, placeFor } from "./Home";
 
 /** Opens my note for a wine in a list, starting one at my default depth the first time. */
 export function openTasting(route: (url: string) => void, vintageId: string, itemId: string | null) {
@@ -31,6 +31,8 @@ export function openTasting(route: (url: string) => void, vintageId: string, ite
   saveTasting(x);
   route(`/taste/${x.id}?new=1`);
 }
+
+const BOARD_POLL_MS = 10_000;
 
 export function ListPage() {
   const { params } = useRoute();
@@ -47,18 +49,29 @@ export function ListPage() {
   const [shareError, setShareError] = useState("");
   const syncedAt = useStore((s) => s.syncedAt);
   const me = useStore((s) => s.me);
-  // Everyone's notes come from the server, which applies 盲评; refreshed after each upload.
+  // Everyone's notes come from the server, which applies 盲评; refreshed after each upload, and
+  // every BOARD_POLL_MS while a list with friends in it is on screen, so their notes show up too.
+  const sharedNow =
+    !!list && ((list.members ?? 1) > 1 || list.visibility === "public" || (!!list.ownerId && list.ownerId !== me?.id));
   useEffect(() => {
     if (!list || navigator.onLine === false) return;
     let live = true;
-    fetchBoard(list.id).then(
-      (b) => live && setBoard(b),
-      () => {},
-    );
+    const load = () =>
+      fetchBoard(list.id).then(
+        (b) => live && setBoard(b),
+        () => {},
+      );
+    void load();
+    const poll = sharedNow
+      ? setInterval(() => {
+          if (document.visibilityState === "visible" && navigator.onLine !== false) void load();
+        }, BOARD_POLL_MS)
+      : null;
     return () => {
       live = false;
+      if (poll) clearInterval(poll);
     };
-  }, [list?.id, syncedAt]);
+  }, [list?.id, syncedAt, sharedNow]);
   if (!list)
     return (
       <div class="page">
@@ -99,12 +112,11 @@ export function ListPage() {
           {list.place && (
             <a
               class="small place-link block-link"
-              href={mapsUrl(list.place.name, list.place.id)}
+              href={mapsUrl(list.place.address || list.place.name, list.place.id)}
               target="_blank"
               rel="noreferrer"
             >
-              📍 {list.place.name}
-              {list.place.address ? ` · ${list.place.address}` : ""}
+              📍 {[list.place.name, list.place.address].filter(Boolean).join(" · ")}
             </a>
           )}
         </div>
@@ -287,7 +299,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
       title: title.trim(),
       kind,
       startsOn: date || null,
-      place: placeFor(kind, place),
+      place: placeFor(place),
       note: note.trim() || null,
     });
     props.onClose();
@@ -295,7 +307,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
   return (
     <Sheet title={t("酒单设置")} onClose={props.onClose}>
       <form class="form" onSubmit={submit}>
-        <Field label={t("名称")}>
+        <Field label={t("酒单名称")}>
           <input value={title} maxLength={80} onInput={(e) => setTitle((e.target as HTMLInputElement).value)} />
         </Field>
         <Field label={t("类型")} group>
@@ -307,7 +319,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
             onChange={(v) => v && setKind(v)}
           />
         </Field>
-        <ListPlaceField kind={kind} value={place} onChange={setPlace} />
+        <ListPlaceFields kind={kind} value={place} onChange={setPlace} />
         <Field label={t("日期")}>
           <input type="date" value={date} onInput={(e) => setDate((e.target as HTMLInputElement).value)} />
         </Field>

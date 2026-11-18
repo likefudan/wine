@@ -1,6 +1,7 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { AVA_NAMES, avaOf } from "../../shared/ava";
+import { AVA_NAMES } from "../../shared/ava";
+import { APPELLATION_NAMES, appellationOf, areaOf, tidyPlace } from "../../shared/place";
 import { canonicalGrape } from "../../shared/grapes";
 import { GrapePicker } from "../GrapePicker";
 import { COLOR_WORDS } from "../../shared/guide";
@@ -62,6 +63,15 @@ const EMPTY: Draft = {
   grapes: [],
   abv: "",
 };
+
+/** 国家 / 产区 / 子产区 for the form, each at its own level (src/shared/place.ts). */
+function placeDraft(p: { country: string | null; region: string | null; appellation: string | null }) {
+  const x = tidyPlace(p);
+  return { country: x.country ?? "", region: x.region ?? "", appellation: x.appellation ?? "" };
+}
+
+/** American AVAs, then the appellations of Bordeaux, Burgundy, the Rhône and South Australia. */
+const APPELLATION_LIST = [...AVA_NAMES, ...APPELLATION_NAMES];
 
 /** Shrinks a photo to 1600px on its long side, as a JPEG, base64 (about 300 KB). */
 async function shrink(file: File): Promise<string> {
@@ -177,9 +187,7 @@ export function AddWine() {
         year: rd.year ? String(rd.year) : "",
         nv: !rd.year,
         color: rd.color ?? undefined,
-        region: rd.region,
-        country: rd.country,
-        appellation: rd.appellation,
+        ...placeDraft(rd),
         grapes: rd.grapes.map(canonicalGrape),
         abv: rd.abv ? String(rd.abv) : "",
       });
@@ -206,9 +214,7 @@ export function AddWine() {
       producer: w.producer,
       wine: w.wine === w.producer ? "" : w.wine,
       color: w.color ?? undefined,
-      country: w.country ?? "",
-      region: w.region ?? "",
-      appellation: w.appellation ?? "",
+      ...placeDraft(w),
       // TTB rows sit in the same list with negative ids; only a real LWIN code is kept on the wine.
       lwin: w.lwin > 0 ? w.lwin : null,
     });
@@ -217,7 +223,7 @@ export function AddWine() {
   const fromListPlace = (): Draft => {
     const l = lists.find((x) => x.id === listId);
     const p = l?.kind === "winery" ? l.place : null;
-    if (!p) return EMPTY;
+    if (!p?.name) return EMPTY;
     return {
       ...EMPTY,
       producer: p.name,
@@ -398,17 +404,19 @@ function WineForm(props: {
 }) {
   const [d, setD] = useState<Draft>(props.draft);
   const set = (k: keyof Draft) => (e: Event) => setD({ ...d, [k]: (e.target as HTMLInputElement).value });
-  // Picking an American appellation fills in the region and country if they are empty.
+  // Picking a known appellation fills in the region and country if they are empty (Oakville: California,
+  // USA). The area between them (Napa Valley) is shown under the field, not typed.
   const setAppellation = (e: Event) => {
     const appellation = (e.target as HTMLInputElement).value;
-    const ava = avaOf(appellation);
+    const known = appellationOf(appellation);
     setD((x) => ({
       ...x,
       appellation,
-      region: x.region || ava?.region || "",
-      country: x.country || (ava ? "USA" : ""),
+      region: x.region || known?.region || "",
+      country: x.country || known?.country || "",
     }));
   };
+  const area = areaOf(d.appellation);
   const year = d.nv ? 0 : Number(d.year);
   const yearOk = d.nv || (Number.isInteger(year) && year >= 1900 && year <= new Date().getFullYear() + 1);
   const ok = d.producer.trim() && d.color && yearOk;
@@ -488,20 +496,26 @@ function WineForm(props: {
       </Field>
       <div class="field-row">
         <Field label={t("产区")}>
-          <input value={d.region} maxLength={80} onInput={set("region")} placeholder="Napa Valley" />
+          <input value={d.region} maxLength={80} onInput={set("region")} placeholder="Bordeaux / California" />
         </Field>
         <Field label={t("国家")}>
           <input value={d.country} maxLength={60} onInput={set("country")} placeholder="USA" />
         </Field>
       </div>
       <datalist id="ava-list">
-        {AVA_NAMES.map((n) => (
+        {APPELLATION_LIST.map((n) => (
           <option key={n} value={n} />
         ))}
       </datalist>
-      <div class="field-row">
-        <Field label={t("子产区")}>
-          <input value={d.appellation} maxLength={80} onInput={setAppellation} placeholder="Oakville" list="ava-list" />
+      <div class="field-row top">
+        <Field label={t("子产区")} hint={area ? t("属于 {area}", { area }) : t("酒标上最小的产区")}>
+          <input
+            value={d.appellation}
+            maxLength={80}
+            onInput={setAppellation}
+            placeholder="Pauillac / Oakville"
+            list="ava-list"
+          />
         </Field>
         <Field label={t("酒精度 %")}>
           <input inputMode="decimal" value={d.abv} maxLength={5} onInput={set("abv")} placeholder="14.5" />

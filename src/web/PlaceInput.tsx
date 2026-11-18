@@ -16,8 +16,11 @@ export function PlaceInput(props: {
   label: ComponentChildren;
   value: string;
   placeholder?: string;
+  maxLength?: number;
   /** What to look for first. */
   kind?: PlaceKind;
+  /** false: a plain text field (a home's name). */
+  suggest?: boolean;
   onInput: (v: string) => void;
   onPlace: (p: PlaceDetails) => void;
 }) {
@@ -32,7 +35,7 @@ export function PlaceInput(props: {
 
   useEffect(() => {
     const q = props.value.trim();
-    if (!typed.current || q.length < 3 || !navigator.onLine) {
+    if (!typed.current || props.suggest === false || q.length < 3 || !navigator.onLine) {
       setList([]);
       setSearching(false);
       return;
@@ -65,7 +68,7 @@ export function PlaceInput(props: {
       live = false;
       clearTimeout(timer);
     };
-  }, [props.value, kind]);
+  }, [props.value, kind, props.suggest]);
 
   async function pick(s: PlaceSuggestion) {
     typed.current = false;
@@ -86,7 +89,7 @@ export function PlaceInput(props: {
       </span>
       <input
         value={props.value}
-        maxLength={120}
+        maxLength={props.maxLength ?? 120}
         placeholder={props.placeholder}
         onInput={(e) => {
           typed.current = true;

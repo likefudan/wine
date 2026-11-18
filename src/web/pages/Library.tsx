@@ -3,6 +3,7 @@ import { DESCRIPTOR_BY_ID } from "../../shared/descriptors";
 import { GRAPES } from "../../shared/grapes";
 import { COLOR_WORDS, glassColor } from "../../shared/guide";
 import { COLORS, type Tasting, type VintageInfo, type WineColor, nameKey, yearLabel } from "../../shared/model";
+import { areaOf } from "../../shared/place";
 import { Glass, WineName } from "../components";
 import { fmtDate, p, t } from "../i18n";
 import { useStore } from "../store";
@@ -18,8 +19,8 @@ function haystack(v: VintageInfo, tastings: Tasting[], listTitles: string[]): st
     return known ? [known.en, known.zh, known.tw, ...(known.alt ?? [])] : [g];
   });
   const aromas = tastings.flatMap((x) =>
-    x.descriptors.flatMap((d) => {
-      const w = DESCRIPTOR_BY_ID.get(d.id);
+    [...x.descriptors.map((d) => d.id), ...(x.palate.flavours ?? [])].flatMap((id) => {
+      const w = DESCRIPTOR_BY_ID.get(id);
       return w ? [w.name.zh, w.name.tw, w.name.en] : [];
     }),
   );
@@ -29,6 +30,7 @@ function haystack(v: VintageInfo, tastings: Tasting[], listTitles: string[]): st
       v.wine,
       yearLabel(v.year),
       v.region,
+      areaOf(v.appellation),
       v.appellation,
       v.country,
       ...grapes,

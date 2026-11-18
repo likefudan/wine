@@ -8,6 +8,7 @@ import type { Me } from "../shared/model";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
 import { ConfirmHost } from "./confirm";
+import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
 import { Home } from "./pages/Home";
@@ -26,6 +27,7 @@ import {
   clearLocal,
   clearRejected,
   flush,
+  flushPending,
   getState,
   loadLocal,
   takePendingJoin,
@@ -47,10 +49,15 @@ function Shell() {
   const [boot, setBoot] = useState<Boot>({ state: "loading" });
   const me = useStore((s) => s.me);
   const queue = useStore((s) => s.queue.length);
+  const stuck = useStore((s) => s.stuck);
   const rejected = useStore((s) => s.rejected);
   const [online, setOnline] = useState(navigator.onLine);
   useLang();
   const { path, route } = useLocation();
+  // Leaving a screen sends what was changed on it.
+  useEffect(() => {
+    if (boot.state === "in") flushPending();
+  }, [path]);
 
   useEffect(() => {
     const on = () => setOnline(navigator.onLine);
@@ -140,21 +147,20 @@ function Shell() {
           ? "me"
           : "";
   const fullScreen = path.startsWith("/taste") || path.startsWith("/add");
-  // Every page but the two full-screen ones (tasting, adding a wine) has the brand on top; pages
-  // deeper in add their own back row under it.
   const waiting = usePending();
   return (
     <div class="app">
-      {(!online || queue > 0) && (
+      <PullRefresh enabled={!fullScreen} />
+      {/* Uploading is silent; only no signal, or uploads that keep failing, are worth a line. */}
+      {!online ? (
         <div class="sync-bar" role="status">
-          {!online ? t("没有网络，记录先存在手机上") : null}
-          {queue > 0 ? (
-            <span>
-              {online ? t("正在备份 {n} 条记录…", { n: queue }) : t("{n} 条记录等有网后自动上传", { n: queue })}
-            </span>
-          ) : null}
+          {t("没有网络，记录先存在手机上")}
         </div>
-      )}
+      ) : stuck && queue > 0 ? (
+        <div class="sync-bar" role="status">
+          {t("有 {n} 条记录暂时没能上传，会自动重试", { n: queue })}
+        </div>
+      ) : null}
       {rejected && (
         <div class="sync-bar warn" role="alert">
           <span>{t("有一条修改没能保存：{msg}", { msg: tm(rejected) })}</span>
@@ -163,6 +169,7 @@ function Shell() {
           </button>
         </div>
       )}
+      {/* Every page but the two full-screen ones has the brand on top; deeper pages add a back row. */}
       {!fullScreen && (
         <header class="app-head">
           <a href="/" class="app-brand" aria-label={t("品酒日记")}>

@@ -196,21 +196,28 @@ test("choosing an aroma lights it up in place without moving the words around it
   await page.click("text=开始品鉴");
   await page.click(".depth-tabs >> text=进阶");
 
-  await page.click(".family-name >> text=红色水果");
-  const raspberry = page.locator(".aroma-family .chip >> text=覆盆子");
-  const plum = page.locator(".aroma-family .chip >> text=红李子");
+  const [nose, palate] = [page.locator(".aroma-picker").nth(0), page.locator(".aroma-picker").nth(1)];
+  const raspberry = nose.locator(".aroma-family .chip >> text=覆盆子");
+  const plum = nose.locator(".aroma-family .chip >> text=红李子");
   // Page coordinates, not viewport ones: the tap may scroll the chip into view.
   const where = () => plum.evaluate((e) => [e.getBoundingClientRect().left, e.getBoundingClientRect().top + scrollY]);
   const before = await where();
   await raspberry.click();
   await expect(raspberry).toHaveAttribute("aria-pressed", "true");
   expect(await where()).toEqual(before);
-  await expect(page.locator(".family-name", { hasText: "红色水果" }).locator(".family-count")).toHaveText("1");
-  await expect(page.locator(".aroma-chosen .chip")).toHaveText(["覆盆子"]);
+  await expect(nose.locator(".family-name", { hasText: "红色水果" }).locator(".family-count")).toHaveText("1");
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["覆盆子"]);
   await plum.click();
-  await expect(page.locator(".aroma-chosen .chip")).toHaveText(["覆盆子", "红李子"]);
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["覆盆子", "红李子"]);
   // Tapping it again in place takes it out.
   await raspberry.click();
   await expect(raspberry).toHaveAttribute("aria-pressed", "false");
-  await expect(page.locator(".aroma-chosen .chip")).toHaveText(["红李子"]);
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["红李子"]);
+
+  // The palate's flavours use the same words, and can start from what the nose found.
+  await page.click("text=和闻到的一样");
+  await expect(palate.locator(".aroma-chosen .chip")).toHaveText(["红李子"]);
+  await palate.locator(".aroma-family .chip >> text=黑樱桃").click();
+  await expect(palate.locator(".aroma-chosen .chip")).toHaveText(["红李子", "黑樱桃"]);
+  await expect(page.locator(".tasting-note p")).toContainText("口中有红李子和黑樱桃");
 });
