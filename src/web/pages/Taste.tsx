@@ -46,6 +46,8 @@ import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe
 import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { TastingPlace } from "../TastingPlace";
 import { BoughtToCellar, TastingFromCellar } from "./Cellar";
+import { BlindResult, GuessCard, blindShown } from "../Blind";
+import { isBlindId } from "../../shared/blind";
 
 /**
  * 品鉴: one sheet, four depths over the same fields (docs/design.zh.md §3.3, §3.4). Switching depth
@@ -67,6 +69,10 @@ export function Taste() {
   const vintage = useStore((s) => (saved ? s.vintages.find((v) => v.id === saved.vintageId) : undefined));
   const defaultDepth = useStore((s) => s.me?.depth ?? "quick");
   /** The tasting (酒单) this note belongs to, named at the top so it is clear which series it is in. */
+  /** 盲品 in a 品鉴: the price is on the glass. */
+  const itemPrice = useStore((s) =>
+    saved?.listItemId ? (s.items.find((i) => i.id === saved.listItemId)?.priceUsd ?? null) : null,
+  );
   const list = useStore((s) => {
     const item = saved?.listItemId ? s.items.find((i) => i.id === saved.listItemId) : undefined;
     return item ? s.lists.find((l) => l.id === item.listId) : undefined;
@@ -75,7 +81,7 @@ export function Taste() {
   const prevVintage = useStore((s) =>
     prevTasting ? s.vintages.find((v) => v.id === prevTasting.vintageId) : undefined,
   );
-  const prev: Prev | null = prevTasting ? { t: prevTasting, v: prevVintage } : null;
+  const prev: Prev | null = prevTasting ? { t: prevTasting, v: blindShown(prevTasting, prevVintage) } : null;
   const [x, setX] = useState<Tasting | undefined>(saved);
   const [switches, setSwitches] = useState(0);
   const [offer, setOffer] = useState<Depth | null>(null);
@@ -100,7 +106,10 @@ export function Taste() {
     [],
   );
 
-  if (!x || !vintage)
+  /** 盲品 before its answer: the forms get a stand-in with the colour seen in the glass. */
+  const v = x ? blindShown(x, vintage) : undefined;
+  const blindOpen = !!x && isBlindId(x.vintageId);
+  if (!x || !v)
     return (
       <div class="page">
         <p class="empty">{t("找不到这条记录")}</p>
@@ -150,8 +159,8 @@ export function Taste() {
           <BackIcon />
         </button>
         <div class="page-head-title taste-wine">
-          <Glass color={glassColor(vintage.color, x.appearance, vintage.year)} size={30} />
-          <WineName v={vintage} sub={false} />
+          <Glass color={glassColor(v.color, x.appearance, v.year)} size={30} />
+          <WineName v={v} sub={blindOpen} />
         </div>
         <button type="button" class="button primary small" onClick={done}>
           {t("完成")}
@@ -189,15 +198,33 @@ export function Taste() {
           </button>
         </div>
       )}
+      {x.blind && !blindOpen && <BlindResult x={x} v={v} priceUsd={itemPrice} />}
       <TastingPlace id={x.id} fresh={query.new === "1"} />
-      {saved && <TastingFromCellar x={saved} fresh={query.new === "1"} />}
-      {depth === "quick" && <Quick x={x} v={vintage} patch={patch} />}
-      {depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} prev={prev} />}
-      {depth === "standard" && <Systematic x={x} v={vintage} patch={patch} prev={prev} />}
+      {saved && !blindOpen && <TastingFromCellar x={saved} fresh={query.new === "1"} />}
+      {depth === "quick" && <Quick x={x} v={v} patch={patch} />}
+      {depth === "beginner" && <Beginner x={x} v={v} patch={patch} fresh={query.new === "1"} prev={prev} />}
+      {depth === "standard" && <Systematic x={x} v={v} patch={patch} prev={prev} />}
+      {blindOpen && <GuessCard x={x} color={v.color} onChange={(guesses) => patch({ guesses })} />}
       <div class="taste-foot">
-        <button type="button" class="button block" onClick={() => setSharing(true)}>
-          <ShareIcon /> {t("生成分享图")}
-        </button>
+        {blindOpen ? (
+          <a
+            class="button primary block"
+            href={list ? `/answers/${list.id}` : `/add?answer=${x.id}`}
+            onClick={() => {
+              if (timer.current) {
+                clearTimeout(timer.current);
+                timer.current = null;
+                saveTasting(x);
+              }
+            }}
+          >
+            {t("对答案")}
+          </a>
+        ) : (
+          <button type="button" class="button block" onClick={() => setSharing(true)}>
+            <ShareIcon /> {t("生成分享图")}
+          </button>
+        )}
         <button
           type="button"
           class="link danger small"
@@ -218,7 +245,7 @@ export function Taste() {
           {t("删除这条记录")}
         </button>
       </div>
-      {sharing && (
+      {sharing && vintage && (
         <TastingShareSheet
           v={vintage}
           x={x}
@@ -233,7 +260,7 @@ export function Taste() {
 /** Back to the list the wine is in, else the wine's page in the library. */
 function backOf(x: Tasting): string {
   const listId = x.listItemId ? getState().items.find((i) => i.id === x.listItemId)?.listId : undefined;
-  return listId ? `/lists/${listId}` : `/wine/${x.vintageId}`;
+  return listId ? `/lists/${listId}` : isBlindId(x.vintageId) ? "/" : `/wine/${x.vintageId}`;
 }
 
 // ── Shared pieces ────────────────────────────────────────────────────────────────────────────
@@ -294,7 +321,7 @@ function Conclusion(props: { x: Tasting; patch: Patch; standard?: boolean }) {
               />
             </Field>
           </div>
-          <BoughtToCellar x={x} />
+          {!isBlindId(x.vintageId) && <BoughtToCellar x={x} />}
         </>
       )}
       <NoteField x={x} patch={patch} rows={props.standard ? 5 : 2} />

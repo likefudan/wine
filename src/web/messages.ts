@@ -1,6 +1,7 @@
 // Translations for every page text, keyed by the Simplified Chinese in the code (test/i18n.test.ts
 // checks none is missing). zh-TW uses Taiwan phrasing (登入, 網路, 品飲), not a character swap.
 
+import { BLIND_MESSAGES } from "./messages-blind";
 import { CELLAR_MESSAGES } from "./messages-cellar";
 import { COST_MESSAGES } from "./messages-costs";
 import { FRIEND_MESSAGES } from "./messages-friends";
@@ -12,6 +13,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   ...CELLAR_MESSAGES,
   ...COST_MESSAGES,
   ...FRIEND_MESSAGES,
+  ...BLIND_MESSAGES,
   ...PROFILE_MESSAGES,
   ...RECS_MESSAGES,
   ...REVIEW_MESSAGES,

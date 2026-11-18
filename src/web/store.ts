@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import { BLIND, type BlindInfo, nextLabel } from "../shared/blind";
 import { type CellarLot, DEFAULT_SIZE, type ProWindow } from "../shared/cellar";
 import type { ProScore } from "../shared/taste";
 import { tidyPlace } from "../shared/place";
@@ -427,7 +428,7 @@ export function deleteList(id: string) {
   enqueue({ op: "deleteList", id }, shared);
 }
 
-export function addItem(listId: string, vintageId: string): ListItem {
+export function addItem(listId: string, vintageId: string, blind: BlindInfo | null = null): ListItem {
   const position = Math.max(-1, ...state.items.filter((i) => i.listId === listId).map((i) => i.position)) + 1;
   const item: ListItem = {
     id: ulid(),
@@ -436,6 +437,8 @@ export function addItem(listId: string, vintageId: string): ListItem {
     position,
     priceUsd: null,
     createdAt: new Date().toISOString(),
+    blind,
+    answerVintageId: null,
   };
   set({ items: [...state.items, item] });
   enqueue({ op: "putItem", item });
@@ -496,6 +499,7 @@ export function saveTasting(t: Tasting) {
   // A page that does not deal with the place (location undefined) keeps the one found meanwhile.
   if (next.location === undefined) next.location = old?.location;
   if (next.cellarId === undefined) next.cellarId = old?.cellarId;
+  if (next.blind === undefined) next.blind = old?.blind;
   const exists = !!old;
   set({ tastings: exists ? state.tastings.map((x) => (x.id === t.id ? next : x)) : [next, ...state.tastings] });
   enqueue({ op: "putTasting", tasting: next });
@@ -507,6 +511,52 @@ export function deleteTasting(id: string, putBack = false) {
   const shared = isSharedList(state.items.find((i) => i.id === itemId)?.listId);
   set({ tastings: state.tastings.filter((t) => t.id !== id) });
   enqueue({ op: "deleteTasting", id }, shared);
+}
+
+// ── 盲品 (src/shared/blind.ts) ─────────────────────────────────────────────────────────────────
+
+/** The next #n: among the 品鉴's glasses, or among my glasses on their own still waiting for 对答案. */
+export function nextBlindLabel(listId: string | null): string {
+  const used = listId
+    ? state.items.filter((i) => i.listId === listId && i.blind).map((i) => i.blind!.label)
+    : state.tastings.filter((x) => !x.listItemId && x.blind && x.vintageId === BLIND).map((x) => x.blind!.label);
+  return nextLabel(used);
+}
+
+/** 盲品: a glass with no wine yet, in a 品鉴 (the host's) or on its own. Returns my note on it. */
+export function startBlind(listId: string | null, blind: BlindInfo): Tasting {
+  const item = listId ? addItem(listId, BLIND, blind) : null;
+  const x = { ...blankTasting(BLIND, item?.id ?? null, state.me?.depth ?? "quick"), blind };
+  saveTasting(x);
+  return x;
+}
+
+/** 对答案 for a glass on its own: the note now belongs to that wine. */
+export function answerTasting(id: string, vintageId: string) {
+  const x = state.tastings.find((t) => t.id === id);
+  if (x) saveTasting({ ...x, vintageId });
+}
+
+/**
+ * 对答案 for a glass in a 品鉴 (the host). With `reveal` (alone, or after 揭晓) the glass and every note
+ * on it become that wine at once; otherwise the answer waits, seen by the host only, for 揭晓.
+ */
+export function answerItem(itemId: string, vintageId: string | null, reveal: boolean) {
+  const item = state.items.find((i) => i.id === itemId);
+  if (!item?.blind) return;
+  const next: ListItem = {
+    ...item,
+    answerVintageId: vintageId,
+    vintageId: reveal && vintageId ? vintageId : item.vintageId,
+  };
+  set({
+    items: state.items.map((i) => (i.id === itemId ? next : i)),
+    tastings:
+      reveal && vintageId
+        ? state.tastings.map((t) => (t.listItemId === itemId ? { ...t, vintageId } : t))
+        : state.tastings,
+  });
+  enqueue({ op: "putItem", item: next }, isSharedList(item.listId));
 }
 
 // ── 酒窖 ──────────────────────────────────────────────────────────────────────────────────────
@@ -647,6 +697,8 @@ export async function shareList(
   // 揭晓 and the switches act on what everyone has sent, mine included: send it first.
   if (state.queue.length) await flush();
   const b = await api<Board>(`/api/lists/${listId}/share`, { body: change });
+  // 揭晓 gave the 盲品 glasses their wines: fetch them.
+  if (change.revealed) void flush();
   set({
     lists: state.lists.map((l) =>
       l.id === listId

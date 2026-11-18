@@ -1,3 +1,5 @@
+import { blindVintage, isBlindId } from "../../shared/blind";
+import { blindShown } from "../Blind";
 import { useLocation } from "preact-iso";
 import { CellarAlertCard } from "../CellarAlerts";
 import { useState } from "preact/hooks";
@@ -193,7 +195,7 @@ export function Home() {
                 <div class="glass-row">
                   {its.length === 0 && <span class="muted small">{t("还没有酒")}</span>}
                   {its.slice(0, 12).map((i) => {
-                    const v = vById.get(i.vintageId);
+                    const v = vById.get(i.vintageId) ?? (i.blind ? blindVintage(i.blind) : undefined);
                     const mine = tastings.find((x) => x.listItemId === i.id);
                     return v ? (
                       <Glass key={i.id} color={glassColor(v.color, mine?.appearance, v.year)} size={22} />
@@ -211,14 +213,15 @@ export function Home() {
           <h2 class="section-title">{t("单独记的酒")}</h2>
           <ul class="rows">
             {loose.map((x) => {
-              const v = vById.get(x.vintageId);
+              const v = blindShown(x, vById.get(x.vintageId));
               if (!v) return null;
+              const waiting = isBlindId(x.vintageId);
               return (
                 <li key={x.id}>
                   <a class="row" href={`/taste/${x.id}`}>
                     <Glass color={glassColor(v.color, x.appearance, v.year)} />
-                    <WineName v={v} sub={false} />
-                    <span class="row-score num">{x.score ?? "—"}</span>
+                    <WineName v={v} sub={waiting} />
+                    <span class="row-score num">{waiting ? t("待对答案") : (x.score ?? "—")}</span>
                   </a>
                 </li>
               );
