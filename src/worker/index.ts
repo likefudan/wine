@@ -6,6 +6,7 @@ import { HttpError } from "./http";
 import { costRoutes } from "./costs";
 import { aiEnabled, labelRoutes } from "./label";
 import { profileRoutes } from "./profile";
+import { recsRoutes } from "./recs";
 import { placesRoutes } from "./places";
 import { friendRoutes } from "./friends";
 import { proseRoutes } from "./prose";
@@ -45,6 +46,7 @@ app.route("/api", sharingRoutes);
 app.route("/api", friendRoutes);
 app.route("/api", reviewRoutes);
 app.route("/api", profileRoutes);
+app.route("/api", recsRoutes);
 app.all("/api/*", (c) => c.json({ error: "not_found", message: "Not found" }, 404));
 
 /**

@@ -73,7 +73,7 @@ describe("盲品 scoring", () => {
   });
 });
 
-// test/setup.ts wipes every table before each test: put back the placeholder wine migration 0015 adds.
+// test/setup.ts wipes every table before each test: put back the placeholder wine migration 0016 adds.
 beforeEach(async () => {
   const m = (env.TEST_MIGRATIONS as { name: string; queries: string[] }[]).find((x) => x.name.includes("blind"))!;
   await env.DB.batch(m.queries.filter((q) => q.includes("INSERT OR IGNORE")).map((q) => env.DB.prepare(q)));

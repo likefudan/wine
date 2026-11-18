@@ -1,5 +1,5 @@
 /**
- * 盲品 (docs/design.zh.md §11): a glass tasted without knowing the wine. It is called by a label (#3)
+ * 盲品 (docs/design.zh.md §12): a glass tasted without knowing the wine. It is called by a label (#3)
  * and the colour seen in it; at the end the real wine is filled in (对答案) and the guesses are scored.
  *
  * Until then the tasting, and in a 品鉴 its list item, points at BLIND, a placeholder vintage that
@@ -9,7 +9,7 @@ import { canonicalGrape } from "./grapes";
 import { COLORS, type Guesses, type VintageInfo, type WineColor, nameKey } from "./model";
 import { areaNamed, countryOfRegion, normalCountry, tidyPlace } from "./place";
 
-/** The placeholder vintage of a glass whose wine is not known yet (migrations/0015_blind_tasting.sql). */
+/** The placeholder vintage of a glass whose wine is not known yet (migrations/0016_blind_tasting.sql). */
 export const BLIND = "00000000000000000000000000";
 export const isBlindId = (vintageId: string | null | undefined) => vintageId === BLIND;
 

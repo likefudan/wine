@@ -3,6 +3,7 @@ import { type CellarLot, MAX_QTY, type ProWindow, isCurrency, parseWindow } from
 import { BLIND, cleanBlind } from "../shared/blind";
 import { isDescriptorId } from "../shared/descriptors";
 import { tidyPlace } from "../shared/place";
+import { type ProScore, criticAverage } from "../shared/taste";
 import {
   COLORS,
   toDepth,
@@ -170,7 +171,7 @@ const cellarLot = (r: CellarRow): CellarLot => ({
 
 export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
   const db = env.DB;
-  const [lists, items, tastings, descriptors, cellar, windows] = await db.batch([
+  const [lists, items, tastings, descriptors, cellar, windows, scores] = await db.batch([
     db
       .prepare(
         `SELECT l.*, (SELECT COUNT(*) FROM list_members x WHERE x.list_id = l.id) AS member_count
@@ -200,6 +201,14 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
            (SELECT json_extract(i.data, '$.drinkWindow') FROM pro_review_imports i WHERE i.vintage_id = c.vintage_id AND i.user_id = ?1)
          ) AS window
          FROM (SELECT DISTINCT vintage_id FROM cellar WHERE user_id = ?1) c`,
+      )
+      .bind(user.id),
+    // 推荐: the critics' scores on what I have tasted or keep, for 我与评论家 (src/shared/taste.ts).
+    db
+      .prepare(
+        `SELECT r.vintage_id, json_extract(r.data, '$.critics') AS critics, json_extract(r.data, '$.community.avg') AS community
+         FROM pro_reviews r WHERE r.status = 'done' AND r.data IS NOT NULL AND r.vintage_id IN (
+           SELECT vintage_id FROM tastings WHERE user_id = ?1 UNION SELECT vintage_id FROM cellar WHERE user_id = ?1)`,
       )
       .bind(user.id),
   ]);
@@ -292,6 +301,14 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
       const w = parseWindow(r.window);
       return w && r.window ? [{ vintageId: r.vintage_id, ...w, text: r.window }] : [];
     }),
+    proScores: (scores!.results as { vintage_id: string; critics: string | null; community: number | null }[]).flatMap(
+      (r): ProScore[] => {
+        const list = parse<unknown>(r.critics);
+        const critic = Array.isArray(list) ? criticAverage(list.filter((x) => typeof x?.score === "string")) : null;
+        const community = typeof r.community === "number" ? r.community : null;
+        return critic !== null || community !== null ? [{ vintageId: r.vintage_id, critic, community }] : [];
+      },
+    ),
   };
 }
 

@@ -7,7 +7,7 @@ export const DEPTH_INFO: Record<Depth, { name: string; who: string; time: string
   beginner: { name: tk("入门"), who: tk("第一次认真品酒：大白话提问，边喝边学"), time: tk("约 1 分钟") },
   standard: {
     name: tk("进阶"),
-    who: tk("想建立体系：完整的 WSET 品鉴表，加缺陷和侍酒条件"),
+    who: tk("想建立体系：按 WSET 三级品鉴表，外加适饮期判断"),
     time: tk("3–5 分钟"),
   },
 };

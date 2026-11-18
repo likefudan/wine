@@ -33,7 +33,7 @@ import {
 } from "./store";
 
 /**
- * 盲品 (docs/design.zh.md §11): start a glass without its wine (BlindStart), guess at the end of the
+ * 盲品 (docs/design.zh.md §12): start a glass without its wine (BlindStart), guess at the end of the
  * tasting (GuessCard), then fill in the real wine and see how close the guesses came (AnswersPage,
  * BlindResult). The scoring is src/shared/blind.ts.
  */

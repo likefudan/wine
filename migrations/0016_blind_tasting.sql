@@ -1,4 +1,4 @@
--- 盲品 (docs/design.zh.md §11): a glass tasted before anyone knows which wine it is. Until the answer is in,
+-- 盲品 (docs/design.zh.md §12): a glass tasted before anyone knows which wine it is. Until the answer is in,
 -- the tasting (and, in a 品鉴, its list item) points at this one placeholder vintage, so vintage_id stays
 -- NOT NULL everywhere. Its names are empty so the catalogue search never finds it.
 INSERT OR IGNORE INTO producers (id, name, name_key, created_at)

@@ -11,6 +11,7 @@ import { CellarIcon, GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
 import { ConfirmHost } from "./confirm";
 import { FriendsPage } from "./Friends";
+import { RecsPage } from "./pages/Recs";
 import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
@@ -204,6 +205,7 @@ function Shell() {
           <Route path="/cellar/:id" component={CellarLotPage} />
           <Route path="/me" component={MePage} />
           <Route path="/friends" component={FriendsPage} />
+          <Route path="/recs" component={RecsPage} />
           <Route default component={Home} />
         </Router>
       </main>
