@@ -774,6 +774,34 @@ h3 {
   font-size: 18px;
 }
 
+/* Our own confirm box (confirm.tsx) */
+.confirm-backdrop {
+  z-index: 60;
+  align-items: center;
+  padding: 16px;
+}
+.confirm {
+  width: 100%;
+  max-width: 360px;
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 20px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.confirm p {
+  margin: 0;
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+.confirm-actions .button {
+  flex: 1;
+}
+
 /* Login and welcome */
 .login,
 .welcome {
@@ -983,6 +1011,9 @@ h3 {
 .taste-foot {
   display: flex;
   justify-content: center;
+  /* Keep the last button clear of the bottom edge: on iPhone Safari a tap there only brings back
+     the toolbar, and in a home-screen app it sits under the home indicator. */
+  padding-bottom: calc(48px + env(safe-area-inset-bottom));
 }
 .finish-timer {
   display: flex;

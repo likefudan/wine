@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
 import { Choice, Field } from "../components";
 import { LangSwitch } from "../LangSwitch";
+import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { fmtDate, t, tm } from "../i18n";
 import { ApiError, api, clearLocal, flush, getState, updateMe, useStore } from "../store";
@@ -34,7 +35,7 @@ export function MePage() {
   const [theme, setT] = useState<Theme>(savedTheme());
   const [syncing, setSyncing] = useState(false);
   const logout = async () => {
-    if (getState().queue.length && !confirm(t("还有记录没备份到云端，退出后会丢失。确定退出？"))) return;
+    if (getState().queue.length && !(await ask(t("还有记录没备份到云端，退出后会丢失。确定退出？")))) return;
     try {
       await api("/api/auth/logout", { body: {} });
     } catch {
@@ -237,7 +238,7 @@ function Members() {
               <button
                 type="button"
                 class="link danger small"
-                onClick={() => confirm(t("停用后对方不能再登录。确定？")) && setStatus(m.id, "disabled")}
+                onClick={async () => (await ask(t("停用后对方不能再登录。确定？"))) && setStatus(m.id, "disabled")}
               >
                 {t("停用")}
               </button>

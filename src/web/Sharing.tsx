@@ -4,6 +4,7 @@ import { glassColor, tastingNote } from "../shared/guide";
 import type { Board, BoardItem, BoardNote, Visibility } from "../shared/model";
 import { RING_PATH } from "./Logo";
 import { Choice, Field, Glass, Sheet, WineName } from "./components";
+import { ask } from "./confirm";
 import { DEPTH_INFO } from "./depths";
 import { currentLang, fmtDate, p, t, tm } from "./i18n";
 import { ApiError, getState, removeMember, shareList } from "./store";
@@ -75,13 +76,14 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
       setBusy(false);
     }
   };
-  const setVisibility = (v: Visibility) => {
+  const setVisibility = async (v: Visibility) => {
     if (v === b.list.visibility) return;
     if (
       v === "public" &&
-      !confirm(
+      !(await ask(
         t("公开后，拿到链接的人不用登录就能看到酒单里的酒和成员的名字；揭晓后还能看到大家的评分和笔记。确定公开？"),
-      )
+        { danger: false },
+      ))
     )
       return;
     void change({ visibility: v });
@@ -190,7 +192,9 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
               type="button"
               class="link small"
               disabled={busy}
-              onClick={() => confirm(t("换一个二维码？旧的二维码和链接会立即失效。")) && void change({ newKey: true })}
+              onClick={async () =>
+                (await ask(t("换一个二维码？旧的二维码和链接会立即失效。"))) && void change({ newKey: true })
+              }
             >
               {t("换一个二维码")}
             </button>
@@ -217,7 +221,8 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
                   type="button"
                   class="link danger small"
                   onClick={async () => {
-                    if (!confirm(t("把 {name} 移出酒单？TA 的笔记会留在 TA 自己的酒库里。", { name: m.name }))) return;
+                    if (!(await ask(t("把 {name} 移出酒单？TA 的笔记会留在 TA 自己的酒库里。", { name: m.name }))))
+                      return;
                     try {
                       props.onChange(await removeMember(b.list.id, m.id));
                     } catch (e) {
