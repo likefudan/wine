@@ -1713,3 +1713,10 @@ html.standalone body {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* 我的 → 通用 → 导出 */
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

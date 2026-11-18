@@ -1,11 +1,12 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
+import { exportName, toCsv, toJson } from "../../shared/export";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
 import { Choice, Field } from "../components";
 import { LangSwitch } from "../LangSwitch";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
-import { fmtDate, t, tm } from "../i18n";
+import { currentLang, fmtDate, t, tm } from "../i18n";
 import { ApiError, api, clearLocal, flush, getState, updateMe, useStore } from "../store";
 import { type Theme, savedTheme, setTheme } from "../theme";
 
@@ -206,6 +207,7 @@ export function MePage() {
               </button>
             )}
           </section>
+          <ExportData />
           <button type="button" class="button danger block" onClick={logout}>
             {t("退出登录")}
           </button>
@@ -213,6 +215,64 @@ export function MePage() {
       )}
       {tab === "members" && <Members />}
     </div>
+  );
+}
+
+/**
+ * 导出 (docs/design.zh.md §3.7): CSV for a spreadsheet, JSON for the whole copy. Made from the phone's
+ * own copy, so it works offline. On a phone the share sheet offers 存储到“文件”, AirDrop, WeChat…;
+ * elsewhere it downloads.
+ */
+function ExportData() {
+  const count = useStore((s) => s.tastings.length);
+  const [error, setError] = useState<string | null>(null);
+  const save = async (ext: "csv" | "json") => {
+    setError(null);
+    const s = getState();
+    const data = { lists: s.lists, items: s.items, vintages: s.vintages, tastings: s.tastings };
+    const text = ext === "csv" ? toCsv(data, currentLang()) : toJson(data);
+    const type = ext === "csv" ? "text/csv" : "application/json";
+    const name = exportName(ext);
+    const file = new File([text], name, { type });
+    const touch = matchMedia("(pointer: coarse)").matches;
+    if (touch && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: name });
+        return;
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        // share sheet refused: fall back to a download
+      }
+    }
+    try {
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch {
+      setError(t("这个浏览器不支持下载，请换用 Safari 或 Chrome 打开"));
+    }
+  };
+  return (
+    <section class="group">
+      <h2 class="group-title">{t("导出我的数据")}</h2>
+      <p class="small muted">
+        {t("数据永远是你自己的。CSV 可以用 Excel、Numbers 打开，一行一条笔记；JSON 是完整备份。")}
+      </p>
+      <div class="button-row">
+        <button type="button" class="button" disabled={count === 0} onClick={() => save("csv")}>
+          {t("导出 CSV")}
+        </button>
+        <button type="button" class="button" disabled={count === 0} onClick={() => save("json")}>
+          {t("导出 JSON")}
+        </button>
+      </div>
+      {error && <p class="notice">{error}</p>}
+    </section>
   );
 }
 

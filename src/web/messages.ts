@@ -25,6 +25,17 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "有 {n} 筆修改在手機上，稍後自動上傳",
     en: "{n} changes are on this phone; they'll upload shortly",
   },
+  导出我的数据: { tw: "匯出我的資料", en: "Export my data" },
+  "数据永远是你自己的。CSV 可以用 Excel、Numbers 打开，一行一条笔记；JSON 是完整备份。": {
+    tw: "資料永遠是你自己的。CSV 可以用 Excel、Numbers 開啟，一列一筆筆記；JSON 是完整備份。",
+    en: "Your data is always yours. CSV opens in Excel or Numbers, one row per note; JSON is a complete backup.",
+  },
+  "导出 CSV": { tw: "匯出 CSV", en: "Export CSV" },
+  "导出 JSON": { tw: "匯出 JSON", en: "Export JSON" },
+  "这个浏览器不支持下载，请换用 Safari 或 Chrome 打开": {
+    tw: "這個瀏覽器不支援下載，請改用 Safari 或 Chrome 開啟",
+    en: "This browser can't download files; please open the app in Safari or Chrome",
+  },
   离线与备份: { tw: "離線與備份", en: "Offline & backup" },
   "记录先存在这部手机上，有网时自动备份到云端。在酒庄没信号也能照常记，有网后会自动补传，不用手动操作。": {
     tw: "紀錄先存在這支手機上，有網路時自動備份到雲端。在酒莊沒訊號也能照常記，有網路後會自動補傳，不用手動操作。",
