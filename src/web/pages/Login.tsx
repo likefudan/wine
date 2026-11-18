@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import type { Me } from "../../shared/model";
 import { LangSwitch } from "../LangSwitch";
+import { Logo } from "../Logo";
 import { t, tk } from "../i18n";
 import { api } from "../store";
 
@@ -41,7 +42,10 @@ export function Login(props: { session: { google: boolean; dev: boolean; me: Me 
             />
           ))}
         </div>
-        <h1 class="brand">{t("品酒日记")}</h1>
+        <div class="lockup">
+          <Logo size={56} />
+          <h1 class="brand">{t("品酒日记")}</h1>
+        </div>
         <p class="lead">{t("在酒庄 30 秒记下一款酒，回家后变成可搜索的个人酒库。不懂品酒术语也能上手。")}</p>
       </div>
       {error && ERRORS[error] && (

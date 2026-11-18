@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../shared/descriptors";
 import { glassColor, tastingNote } from "../shared/guide";
 import type { Board, BoardItem, BoardNote, Visibility } from "../shared/model";
+import { RING_PATH } from "./Logo";
 import { Choice, Field, Glass, Sheet, WineName } from "./components";
 import { DEPTH_INFO } from "./depths";
 import { currentLang, fmtDate, p, t, tm } from "./i18n";
@@ -379,9 +380,10 @@ export async function drawListCard(b: Board): Promise<string> {
   ctx.fillRect(0, 0, W, H);
 
   ctx.textAlign = "left";
+  drawLogo(ctx, 76, 70, 52, "#d1ad6c");
   ctx.fillStyle = "#d1ad6c";
   ctx.font = `600 34px ${sans}`;
-  ctx.fillText(t("品酒日记"), 80, 110);
+  ctx.fillText(t("品酒日记"), 140, 110);
   ctx.fillStyle = "#fff7f2";
   ctx.font = `600 76px ${serif}`;
   ctx.fillText(fit(ctx, b.list.title, W - 160), 80, 210);
@@ -457,6 +459,29 @@ export async function drawListCard(b: Board): Promise<string> {
   ctx.font = `400 28px ${sans}`;
   ctx.fillText(location.host, 420, qy + 160);
   return canvas.toDataURL("image/png");
+}
+
+/** The 杯痕 logo (see Logo.tsx) at (x, y), `size` px square. */
+function drawLogo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const ring = new Path2D(RING_PATH);
+  const ghost = new Path2D();
+  // GHOST_TRANSFORM as a matrix: translate(6.5 -5.5) rotate(140 32 32), then scale(.93) about the centre.
+  ghost.addPath(
+    ring,
+    new DOMMatrix().translate(6.5, -5.5).translate(32, 32).rotate(140).scale(0.93).translate(-32, -32),
+  );
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(size / 64, size / 64);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.22;
+  ctx.fill(ghost, "evenodd");
+  ctx.globalAlpha = 0.88;
+  ctx.fill(ring, "evenodd");
+  ctx.beginPath();
+  ctx.ellipse(54.5, 54, 2.3, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawGlass(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string) {

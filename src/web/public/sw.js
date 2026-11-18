@@ -1,12 +1,12 @@
 // 离线也能打开 (docs/design.zh.md §2): keeps the app's page and code so it opens with no signal.
 // The notes themselves live in IndexedDB (store.ts), never here; /api is never cached.
-const CACHE = "shell-v1";
+const CACHE = "shell-v2";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
     caches
       .open(CACHE)
-      .then((c) => c.addAll(["/", "/icon.svg", "/manifest.webmanifest"]))
+      .then((c) => c.addAll(["/", "/icon.svg", "/favicon.svg", "/manifest.webmanifest"]))
       .then(() => self.skipWaiting()),
   );
 });

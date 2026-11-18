@@ -3,6 +3,7 @@ import { useEffect, useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import type { Board } from "../../shared/model";
 import { LangSwitch } from "../LangSwitch";
+import { Logo } from "../Logo";
 import { EveryoneSheet, Initial } from "../Sharing";
 import { Glass, WineName } from "../components";
 import { fmtDate, t, tm } from "../i18n";
@@ -50,7 +51,10 @@ export function JoinPage(props: { signedIn: boolean }) {
     return (
       <div class="page join">
         {head}
-        <h1 class="brand">{t("品酒日记")}</h1>
+        <div class="lockup">
+          <Logo size={44} />
+          <h1 class="brand">{t("品酒日记")}</h1>
+        </div>
         <p class="notice" role="alert">
           {error}
         </p>
