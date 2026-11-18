@@ -478,3 +478,30 @@ export const clampText = (v: unknown, max: number): string | null => {
   const s = v.trim();
   return s ? s.slice(0, max) : null;
 };
+
+/**
+ * 朋友动态 (GET /api/friends): a note handed in by someone I share a 品鉴 with, on a wine in that
+ * 品鉴. Only what the list's board would show me: while 盲评 hides it (`open` false) the score,
+ * aromas and words stay on the server. Where it was tasted is never sent.
+ */
+export interface FriendNote {
+  id: string;
+  list: { id: string; title: string };
+  itemId: string;
+  vintage: VintageInfo;
+  user: { id: string; name: string; picture: string | null };
+  /** When they last changed it: the feed's order, and the cursor for the next page. */
+  at: string;
+  open: boolean;
+  depth: Depth | null;
+  score: number | null;
+  buyAgain: boolean | null;
+  descriptors: string[];
+  note: string | null;
+}
+
+export interface FriendFeed {
+  notes: FriendNote[];
+  /** Pass as ?before= for older notes; null when there are none. */
+  next: string | null;
+}

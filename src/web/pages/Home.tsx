@@ -2,6 +2,7 @@ import { useLocation } from "preact-iso";
 import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import { LIST_KINDS, type ListKind, type ListPlace, type PlaceKind } from "../../shared/model";
+import { FriendsSection } from "../Friends";
 import { NearbyPicker } from "../NearbyPicker";
 import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
@@ -165,6 +166,7 @@ export function Home() {
           {t("你的账号正在等站长审核。现在就能正常记录；拍酒标识别和酒庄地址联想要等审核通过后才能用。")}
         </p>
       )}
+      <FriendsSection />
       {sorted.length === 0 && (
         <div class="empty">
           <p>{t("一次品鉴可以是一次酒庄参观、一顿饭局或一整趟旅行。去之前建好，到了就按上酒顺序一款款记。")}</p>
