@@ -6,7 +6,9 @@ import { LocationProvider, Route, Router, useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
+import { Logo } from "./Logo";
 import { ConfirmHost } from "./confirm";
+import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
 import { Home } from "./pages/Home";
@@ -14,7 +16,7 @@ import { Library } from "./pages/Library";
 import { JoinPage } from "./pages/JoinPage";
 import { ListPage } from "./pages/ListPage";
 import { Login } from "./pages/Login";
-import { MePage } from "./pages/Me";
+import { Avatar, MePage, refreshPending, usePending } from "./pages/Me";
 import { Taste } from "./pages/Taste";
 import { Welcome } from "./pages/Welcome";
 import { WinePage } from "./pages/WinePage";
@@ -113,6 +115,7 @@ function Shell() {
       }
       setBoot({ state: "in" });
       void flush();
+      if (getState().me?.owner) void refreshPending();
     })();
   }, []);
 
@@ -140,10 +143,14 @@ function Shell() {
       ? "lists"
       : path.startsWith("/library") || path.startsWith("/wine")
         ? "library"
-        : "";
+        : path.startsWith("/me")
+          ? "me"
+          : "";
   const fullScreen = path.startsWith("/taste") || path.startsWith("/add");
+  const waiting = usePending();
   return (
     <div class="app">
+      <PullRefresh enabled={!fullScreen} />
       {/* Uploading is silent; only no signal, or uploads that keep failing, are worth a line. */}
       {!online ? (
         <div class="sync-bar" role="status">
@@ -162,6 +169,15 @@ function Shell() {
           </button>
         </div>
       )}
+      {/* Every page but the two full-screen ones has the brand on top; deeper pages add a back row. */}
+      {!fullScreen && (
+        <header class="app-head">
+          <a href="/" class="app-brand" aria-label={t("品酒日记")}>
+            <Logo size={30} class="head-logo" />
+            <span class="brand">{t("品酒日记")}</span>
+          </a>
+        </header>
+      )}
       <main class={fullScreen ? "main full" : "main"}>
         <Router>
           <Route path="/" component={Home} />
@@ -176,22 +192,34 @@ function Shell() {
         </Router>
       </main>
       {!fullScreen && (
-        <nav class="tabbar" aria-label={t("主菜单")}>
-          <a href="/" class={tab === "lists" ? "on" : ""}>
-            <ListIcon />
-            <span>{t("酒单")}</span>
+        <div class="dock">
+          <nav class="tabbar glass-pane" aria-label={t("主菜单")}>
+            <a href="/" class={tab === "lists" ? "on" : ""} aria-current={tab === "lists" ? "page" : undefined}>
+              <ListIcon />
+              <span>{t("酒单")}</span>
+            </a>
+            <a
+              href="/library"
+              class={tab === "library" ? "on" : ""}
+              aria-current={tab === "library" ? "page" : undefined}
+            >
+              <SearchIcon />
+              <span>{t("酒库")}</span>
+            </a>
+            <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
+              <Avatar tab />
+              {waiting > 0 && (
+                <span class="dot">
+                  <span class="visually-hidden">{t("{n} 人待审核", { n: waiting })}</span>
+                </span>
+              )}
+              <span>{t("我的")}</span>
+            </a>
+          </nav>
+          <a href="/add" class="dock-add" aria-label={t("记一杯")}>
+            <GlassIcon />
           </a>
-          <a href="/add" class="tab-add" aria-label={t("记一杯")}>
-            <span class="tab-add-circle">
-              <GlassIcon />
-            </span>
-            <span>{t("记一杯")}</span>
-          </a>
-          <a href="/library" class={tab === "library" ? "on" : ""}>
-            <SearchIcon />
-            <span>{t("酒库")}</span>
-          </a>
-        </nav>
+        </div>
       )}
     </div>
   );

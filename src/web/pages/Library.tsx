@@ -7,7 +7,6 @@ import { areaOf } from "../../shared/place";
 import { Glass, WineName } from "../components";
 import { fmtDate, p, t } from "../i18n";
 import { useStore } from "../store";
-import { Avatar } from "./Me";
 
 /**
  * 酒库: everything I've tasted, searched on the phone (docs/design.zh.md §3.7): wine, producer,
@@ -84,10 +83,7 @@ export function Library() {
 
   return (
     <div class="page">
-      <header class="page-head">
-        <h1 class="brand">{t("酒库")}</h1>
-        <Avatar />
-      </header>
+      <h1 class="visually-hidden">{t("酒库")}</h1>
       <input
         type="search"
         class="search"
