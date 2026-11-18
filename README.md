@@ -78,6 +78,10 @@ npx wrangler r2 object put wine-photos-staging/lwin/lwin.sql --file lwin.sql --r
 
 and run **Actions → Load LWIN** (`.github/workflows/lwin.yml`) once for `staging` and once for `production`. The SQL replaces the previous load. Only live wines are kept (about 186,000; no spirits).
 
+## American wine labels
+
+Every wine sold in the US needs a label approval from TTB, so its public COLA registry names many small American wineries that LWIN lacks. **Actions → Export TTB** (`.github/workflows/ttb.yml`) runs `scripts/ttb_export.py`, which searches the registry for American wines date range by date range (it exports at most 1,000 rows at a time), pausing between requests, and saves the result to the test site's private bucket at `ttb/ttb.csv`. A full export from 2005 takes an hour or two. The registry is public US government data.
+
 ## American appellations
 
 The 子产区 field suggests the 280 current American Viticultural Areas, and picking one fills in an empty region and country (Oakville → Napa Valley, USA). The list is TTB public data, kept in `src/shared/ava.ts`. To refresh it:
