@@ -32,6 +32,7 @@ import { DEPTHS, type Depth, type Tasting, type VintageInfo } from "../../shared
 import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
+import { GrapePicker } from "../GrapePicker";
 import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, getState, saveTasting, updateMe, useStore } from "../store";
 
@@ -679,14 +680,16 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
         <section class="step">
           <h2 class="step-title">{t("盲品猜酒")}</h2>
           <p class="hint">{t("先猜再看答案。猜过的会统计命中率。")}</p>
+          <Field label={t("品种")} group>
+            <GrapePicker
+              label={t("品种")}
+              single
+              color={v.color}
+              value={gs.grape ? [gs.grape] : []}
+              onChange={(g) => setG({ grape: g[0] })}
+            />
+          </Field>
           <div class="field-row">
-            <Field label={t("品种")}>
-              <input
-                value={gs.grape ?? ""}
-                maxLength={60}
-                onInput={(e) => setG({ grape: (e.target as HTMLInputElement).value || undefined })}
-              />
-            </Field>
             <Field label={t("产区")}>
               <input
                 value={gs.region ?? ""}
