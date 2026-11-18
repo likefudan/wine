@@ -23,6 +23,7 @@ import {
   SWEETNESS_WORDS,
   beginnerQuestions,
   glassColor,
+  levelTwoSheet,
   huesFor,
   swatch,
   tastingNote,
@@ -376,6 +377,10 @@ const aromasOf = (x: Tasting, patch: Patch): Words => ({
   value: x.descriptors,
   set: (descriptors) => patch({ descriptors }),
 });
+const flavoursOf = (x: Tasting, patch: Patch): Words => ({
+  value: (x.palate.flavours ?? []).map((id) => ({ id, intensity: 2 })),
+  set: (d) => patch({ palate: { ...x.palate, flavours: d.map((s) => s.id) } }),
+});
 
 /** Chips for aroma words; tap to add, tap again to remove (专业: tap cycles the strength). */
 function AromaChips(props: { ids: string[]; w: Words; strength?: boolean; row?: boolean }) {
@@ -442,7 +447,7 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; w: Words; strength?: b
             {t(tier === 1 ? tk("一类：来自葡萄") : tier === 2 ? tk("二类：来自酿造") : tk("三类：来自陈年"))}
           </span>
           {FAMILIES.filter((f) => f.tier === tier).map((f) => {
-            const all = wordsOf([f.id], color);
+            const all = wordsOf([f.id], color, "L3");
             const words = all.filter(hit);
             if (!words.length) return null;
             const picked = all.filter((d) => chosen.includes(d.id)).length;
@@ -538,6 +543,30 @@ function CompareAnswers(props: {
         ))}
       </div>
     </div>
+  );
+}
+
+/** What 入门's answers add up to, item by item on the WSET Level 2 grid. */
+function LevelTwoSheet(props: { x: Tasting; v: VintageInfo }) {
+  const sections = levelTwoSheet(currentLang(), props.v.color, props.x);
+  return (
+    <section class="step sheet">
+      <h2 class="step-title">{t("品鉴表")}</h2>
+      <p class="hint">{t("你的回答，按 WSET 二级品鉴的项目整理")}</p>
+      {sections.map((s) => (
+        <div key={s.name.en} class="sheet-section">
+          <h3 class="sub-title">{p(s.name)}</h3>
+          <dl class="sheet-rows">
+            {s.rows.map((r) => (
+              <div key={r.label.en} class="sheet-row">
+                <dt>{p(r.label)}</dt>
+                <dd class={r.value ? "" : "muted"}>{r.value ?? "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -644,7 +673,9 @@ function Quick(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
 // ── 入门 ─────────────────────────────────────────────────────────────────────────────────────
 
 function answerOf(q: GuideQuestion, x: Tasting): number | string | undefined {
+  if (q.field === "quality") return x.quality ?? undefined;
   const [part, key] = q.field.split(".") as [string, string];
+  if (part === "appearance") return (x.appearance as Record<string, string | number | undefined>)[key];
   if (part === "nose") return (x.nose as Record<string, number | undefined>)[key];
   if (part === "palate") return (x.palate as Record<string, number | string | undefined>)[key];
   return undefined;
@@ -666,24 +697,98 @@ interface Prev {
   v: VintageInfo | undefined;
 }
 
+/** 入门's way to words: a broad question, for fruit a second one, then the WSET Level 2 words. */
+function GuideWords(props: { w: Words; color: "red" | "white"; nose?: TastingDescriptor[] }) {
+  const { value, set } = props.w;
+  const color = props.color;
+  const [group, setGroup] = useState<string | null>(null);
+  const [branch, setBranch] = useState<number | null>(null);
+  const g = BEGINNER_GROUPS.find((b) => b.id === group);
+  return (
+    <div class="aroma-guide">
+      {props.nose && (
+        <button
+          type="button"
+          class="button small same-as-nose"
+          disabled={!props.nose.length}
+          onClick={() => {
+            const have = new Set(value.map((d) => d.id));
+            set([...value, ...props.nose!.filter((d) => !have.has(d.id)).map((d) => ({ id: d.id, intensity: 2 }))]);
+          }}
+        >
+          {t("和闻到的一样")}
+        </button>
+      )}
+      {!g && (
+        <div class="answers">
+          {BEGINNER_GROUPS.map((b) => (
+            <button key={b.id} type="button" class="answer" onClick={() => setGroup(b.id)}>
+              <strong>{p(b.name)}</strong>
+              <span>{p(b.sub)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {g?.branches && branch === null && (
+        <div class="answers">
+          {g.branches.map((b, i) => (
+            <button key={i} type="button" class="answer" onClick={() => setBranch(i)}>
+              <strong>{p(b.name)}</strong>
+            </button>
+          ))}
+        </div>
+      )}
+      {g && (g.families || branch !== null) && (
+        <div class="aroma-words">
+          {wordsOf(g.families ?? g.branches![branch!]!.families, color, "L2").map((d) => {
+            const on = value.some((s) => s.id === d.id);
+            return (
+              <button
+                key={d.id}
+                type="button"
+                class={on ? "answer word on" : "answer word"}
+                aria-pressed={on}
+                onClick={() => set(on ? value.filter((s) => s.id !== d.id) : [...value, { id: d.id, intensity: 2 }])}
+              >
+                <strong>{p(d.name)}</strong>
+                {d.hint && <span>{p(d.hint)}</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {g && (
+        <button
+          type="button"
+          class="link small"
+          onClick={() => {
+            setGroup(null);
+            setBranch(null);
+          }}
+        >
+          {t("换个方向再找")}
+        </button>
+      )}
+      <ChosenAromas w={props.w} hideEmpty />
+    </div>
+  );
+}
+
 function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: boolean; prev: Prev | null }) {
   const { x, v, patch } = props;
   const questions = beginnerQuestions(v.color);
   const [step, setStep] = useState(props.fresh ? 0 : questions.length);
   const [why, setWhy] = useState(false);
-  const [group, setGroup] = useState<string | null>(null);
-  const [branch, setBranch] = useState<number | null>(null);
   const go = (n: number) => {
     setStep(n);
     setWhy(false);
-    setGroup(null);
-    setBranch(null);
     scrollTo({ top: 0 });
   };
   if (step >= questions.length)
     return (
       <div class="steps">
         <Note x={x} v={v} prev={props.prev} />
+        <LevelTwoSheet x={x} v={v} />
         <div class="beginner-done">
           <button type="button" class="link small" onClick={() => go(0)}>
             {t("重新走一遍问题")}
@@ -695,11 +800,13 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
 
   const q = questions[step]!;
   const setAnswer = (value: number | string) => {
-    const [part, key] = q.field.split(".") as ["nose" | "palate", string];
-    patch({ [part]: { ...x[part], [key]: value } } as Partial<Tasting>);
+    if (q.field === "quality") patch({ quality: String(value) });
+    else {
+      const [part, key] = q.field.split(".") as ["appearance" | "nose" | "palate", string];
+      patch({ [part]: { ...x[part], [key]: value } } as Partial<Tasting>);
+    }
     go(step + 1);
   };
-  const g = BEGINNER_GROUPS.find((b) => b.id === group);
   const color = redLike(v, x);
   return (
     <div class="steps">
@@ -724,68 +831,13 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
             </Field>
           </>
         )}
-        {q.field === "aromas" && (
-          <div class="aroma-guide">
-            {!g && (
-              <div class="answers">
-                {BEGINNER_GROUPS.map((b) => (
-                  <button key={b.id} type="button" class="answer" onClick={() => setGroup(b.id)}>
-                    <strong>{p(b.name)}</strong>
-                    <span>{p(b.sub)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {g?.branches && branch === null && (
-              <div class="answers">
-                {g.branches.map((b, i) => (
-                  <button key={i} type="button" class="answer" onClick={() => setBranch(i)}>
-                    <strong>{p(b.name)}</strong>
-                  </button>
-                ))}
-              </div>
-            )}
-            {g && (g.families || branch !== null) && (
-              <div class="aroma-words">
-                {wordsOf(g.families ?? g.branches![branch!]!.families, color)
-                  .slice(0, 8)
-                  .map((d) => {
-                    const on = x.descriptors.some((s) => s.id === d.id);
-                    return (
-                      <button
-                        key={d.id}
-                        type="button"
-                        class={on ? "answer word on" : "answer word"}
-                        aria-pressed={on}
-                        onClick={() =>
-                          patch({
-                            descriptors: on
-                              ? x.descriptors.filter((s) => s.id !== d.id)
-                              : [...x.descriptors, { id: d.id, intensity: 2 }],
-                          })
-                        }
-                      >
-                        <strong>{p(d.name)}</strong>
-                        {d.hint && <span>{p(d.hint)}</span>}
-                      </button>
-                    );
-                  })}
-              </div>
-            )}
-            {g && (
-              <button
-                type="button"
-                class="link small"
-                onClick={() => {
-                  setGroup(null);
-                  setBranch(null);
-                }}
-              >
-                {t("换个方向再找")}
-              </button>
-            )}
-            <ChosenAromas w={aromasOf(x, patch)} hideEmpty />
-          </div>
+        {(q.field === "aromas" || q.field === "flavours") && (
+          <GuideWords
+            key={q.field}
+            w={q.field === "aromas" ? aromasOf(x, patch) : flavoursOf(x, patch)}
+            color={color}
+            nose={q.field === "flavours" ? x.descriptors : undefined}
+          />
         )}
         {q.options.length > 0 && (
           <div class="answers">

@@ -81,7 +81,10 @@ export const SCHEMA = {
     community: SOURCED_NUMBER("avg", { count: { type: ["integer", "null"] } }),
     price_usd: SOURCED_NUMBER("avg"),
     drink_window: { type: ["string", "null"] },
-    aromas: { type: "array", items: { type: "string", enum: DESCRIPTORS.map((d) => d.id) } },
+    aromas: {
+      type: "array",
+      items: { type: "string", enum: DESCRIPTORS.filter((d) => d.wset.length).map((d) => d.id) },
+    },
     summary: {
       type: "object",
       additionalProperties: false,

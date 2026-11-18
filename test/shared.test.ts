@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { avaOf } from "../src/shared/ava";
 import { appellationsIn, areasIn, placePath, tidyPlace } from "../src/shared/place";
-import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
+import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES, wordsOf } from "../src/shared/descriptors";
 import { toCsv, toJson } from "../src/shared/export";
 import { compareLine, nudge, previousTasting } from "../src/shared/compare";
 import { growthOf, suggestStandard } from "../src/shared/growth";
 import { aromasInNote } from "../src/shared/notewords";
 import { versus } from "../src/shared/versus";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
-import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
+import { beginnerQuestions, glassColor, huesFor, levelTwoSheet, tastingNote } from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
 import { type ProseTasting, type ProseWine, tastingFacts, wineFacts, wrap } from "../src/shared/prose";
 
@@ -25,6 +25,73 @@ describe("vocabulary", () => {
     for (const g of BEGINNER_GROUPS)
       for (const f of [...(g.families ?? []), ...(g.branches ?? []).flatMap((b) => b.families)])
         expect(families.has(f)).toBe(true);
+  });
+});
+
+describe("WSET word lists", () => {
+  it("files every word under known families, and offers each group words at both levels", () => {
+    const families = new Set(FAMILIES.map((f) => f.id));
+    for (const d of DESCRIPTORS) for (const f of d.also ?? []) expect(families.has(f)).toBe(true);
+    for (const g of BEGINNER_GROUPS) {
+      const sets = g.branches ? g.branches.map((b) => b.families) : [g.families ?? []];
+      for (const fs of sets) {
+        expect(wordsOf(fs, "red", "L2").length + wordsOf(fs, "white", "L2").length).toBeGreaterThan(0);
+      }
+    }
+    for (const f of FAMILIES.filter((f) => f.id !== "ripeness"))
+      expect(wordsOf([f.id], "red", "L3").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the level lists apart: pear drop is L3 only, candy L2 only", () => {
+    const l2 = wordsOf(
+      FAMILIES.map((f) => f.id),
+      "white",
+      "L2",
+    ).map((d) => d.id);
+    const l3 = wordsOf(
+      FAMILIES.map((f) => f.id),
+      "white",
+      "L3",
+    ).map((d) => d.id);
+    expect(l3).toContain("pear-drop");
+    expect(l2).not.toContain("pear-drop");
+    expect(l2).toContain("candy");
+    expect(l3).not.toContain("candy");
+    expect(l2).not.toContain("graphite");
+    expect(l3).not.toContain("graphite");
+  });
+});
+
+describe("the Level 2 sheet", () => {
+  it("writes 入门's answers on the grid, three steps per scale", () => {
+    const sheet = levelTwoSheet("zh-CN", "red", {
+      appearance: { clarity: "clear", intensity: 3, hue: undefined } as never,
+      nose: { condition: "clean", intensity: 4 } as never,
+      palate: { sweetness: 1, acidity: 3, tannin: 5, alcohol: 2, flavours: ["blackcurrant"] } as never,
+      descriptors: [{ id: "blackcurrant" }],
+      quality: null,
+    });
+    const rows = Object.fromEntries(sheet.flatMap((s) => s.rows).map((r) => [r.label.zh, r.value]));
+    expect(rows.澄清度).toBe("清澈");
+    expect(rows.状态).toBe("干净");
+    expect(rows.香气强度).toBe("浓郁");
+    expect(rows.香气特征).toBe("黑醋栗");
+    expect(rows.甜度).toBe("干");
+    expect(rows.单宁).toBe("高");
+    expect(rows.酒精).toBe("低");
+    expect(rows.风味特征).toBe("黑醋栗");
+    expect(rows.品质).toBeUndefined();
+  });
+
+  it("leaves tannin off a white with none", () => {
+    const sheet = levelTwoSheet("en", "white", {
+      appearance: {} as never,
+      nose: {} as never,
+      palate: {} as never,
+      descriptors: [],
+      quality: null,
+    });
+    expect(sheet.flatMap((s) => s.rows).map((r) => r.label.en)).not.toContain("Tannin");
   });
 });
 

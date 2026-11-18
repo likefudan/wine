@@ -102,7 +102,10 @@ export function GrowthPanel() {
       <section class="group">
         <h2 class="group-title">{t("认识的香气")}</h2>
         <p class="small muted">
-          {t("词表里一共 {all} 个，你已经用过 {n} 个。", { all: DESCRIPTORS.length, n: g.words.length })}
+          {t("词表里一共 {all} 个，你已经用过 {n} 个。", {
+            all: DESCRIPTORS.filter((d) => d.wset.length).length,
+            n: g.words.length,
+          })}
         </p>
         <div class="chips">
           {g.words.map((w) => (

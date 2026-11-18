@@ -359,6 +359,11 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   陈年潜力: { tw: "陳年潛力", en: "Ageing potential" },
   "3–5 分钟": { tw: "3–5 分鐘", en: "3–5 min" },
   "喝过不少，要完整的品鉴表": { tw: "喝過不少，要完整的品飲表", en: "I've tasted a fair bit and want the full grid" },
+  品鉴表: { tw: "品飲表", en: "Tasting grid" },
+  "你的回答，按 WSET 二级品鉴的项目整理": {
+    tw: "你的回答，按 WSET 二級品飲的項目整理",
+    en: "Your answers, set out on the items of WSET Level 2",
+  },
   "找香气，例如 雪松": { tw: "找香氣，例如 雪松", en: "Find an aroma, e.g. cedar" },
   你描述的是: { tw: "你描述的是", en: "What you described" },
   香气: { tw: "香氣", en: "Aromas" },
