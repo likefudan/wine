@@ -73,11 +73,10 @@ Typing a producer or wine also suggests wines from [LWIN](https://www.liv-ex.com
 ```sh
 pip install openpyxl
 python3 scripts/lwin_import.py LWINdatabase.xlsx lwin.sql
-npx wrangler d1 execute DB --remote --env staging --file lwin.sql   # test site
-npx wrangler d1 execute DB --remote --file lwin.sql                 # production
+npx wrangler r2 object put wine-photos-staging/lwin/lwin.sql --file lwin.sql --remote
 ```
 
-The SQL replaces the previous load. Only live wines are kept (about 186,000; no spirits).
+and run **Actions → Load LWIN** (`.github/workflows/lwin.yml`) once for `staging` and once for `production`. The SQL replaces the previous load. Only live wines are kept (about 186,000; no spirits).
 
 ## Documents
 
