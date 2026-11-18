@@ -26,7 +26,8 @@ test("a tasting makes a share image whose text can be edited", async ({ page }) 
   const img = page.locator(".share-card img");
   await expect(img).toHaveAttribute("src", /^data:image\/png/);
   const before = await img.getAttribute("src");
-  await text.fill("一句我自己改过的酒评。");
+  // Latin text: the CI runner may have no CJK font, which would draw both notes as nothing.
+  await text.fill("A note I rewrote myself.");
   await expect.poll(() => img.getAttribute("src")).not.toBe(before);
   await page.click(".share-card-opts >> text=深色");
   await page.click(".share-card-opts >> text=9:16");
