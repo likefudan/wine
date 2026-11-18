@@ -75,8 +75,8 @@ export function ListPage() {
   if (!list)
     return (
       <div class="page">
-        <p class="empty">{t("找不到这份酒单")}</p>
-        <a href="/">{t("回到酒单")}</a>
+        <p class="empty">{t("找不到这次品鉴")}</p>
+        <a href="/">{t("回到品鉴")}</a>
       </div>
     );
   const vById = new Map(vintages.map((v) => [v.id, v]));
@@ -190,7 +190,7 @@ export function ListPage() {
                       class="icon-button danger"
                       aria-label={t("移除")}
                       onClick={async () =>
-                        (await ask(t("从酒单移除这款酒？你的笔记会留在酒库里。"))) && removeItem(i.id)
+                        (await ask(t("从这次品鉴移除这款酒？你的笔记会留在酒库里。"))) && removeItem(i.id)
                       }
                     >
                       ✕
@@ -256,9 +256,9 @@ function EveryoneChip(props: { b: BoardItem | undefined; onClick: () => void }) 
 function MemberSettings(props: { listId: string; onClose: () => void; onLeft: () => void }) {
   const [error, setError] = useState("");
   return (
-    <Sheet title={t("酒单设置")} onClose={props.onClose}>
+    <Sheet title={t("品鉴设置")} onClose={props.onClose}>
       <div class="form">
-        <p class="muted">{t("这份酒单是别人建的，只有创建者能改名称和设置。你可以往里加酒、记自己的感受。")}</p>
+        <p class="muted">{t("这次品鉴是别人建的，只有创建者能改名称和设置。你可以往里加酒、记自己的感受。")}</p>
         {error && (
           <p class="notice" role="alert">
             {error}
@@ -268,7 +268,7 @@ function MemberSettings(props: { listId: string; onClose: () => void; onLeft: ()
           type="button"
           class="button danger"
           onClick={async () => {
-            if (!(await ask(t("退出这份酒单？你记的笔记会留在你的酒库里。")))) return;
+            if (!(await ask(t("退出这次品鉴？你记的笔记会留在你的酒库里。")))) return;
             try {
               await leaveList(props.listId);
               props.onLeft();
@@ -277,7 +277,7 @@ function MemberSettings(props: { listId: string; onClose: () => void; onLeft: ()
             }
           }}
         >
-          {t("退出酒单")}
+          {t("退出品鉴")}
         </button>
       </div>
     </Sheet>
@@ -305,9 +305,9 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
     props.onClose();
   };
   return (
-    <Sheet title={t("酒单设置")} onClose={props.onClose}>
+    <Sheet title={t("品鉴设置")} onClose={props.onClose}>
       <form class="form" onSubmit={submit}>
-        <Field label={t("酒单名称")}>
+        <Field label={t("品鉴名称")}>
           <input value={title} maxLength={80} onInput={(e) => setTitle((e.target as HTMLInputElement).value)} />
         </Field>
         <Field label={t("类型")} group>
@@ -338,12 +338,12 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
           type="button"
           class="button danger"
           onClick={async () => {
-            if (!(await ask(t("删除这份酒单？里面的笔记会留在你的酒库里。"), { ok: t("删除") }))) return;
+            if (!(await ask(t("删除这次品鉴？里面的笔记会留在你的酒库里。"), { ok: t("删除") }))) return;
             deleteList(list.id);
             props.onDeleted();
           }}
         >
-          {t("删除酒单")}
+          {t("删除品鉴")}
         </button>
       </form>
     </Sheet>

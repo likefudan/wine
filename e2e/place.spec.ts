@@ -5,7 +5,7 @@ test("picking California narrows the 子产区 list, and Oakville fills in Napa 
   await page.fill('input[type="email"]', `place${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=刚开始认真喝，想学怎么品");
-  await page.click("text=新建酒单");
+  await page.click("text=新建品鉴");
   await page.fill('.sheet input[placeholder^="例如"]', "Napa");
   await page.click("text=建好了");
   await page.click("text=加下一款酒");

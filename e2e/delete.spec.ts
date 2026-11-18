@@ -10,7 +10,7 @@ test("a tasting is deleted after confirming in the app's own box", async ({ page
   await page.fill('input[type="email"]', `delete${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=只想快速记个分");
-  await page.click("text=新建酒单");
+  await page.click("text=新建品鉴");
   await page.fill('.sheet input[placeholder="Opus One"]', "Opus One");
   await page.fill('.sheet input[placeholder^="例如"]', "Napa");
   await page.click("text=建好了");
