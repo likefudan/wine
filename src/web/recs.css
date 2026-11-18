@@ -13,10 +13,9 @@
 .rec-card {
   display: grid;
   gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
+  padding: 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
 }
 .rec-card .button {
   justify-self: start;
@@ -46,7 +45,8 @@
   color: var(--brass);
 }
 .stretch {
-  border-left: 3px solid var(--brass);
+  padding-left: 12px;
+  border-left: 2px solid var(--brass);
 }
 .stretch p {
   margin: 0;
