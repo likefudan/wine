@@ -20,4 +20,19 @@ export const SYNC_MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "這支手機上還有 {n} 筆紀錄沒上傳。登入已過期，重新登入後會自動上傳。",
     en: "{n} changes on this phone haven't been uploaded yet. Your sign-in expired; sign in again and they'll upload automatically.",
   },
+  品鉴者: { tw: "品飲者", en: "Taster" },
+  删除账号和全部数据: { tw: "刪除帳號和全部資料", en: "Delete my account and all data" },
+  "删除后，你的所有品鉴记录、酒窖、酒标照片和你创建的品鉴都会永久删除，无法恢复。建议先在上面导出一份。确定删除？": {
+    tw: "刪除後，你的所有品飲紀錄、酒窖、酒標照片和你建立的品飲都會永久刪除，無法復原。建議先在上面匯出一份。確定刪除？",
+    en: "This permanently deletes all your notes, cellar, label photos and the tastings you created. It can't be undone. Consider exporting first. Delete?",
+  },
+  "最后确认：真的永久删除这个账号？": {
+    tw: "最後確認：真的永久刪除這個帳號？",
+    en: "Last check: permanently delete this account?",
+  },
+  "没有网络，请联网后再删除": {
+    tw: "沒有網路，請連上網路後再刪除",
+    en: "No connection. Please delete when you're online.",
+  },
+  请确认删除: { tw: "請確認刪除", en: "Please confirm the deletion" },
 };

@@ -95,6 +95,9 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
     throw new HttpError(403, "private_list", "这次品鉴是私密的，请向创建者要二维码");
   }
   const open = notesOpen(l);
+  // Someone without a name shows as the front of their email to the people they taste with, never
+  // to a visitor who only has a public link (the page then says 品鉴者).
+  const who = (name: string | null, email: string) => (member ? displayName(name, email) : name?.trim() || "");
   const [items, notes, descriptors, members] = await db.batch([
     db
       .prepare(`${VINTAGE_SELECT.replace("SELECT ", "SELECT i.id AS item_id, i.position, i.blind AS item_blind, ")}
@@ -173,7 +176,7 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
         ? rows.map(
             (n): BoardNote => ({
               userId: n.user_id,
-              name: displayName(n.name, n.email),
+              name: who(n.name, n.email),
               picture: n.picture,
               mine: n.user_id === user?.id,
               depth: n.depth as Depth,
@@ -242,7 +245,7 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
       member || open
         ? memberRows.map((m) => ({
             id: m.id,
-            name: displayName(m.name, m.email),
+            name: who(m.name, m.email),
             picture: m.picture,
             owner: m.role === "owner",
           }))
@@ -359,5 +362,10 @@ sharingRoutes.post("/lists/:id/members/:user/remove", async (c) => {
   if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有品鉴的创建者能修改");
   if (c.req.param("user") === user.id) throw new HttpError(400, "owner", "创建者不能退出，可以删除品鉴");
   await removeMember(db, l.id, c.req.param("user"));
-  return c.json(await board(db, l, user, null));
+  // The QR code they scanned stops working, so they cannot simply scan it again.
+  await db
+    .prepare("UPDATE lists SET share_key = ?, updated_at = ? WHERE id = ?")
+    .bind(randomToken(), now(), l.id)
+    .run();
+  return c.json(await board(db, await loadList(db, l.id), user, null));
 });

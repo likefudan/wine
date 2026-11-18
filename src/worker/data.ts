@@ -620,12 +620,22 @@ async function reorder(db: DB, user: UserRow, listId: string, ids: unknown) {
   );
 }
 
-async function putTasting(db: DB, user: UserRow, t: Tasting) {
+/** A label photo no note points at any more: gone from R2 and from the photos table. */
+export async function dropPhotoIfUnused(db: DB, photos: R2Bucket | undefined, photoId: string | null | undefined) {
+  if (!photoId) return;
+  if (await db.prepare("SELECT 1 FROM tastings WHERE photo_id = ?").bind(photoId).first()) return;
+  const row = await db.prepare("SELECT r2_key FROM photos WHERE id = ?").bind(photoId).first<{ r2_key: string }>();
+  if (!row) return;
+  if (photos) await photos.delete(row.r2_key);
+  await db.prepare("DELETE FROM photos WHERE id = ?").bind(photoId).run();
+}
+
+async function putTasting(db: DB, user: UserRow, t: Tasting, photos?: R2Bucket) {
   const tid = id(t?.id);
   const existing = await db
-    .prepare("SELECT user_id, updated_at FROM tastings WHERE id = ?")
+    .prepare("SELECT user_id, updated_at, photo_id FROM tastings WHERE id = ?")
     .bind(tid)
-    .first<{ user_id: string; updated_at: string }>();
+    .first<{ user_id: string; updated_at: string; photo_id: string | null }>();
   if (existing && existing.user_id !== user.id) fail("只能修改自己的品鉴");
   const updatedAt = editedAt(t.updatedAt);
   // A later edit from another phone already arrived: keep it.
@@ -740,10 +750,16 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
         .bind(tid, d.id, Number.isInteger(d.intensity) && d.intensity >= 1 && d.intensity <= 3 ? d.intensity : 2),
     ),
   ]);
+  // A new photo (or none) replaces the old one: the old file goes unless another note still uses it.
+  if (existing?.photo_id && existing.photo_id !== values[15]) await dropPhotoIfUnused(db, photos, existing.photo_id);
 }
 
-async function deleteTasting(db: DB, user: UserRow, tastingId: string) {
-  await db.prepare("DELETE FROM tastings WHERE id = ? AND user_id = ?").bind(id(tastingId), user.id).run();
+async function deleteTasting(db: DB, user: UserRow, tastingId: string, photos?: R2Bucket) {
+  const row = await db
+    .prepare("DELETE FROM tastings WHERE id = ? AND user_id = ? RETURNING photo_id")
+    .bind(id(tastingId), user.id)
+    .first<{ photo_id: string | null }>();
+  await dropPhotoIfUnused(db, photos, row?.photo_id);
 }
 
 const year = (v: unknown): number | null =>
@@ -824,7 +840,7 @@ async function putMe(db: DB, user: UserRow, o: Extract<Op, { op: "putMe" }>) {
       .run();
 }
 
-export async function applyOp(db: DB, user: UserRow, o: Op, owner = false): Promise<OpResult> {
+export async function applyOp(db: DB, user: UserRow, o: Op, owner = false, photos?: R2Bucket): Promise<OpResult> {
   try {
     switch (o?.op) {
       case "putVintage":
@@ -845,10 +861,10 @@ export async function applyOp(db: DB, user: UserRow, o: Op, owner = false): Prom
         await reorder(db, user, o.listId, o.ids);
         break;
       case "putTasting":
-        await putTasting(db, user, o.tasting);
+        await putTasting(db, user, o.tasting, photos);
         break;
       case "deleteTasting":
-        await deleteTasting(db, user, o.id);
+        await deleteTasting(db, user, o.id, photos);
         break;
       case "putMe":
         await putMe(db, user, o);
@@ -885,7 +901,7 @@ dataRoutes.post("/ops", async (c) => {
   const results: OpResult[] = [];
   // In order: a note may name the wine added just before it.
   const owner = isOwner(c.env, user.email);
-  for (const o of ops) results.push(await applyOp(c.env.DB, user, o, owner));
+  for (const o of ops) results.push(await applyOp(c.env.DB, user, o, owner, c.env.PHOTOS));
   return c.json({ results });
 });
 
