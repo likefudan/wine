@@ -19,6 +19,10 @@ on:
         type: string
         required: false
         default: ""
+    outputs:
+      deployed:
+        description: true when it deployed (false when skipped)
+        value: ${{ jobs.deploy.outputs.deployed }}
 
 permissions:
   contents: read
@@ -28,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     # One deploy per site at a time. A newer one waiting replaces an older one waiting.
     concurrency: deploy-${{ inputs.target }}
+    outputs:
+      deployed: ${{ steps.go.outputs.ok }}
     env:
       TARGET: ${{ inputs.target }}
       REF: ${{ inputs.ref }}

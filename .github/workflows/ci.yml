@@ -5,6 +5,8 @@ name: CI
 # to the test site (wine-staging.llmat.dev).
 # Push a release tag v* (e.g. v2026.11.18): checks, then deploy to production (wine.llmat.dev).
 # Release (release.yml) deploys production itself and does not start this workflow.
+# 自动发布: after the test site takes a new main, the auto-release job releases it to production
+# unless the repository variable AUTO_RELEASE is false (see release.yml).
 # Run workflow by hand: on main → redeploys staging; on a v* tag → deploys that release to production.
 # The deploy itself is deploy.yml (also used by release.yml).
 on:
@@ -150,4 +152,20 @@ jobs:
       target: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
       ref: ${{ github.sha }}
       version: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+    secrets: inherit
+
+  # 自动发布: the test site just took this main commit, so release it to production too. Off when the
+  # repository variable AUTO_RELEASE is false. Skipped when the test site skipped it (main moved on:
+  # the newer commit's run releases).
+  auto-release:
+    needs: deploy
+    if: >-
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && vars.AUTO_RELEASE != 'false' && needs.deploy.outputs.deployed == 'true' }}
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/release.yml
+    with:
+      ci_green: true
     secrets: inherit
