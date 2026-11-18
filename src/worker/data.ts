@@ -17,6 +17,7 @@ import {
   type ListPlace,
   type WineList,
   clampText,
+  cleanLocation,
   isLabelModel,
   isLang,
   nameKey,
@@ -124,6 +125,7 @@ interface TastingRow {
   price_usd: number | null;
   note: string | null;
   photo_id: string | null;
+  location: string | null;
   updated_at: string;
 }
 
@@ -221,6 +223,7 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         priceUsd: t.price_usd,
         note: t.note,
         photoId: t.photo_id,
+        location: t.location ? cleanLocation(parse(t.location)) : null,
         updatedAt: t.updated_at,
       }),
     ),
@@ -511,22 +514,27 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
     typeof t.photoId === "string" && ID_RE.test(t.photoId) ? t.photoId : null,
     updatedAt,
   ];
+  // An older app does not send `location`: keep what is there.
+  const keepLocation = t.location === undefined;
+  const loc = keepLocation ? null : cleanLocation(t.location);
+  const location = loc ? JSON.stringify(loc) : null;
   await db.batch([
     existing
       ? db
           .prepare(
             `UPDATE tastings SET vintage_id = ?, list_item_id = ?, tasted_at = ?, depth = ?, appearance = ?, nose = ?,
              palate = ?, extra = ?, guesses = ?, quality = ?, score = ?, buy_again = ?, bought_qty = ?, price_usd = ?,
-             note = ?, photo_id = ?, updated_at = ? WHERE id = ?`,
+             note = ?, photo_id = ?, updated_at = ?, location = CASE WHEN ? THEN location ELSE ? END WHERE id = ?`,
           )
-          .bind(...values, tid)
+          .bind(...values, keepLocation ? 1 : 0, location, tid)
       : db
           .prepare(
             `INSERT INTO tastings (vintage_id, list_item_id, tasted_at, depth, appearance, nose, palate, extra, guesses,
-             quality, score, buy_again, bought_qty, price_usd, note, photo_id, updated_at, id, user_id, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             quality, score, buy_again, bought_qty, price_usd, note, photo_id, updated_at, id, user_id, created_at,
+             location)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
-          .bind(...values, tid, user.id, now()),
+          .bind(...values, tid, user.id, now(), location),
     db.prepare("DELETE FROM tasting_descriptors WHERE tasting_id = ?").bind(tid),
     ...descriptors.map((d) =>
       db
@@ -547,6 +555,11 @@ async function putMe(db: DB, user: UserRow, o: Extract<Op, { op: "putMe" }>) {
     await db.prepare("UPDATE users SET depth = ? WHERE id = ?").bind(o.depth, user.id).run();
   if (o.labelModel !== undefined && isLabelModel(o.labelModel))
     await db.prepare("UPDATE users SET label_model = ? WHERE id = ?").bind(o.labelModel, user.id).run();
+  if (typeof o.locationOn === "boolean")
+    await db
+      .prepare("UPDATE users SET location_on = ? WHERE id = ?")
+      .bind(o.locationOn ? 1 : 0, user.id)
+      .run();
 }
 
 export async function applyOp(db: DB, user: UserRow, o: Op): Promise<OpResult> {

@@ -124,7 +124,60 @@ export interface Tasting {
   priceUsd: number | null;
   note: string | null;
   photoId: string | null;
+  /**
+   * Where it was tasted (记一杯 with the phone's position): private, never on a shared list's board.
+   * undefined (an older app, or a page that did not touch it) keeps what the server has; null removes it.
+   */
+  location?: TastingLocation | null;
   updatedAt: string;
+}
+
+/**
+ * Where a glass was tasted. The position comes from the phone; the name and address from Google once
+ * there is a network (`geocoded`), or as typed. A typed place may have no position.
+ */
+export interface TastingLocation {
+  lat: number | null;
+  lng: number | null;
+  /** Metres, as the phone reported it. */
+  accuracy: number | null;
+  name: string | null;
+  address: string | null;
+  placeId: string | null;
+  /** The name and address have been looked up (or typed): no need to ask Google again. */
+  geocoded: boolean;
+}
+
+/** A sane TastingLocation from anything, or null. */
+export function cleanLocation(v: unknown): TastingLocation | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const num = (x: unknown, lim: number) =>
+    typeof x === "number" && Number.isFinite(x) && Math.abs(x) <= lim ? x : null;
+  let lat = num(o.lat, 90);
+  let lng = num(o.lng, 180);
+  if (lat === null || lng === null) lat = lng = null;
+  const text = (x: unknown, max: number) => (typeof x === "string" && x.trim() ? x.trim().slice(0, max) : null);
+  const name = text(o.name, 120);
+  const address = text(o.address, 200);
+  if (lat === null && !name && !address) return null;
+  const acc = num(o.accuracy, 100_000);
+  const placeId = typeof o.placeId === "string" && /^[A-Za-z0-9_-]{10,300}$/.test(o.placeId) ? o.placeId : null;
+  return {
+    lat: lat === null ? null : Math.round(lat * 1e6) / 1e6,
+    lng: lng === null ? null : Math.round(lng * 1e6) / 1e6,
+    accuracy: acc === null ? null : Math.round(acc),
+    name,
+    address,
+    placeId,
+    geocoded: o.geocoded === true || lat === null,
+  };
+}
+
+/** /api/places/near: what is around a position. `address` is the street address there, if Google knows it. */
+export interface NearbyPlaces {
+  address: string | null;
+  places: (PlaceDetails & { distance: number | null })[];
 }
 
 /** A vintage with its wine and producer, flattened: what every list and search row shows. */
@@ -308,6 +361,8 @@ export interface Me {
   depth: Depth | null;
   /** null = the default (LABEL_MODELS[0]). */
   labelModel: LabelModel | null;
+  /** 记下品酒地点 when starting a note: null = not asked yet. */
+  locationOn: boolean | null;
   /** false while waiting for an owner's approval (开放注册): no label reading or place lookups. */
   approved: boolean;
   owner: boolean;
@@ -357,7 +412,7 @@ export type Op =
   | { op: "reorder"; listId: string; ids: string[] }
   | { op: "putTasting"; tasting: Tasting }
   | { op: "deleteTasting"; id: string }
-  | { op: "putMe"; locale?: Lang; depth?: Depth; labelModel?: LabelModel };
+  | { op: "putMe"; locale?: Lang; depth?: Depth; labelModel?: LabelModel; locationOn?: boolean };
 
 export interface OpResult {
   ok: boolean;

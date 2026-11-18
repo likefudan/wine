@@ -1583,3 +1583,77 @@ html.standalone body {
     animation-duration: 2.4s;
   }
 }
+
+/* 用当前位置 (NearbyPicker) and 品酒地点 (TastingPlace) */
+.nearby {
+  margin: -4px 0 4px;
+}
+.nearby .link {
+  padding-left: 0;
+}
+.nearby-list {
+  margin: 4px 0 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.nearby-list li.small {
+  padding: 10px 12px;
+}
+.nearby-list button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+}
+.nearby-list button:active,
+.nearby-list button:hover {
+  background: var(--surface-2);
+}
+.nearby-list strong,
+.nearby-list span {
+  display: block;
+}
+.nearby-list em {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 13px;
+}
+.nearby-list span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.tasting-place {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+  font-size: 14px;
+}
+.tasting-place-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tasting-place-text strong,
+.tasting-place-text span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tasting-place-text span {
+  color: var(--muted);
+  font-size: 13px;
+}

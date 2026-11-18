@@ -285,6 +285,49 @@ describe("lists and tastings", () => {
     expect(s.tastings[0].score).toBe(88);
   });
 
+  it("keeps where a glass was tasted: an older app leaves it, null removes it", async () => {
+    const c = await signIn();
+    const v = vintageOp();
+    const loc = {
+      lat: 38.4321234567,
+      lng: -122.41,
+      accuracy: 12.4,
+      name: "Opus One",
+      address: "7900 St Helena Hwy",
+      placeId: null,
+      geocoded: true,
+    };
+    const t = tasting(v.id, { location: loc });
+    await c.ops([v, { op: "putTasting", tasting: t }]);
+    let s = (await c.call("/api/sync")).data;
+    expect(s.tastings[0].location).toEqual({ ...loc, lat: 38.432123, accuracy: 12 });
+    // An older app sends no location.
+    const { location: _, ...old } = { ...t, score: 90, updatedAt: new Date(Date.now() + 1000).toISOString() };
+    await c.ops([{ op: "putTasting", tasting: old as typeof t }]);
+    s = (await c.call("/api/sync")).data;
+    expect(s.tastings[0]).toMatchObject({ score: 90, location: { name: "Opus One" } });
+    await c.ops([
+      { op: "putTasting", tasting: { ...t, location: null, updatedAt: new Date(Date.now() + 2000).toISOString() } },
+    ]);
+    s = (await c.call("/api/sync")).data;
+    expect(s.tastings[0].location).toBeNull();
+    // Nonsense is dropped, not stored.
+    await c.ops([
+      {
+        op: "putTasting",
+        tasting: { ...t, location: { lat: 999 } as never, updatedAt: new Date(Date.now() + 3000).toISOString() },
+      },
+    ]);
+    expect((await c.call("/api/sync")).data.tastings[0].location).toBeNull();
+  });
+
+  it("remembers 记下品酒地点", async () => {
+    const c = await signIn();
+    expect((await c.call("/api/sync")).data.me.locationOn).toBeNull();
+    await c.ops([{ op: "putMe", locationOn: false }]);
+    expect((await c.call("/api/sync")).data.me.locationOn).toBe(false);
+  });
+
   it("drops unknown aroma words and out-of-range scores", async () => {
     const c = await signIn();
     const v = vintageOp();

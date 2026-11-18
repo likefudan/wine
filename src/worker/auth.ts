@@ -36,6 +36,7 @@ export interface UserRow {
   locale: string | null;
   depth: string | null;
   label_model: string | null;
+  location_on?: number | null;
   status: string;
   approved_at: string | null;
   approved_by: string | null;
@@ -59,6 +60,7 @@ export function meOf(env: Env, u: UserRow): Me {
     locale: isLang(u.locale) ? (u.locale as Lang) : null,
     depth: (u.depth as Depth | null) ?? null,
     labelModel: isLabelModel(u.label_model) ? u.label_model : null,
+    locationOn: u.location_on === null || u.location_on === undefined ? null : !!u.location_on,
     approved: u.status === "active" || isOwner(env, u.email),
     owner: isOwner(env, u.email),
   };

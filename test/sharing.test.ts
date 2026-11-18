@@ -209,4 +209,27 @@ describe("分享与共同评价", () => {
     expect((await boardOf(friend, list.id)).status).toBe(403);
     expect((await owner.call(`/api/lists/${list.id}/leave`, {})).status).toBe(400);
   });
+
+  it("never shows where someone tasted on the board", async () => {
+    const owner = await signIn("owner@example.com");
+    const { list, wines, items } = await napaDay(owner);
+    await owner.call(`/api/lists/${list.id}/share`, { visibility: "public", blind: false });
+    const t = tasting(wines[0]!.id, {
+      listItemId: items[0]!.id,
+      location: {
+        lat: 38.4,
+        lng: -122.4,
+        accuracy: 5,
+        name: "Secret Spot",
+        address: "1 Hidden Rd",
+        placeId: null,
+        geocoded: true,
+      },
+    });
+    expect((await owner.ops([{ op: "putTasting", tasting: t }])).data.results[0]!.ok).toBe(true);
+    const board = JSON.stringify((await boardOf(owner, list.id)).data);
+    expect(board).toContain(items[0]!.id);
+    expect(board).not.toContain("Secret Spot");
+    expect(board).not.toContain("38.4");
+  });
 });
