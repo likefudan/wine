@@ -20,8 +20,8 @@ function haystack(v: VintageInfo, tastings: Tasting[], listTitles: string[]): st
     return known ? [known.en, known.zh, known.tw, ...(known.alt ?? [])] : [g];
   });
   const aromas = tastings.flatMap((x) =>
-    x.descriptors.flatMap((d) => {
-      const w = DESCRIPTOR_BY_ID.get(d.id);
+    [...x.descriptors.map((d) => d.id), ...(x.palate.flavours ?? [])].flatMap((id) => {
+      const w = DESCRIPTOR_BY_ID.get(id);
       return w ? [w.name.zh, w.name.tw, w.name.en] : [];
     }),
   );

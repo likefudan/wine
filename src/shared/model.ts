@@ -21,15 +21,18 @@ export const isLang = (v: unknown): v is Lang => typeof v === "string" && (LANGS
 export type Level = 1 | 2 | 3 | 4 | 5;
 
 export const HUES = {
-  red: ["purple", "ruby", "garnet", "tawny"],
-  white: ["lemon-green", "lemon", "gold", "amber"],
+  red: ["purple", "ruby", "garnet", "tawny", "brown"],
+  white: ["lemon-green", "lemon", "gold", "amber", "brown"],
   rose: ["pink", "salmon", "orange"],
 } as const;
 export type Hue = (typeof HUES)[keyof typeof HUES][number];
-export const ALL_HUES: readonly string[] = [...HUES.red, ...HUES.white, ...HUES.rose];
+export const ALL_HUES: readonly string[] = [...new Set([...HUES.red, ...HUES.white, ...HUES.rose])];
 
 /** Which hue set a colour of wine uses: sparkling and dessert can be either, white by default. */
 export const hueFamily = (color: WineColor, hue?: string): keyof typeof HUES => {
+  const own = color === "red" ? "red" : color === "rose" ? "rose" : "white";
+  // "brown" is in both red and white: a hue the wine's own set has wins.
+  if (hue && (HUES[own] as readonly string[]).includes(hue)) return own;
   if (hue && (HUES.red as readonly string[]).includes(hue)) return "red";
   if (hue && (HUES.rose as readonly string[]).includes(hue)) return "rose";
   if (hue && (HUES.white as readonly string[]).includes(hue)) return "white";
@@ -38,6 +41,8 @@ export const hueFamily = (color: WineColor, hue?: string): keyof typeof HUES => 
 
 export const QUALITIES = ["faulty", "poor", "acceptable", "good", "very-good", "outstanding"] as const;
 export const DEVELOPMENT = ["youthful", "developing", "developed", "tired"] as const;
+/** WSET: readiness for drinking / potential for ageing. */
+export const READINESS = ["too-young", "can-age", "drink-now", "too-old"] as const;
 export const TANNIN_TEXTURES = ["fine", "grainy", "coarse", "green"] as const;
 export const MOUSSE = ["delicate", "creamy", "aggressive"] as const;
 export const FAULTS = ["cork", "oxidised", "reduced", "brett", "va"] as const;
@@ -53,6 +58,8 @@ export interface Appearance {
   sediment?: boolean;
 }
 export interface Nose {
+  /** WSET 状态: clean, or unclean (a fault). */
+  condition?: "clean" | "unclean";
   intensity?: Level;
   development?: (typeof DEVELOPMENT)[number];
   /** Words not in the vocabulary, as typed (专业). */
@@ -67,11 +74,14 @@ export interface Palate {
   alcohol?: Level;
   body?: Level;
   flavour?: Level;
+  /** Flavour characteristics: words from the aroma vocabulary, as tasted (WSET uses the same lexicon). */
+  flavours?: string[];
   mousse?: (typeof MOUSSE)[number];
   finish?: Level;
   finishSeconds?: number;
 }
 export interface Extra {
+  readiness?: (typeof READINESS)[number];
   faults?: string[];
   reasons?: string[];
   drinkFrom?: number;
