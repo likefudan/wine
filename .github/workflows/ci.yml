@@ -1,11 +1,12 @@
 name: CI
 
 # Pull requests: checks only.
-# Merge to main: checks, then deploy to the test site (wine-staging.llmat.dev).
-# Push a release tag v* (e.g. v2026.11.18), or run release.yml: checks, then deploy to production (wine.llmat.dev).
+# Merge to main: checks (skipped when a pull request already tested exactly these files), then deploy
+# to the test site (wine-staging.llmat.dev).
+# Push a release tag v* (e.g. v2026.11.18): checks, then deploy to production (wine.llmat.dev).
+# Release (release.yml) deploys production itself and does not start this workflow.
 # Run workflow by hand: on main → redeploys staging; on a v* tag → deploys that release to production.
-# Deploys need the repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID; without them
-# the deploy jobs say so and stop without failing.
+# The deploy itself is deploy.yml (also used by release.yml).
 on:
   pull_request:
   push:
@@ -16,30 +17,50 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels its older run. Runs on main and on tags do not wait for each
+# other (only their deploys take turns, see deploy.yml), so merges close together test in parallel.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # A release tag (v*) on a commit whose CI on main already passed deploys without running the same
-  # checks and browser tests again (Release only tags a green main). Any other tag is tested first.
+  # Skip testing what was already tested:
+  # - a release tag (v*) on a commit whose CI on main passed (Release only tags a green main);
+  # - a commit on main whose files are exactly what a pull request's CI tested green (the usual case
+  #   when the pull request was up to date with main). Each test job leaves a marker artifact
+#   tested-<job>-<tree> when it passes, and both are needed.
+  # Anything else is tested first.
   verified:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       actions: read
+      contents: read
     outputs:
-      ok: ${{ steps.main.outputs.ok }}
+      ok: ${{ steps.tested.outputs.ok }}
     steps:
-      - id: main
+      - id: tested
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          n=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --branch main \
-            --status success --json databaseId --jq length)
+          n=0
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            n=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --branch main \
+              --status success --json databaseId --jq length)
+            why="CI on main already passed for ${GITHUB_SHA:0:7}"
+          else
+            tree=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA" --jq .commit.tree.sha)
+            n=1
+            for job in check e2e; do
+              m=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=tested-$job-$tree&per_page=10" \
+                --jq '[.artifacts[] | select((.expired | not) and .workflow_run.head_repository_id == .workflow_run.repository_id)] | length')
+              [ "${m:-0}" -gt 0 ] || n=0
+            done
+            why="these exact files (tree ${tree:0:7}) already passed CI"
+          fi
           if [ "${n:-0}" -gt 0 ]; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
-            echo "CI on main already passed for ${GITHUB_SHA:0:7}: not testing it again" >> "$GITHUB_STEP_SUMMARY"
+            echo "$why: not testing them again" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "ok=false" >> "$GITHUB_OUTPUT"
           fi
@@ -58,6 +79,15 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      # Passed: these files are tested (see `verified`).
+      - id: tree
+        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tested-check-${{ steps.tree.outputs.tree }}
+          path: package.json
+          retention-days: 7
+          overwrite: true
 
   e2e:
     needs: verified
@@ -93,6 +123,15 @@ jobs:
       - run: npx playwright test --trace off
         env:
           WRANGLER_SEND_METRICS: "false"
+      # Passed: these files are tested (see `verified`).
+      - id: tree
+        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tested-e2e-${{ steps.tree.outputs.tree }}
+          path: package.json
+          retention-days: 7
+          overwrite: true
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
@@ -106,46 +145,9 @@ jobs:
       ${{ !cancelled() && github.event_name != 'pull_request'
       && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
       && (needs.verified.outputs.ok == 'true' || (needs.check.result == 'success' && needs.e2e.result == 'success')) }}
-    runs-on: ubuntu-latest
-    concurrency: deploy-${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
-    env:
-      TARGET: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    steps:
-      - name: Cloudflare token present
-        id: token
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "No CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID secret: not deploying" >> "$GITHUB_STEP_SUMMARY"
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          fi
-      - if: steps.token.outputs.ok == 'true'
-        uses: actions/checkout@v7
-      - if: steps.token.outputs.ok == 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - if: steps.token.outputs.ok == 'true'
-        run: npm ci && npm run build
-      - if: steps.token.outputs.ok == 'true'
-        run: node scripts/prepare-deploy.mjs "$TARGET"
-      - if: steps.token.outputs.ok == 'true'
-        run: npx wrangler d1 migrations apply DB --remote $([ "$TARGET" = staging ] && echo --env staging)
-      - if: steps.token.outputs.ok == 'true'
-        run: npx wrangler deploy $([ "$TARGET" = staging ] && echo --env staging) --var "APP_VERSION:${GITHUB_REF_NAME/main/main-${GITHUB_SHA:0:7}}"
-      - if: steps.token.outputs.ok == 'true'
-        run: node scripts/sync-secrets.mjs "$TARGET"
-        env:
-          OWNER_EMAILS: ${{ secrets.OWNER_EMAILS }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-      - if: steps.token.outputs.ok == 'true'
-        run: node scripts/smoke.mjs
-        env:
-          SITE_ORIGIN: ${{ env.TARGET == 'production' && 'https://wine.llmat.dev' || 'https://wine-staging.llmat.dev' }}
+    uses: ./.github/workflows/deploy.yml
+    with:
+      target: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
+      ref: ${{ github.sha }}
+      version: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+    secrets: inherit
