@@ -8,6 +8,7 @@ import type { Me } from "../shared/model";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
 import { ConfirmHost } from "./confirm";
+import { FriendsPage } from "./Friends";
 import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
@@ -139,7 +140,7 @@ function Shell() {
   if (!me.depth) return <Welcome />;
 
   const tab =
-    path === "/" || path.startsWith("/lists")
+    path === "/" || path.startsWith("/lists") || path.startsWith("/friends")
       ? "lists"
       : path.startsWith("/library") || path.startsWith("/wine")
         ? "library"
@@ -190,6 +191,7 @@ function Shell() {
           <Route path="/library" component={Library} />
           <Route path="/wine/:id" component={WinePage} />
           <Route path="/me" component={MePage} />
+          <Route path="/friends" component={FriendsPage} />
           <Route default component={Home} />
         </Router>
       </main>

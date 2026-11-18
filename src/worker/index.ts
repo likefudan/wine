@@ -6,6 +6,8 @@ import { HttpError } from "./http";
 import { costRoutes } from "./costs";
 import { aiEnabled, labelRoutes } from "./label";
 import { placesRoutes } from "./places";
+import { friendRoutes } from "./friends";
+import { proseRoutes } from "./prose";
 import { sharingRoutes } from "./sharing";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -35,7 +37,9 @@ app.route("/api", dataRoutes);
 app.route("/api", labelRoutes);
 app.route("/api", costRoutes);
 app.route("/api", placesRoutes);
+app.route("/api", proseRoutes);
 app.route("/api", sharingRoutes);
+app.route("/api", friendRoutes);
 app.all("/api/*", (c) => c.json({ error: "not_found", message: "Not found" }, 404));
 
 /**
