@@ -4,6 +4,7 @@ import { COLORS, isLang, type Lang, ulid } from "../shared/model";
 import { placePath } from "../shared/place";
 import { PROSE_LANG, PROSE_MAX, type ProseTasting, type ProseWine, tastingFacts, wineFacts } from "../shared/prose";
 import { requireApproved, requireSameOrigin, requireUser } from "./auth";
+import { claudeUsage, logCall } from "./costs";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 import { AZURE_HOST, DAILY_AI_LIMIT, aiEnabled } from "./label";
@@ -99,6 +100,7 @@ export const placeNames = (v: ProseWine, path: string[]) => [v.country, ...path]
 async function write(
   env: Env,
   prompt: string,
+  userId: string,
 ): Promise<{ note: string; places: string[]; model: string; usage: [number, number] }> {
   let last: unknown;
   for (const model of PROSE_MODELS) {
@@ -115,12 +117,17 @@ async function write(
         messages: [{ role: "user", content: prompt }],
         output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
       } as Anthropic.MessageCreateParamsNonStreaming);
+      const usage = claudeUsage(r.usage);
       const text = r.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-      const out = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as {
-        note?: unknown;
-        places?: unknown;
-      };
+      let out: { note?: unknown; places?: unknown } = {};
+      try {
+        out = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+      } catch {
+        // Not JSON: treated like an empty note, below.
+      }
       const note = typeof out.note === "string" ? out.note.trim().slice(0, PROSE_MAX) : "";
+      // Billed either way; an empty note sends us to the next model.
+      await logCall(env, { userId, feature: "prose", model, usage, ok: !!note });
       if (!note) throw new Error(`${model}: empty note`);
       const places = Array.isArray(out.places) ? out.places.map((p) => String(p).trim().slice(0, 60)) : [];
       return { note, places, model, usage: [r.usage.input_tokens, r.usage.output_tokens] };
@@ -152,7 +159,7 @@ proseRoutes.post("/prose", async (c) => {
   const prompt = prosePrompt(lang, wineFacts(wine), tastingFacts(cleanTasting(body.tasting)), places);
   const jobId = ulid();
   try {
-    const r = await write(c.env, prompt);
+    const r = await write(c.env, prompt, user.id);
     await c.env.DB.prepare(
       "INSERT INTO ai_jobs (id, user_id, kind, status, model, input_tokens, output_tokens, created_at) VALUES (?, ?, 'prose', 'done', ?, ?, ?, ?)",
     )

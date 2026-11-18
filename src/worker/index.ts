@@ -3,6 +3,7 @@ import { authRoutes } from "./auth";
 import { dataRoutes } from "./data";
 import type { Env } from "./env";
 import { HttpError } from "./http";
+import { costRoutes } from "./costs";
 import { aiEnabled, labelRoutes } from "./label";
 import { profileRoutes } from "./profile";
 import { placesRoutes } from "./places";
@@ -37,6 +38,7 @@ app.get("/api/health", (c) =>
 app.route("/api/auth", authRoutes);
 app.route("/api", dataRoutes);
 app.route("/api", labelRoutes);
+app.route("/api", costRoutes);
 app.route("/api", placesRoutes);
 app.route("/api", proseRoutes);
 app.route("/api", sharingRoutes);

@@ -44,6 +44,7 @@ jobs:
       - id: tested
         env:
           GH_TOKEN: ${{ github.token }}
+          AUTO_RELEASE: ${{ vars.AUTO_RELEASE }}
         run: |
           n=0
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
@@ -60,6 +61,7 @@ jobs:
             done
             why="these exact files (tree ${tree:0:7}) already passed CI"
           fi
+          echo "自动发布 AUTO_RELEASE=${AUTO_RELEASE:-（未设置，默认开）}" >> "$GITHUB_STEP_SUMMARY"
           if [ "${n:-0}" -gt 0 ]; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
             echo "$why: not testing them again" >> "$GITHUB_STEP_SUMMARY"
@@ -155,13 +157,13 @@ jobs:
     secrets: inherit
 
   # 自动发布: the test site just took this main commit, so release it to production too. Off when the
-  # repository variable AUTO_RELEASE is false. Skipped when the test site skipped it (main moved on:
-  # the newer commit's run releases).
+  # repository variable AUTO_RELEASE is false. When main has moved on, Release leaves it to the newer
+  # commit's run.
   auto-release:
     needs: deploy
     if: >-
       ${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
-      && vars.AUTO_RELEASE != 'false' && needs.deploy.outputs.deployed == 'true' }}
+      && vars.AUTO_RELEASE != 'false' && needs.deploy.result == 'success' }}
     permissions:
       contents: write
       actions: read
