@@ -2,12 +2,10 @@ import { useLocation } from "preact-iso";
 import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import { LIST_KINDS, type ListKind, type ListPlace, type PlaceKind } from "../../shared/model";
-import { Logo } from "../Logo";
 import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
 import { fmtDate, t, tk } from "../i18n";
 import { newList, useStore } from "../store";
-import { Avatar } from "./Me";
 
 export const KIND_NAMES: Record<ListKind, string> = {
   winery: tk("酒庄品鉴"),
@@ -143,19 +141,17 @@ export function Home() {
 
   return (
     <div class="page">
-      <header class="page-head">
-        <Logo size={34} class="head-logo" />
-        <h1 class="brand">{t("酒单")}</h1>
-        <Avatar />
-      </header>
+      <div class="section-head">
+        <h1 class="section-head-title">{t("我的酒单")}</h1>
+        <button type="button" class="button small primary" onClick={() => setAdding(true)}>
+          ＋ {t("新建酒单")}
+        </button>
+      </div>
       {me && !me.approved && (
         <p class="notice">
           {t("你的账号正在等站长审核。现在就能正常记录；拍酒标识别和酒庄地址联想要等审核通过后才能用。")}
         </p>
       )}
-      <button type="button" class="button primary block" onClick={() => setAdding(true)}>
-        ＋ {t("新建酒单")}
-      </button>
       {sorted.length === 0 && (
         <div class="empty">
           <p>{t("一份酒单就是一次品鉴或一次旅行。去酒庄之前建一份，到了就按上酒顺序一款款记。")}</p>

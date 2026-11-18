@@ -17,6 +17,8 @@
   --danger: #a1262c;
   --shadow: 0 1px 2px rgb(42 26 29 / 6%), 0 4px 16px rgb(42 26 29 / 6%);
   --radius: 14px;
+  --glass-edge: rgb(255 255 255 / 70%);
+  --glass-shadow: 0 10px 30px rgb(42 26 29 / 14%), 0 1px 3px rgb(42 26 29 / 8%), inset 0 1px 0 rgb(255 255 255 / 60%);
   --serif-latin: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
   --serif: "Cormorant Garamond", "Songti SC", "Noto Serif SC", "Noto Serif TC", "Source Han Serif SC", "STSong", serif;
   --sans:
@@ -41,6 +43,8 @@
     --brass-soft: #3a2f1f;
     --danger: #ec7b7f;
     --shadow: none;
+    --glass-edge: rgb(255 255 255 / 12%);
+    --glass-shadow: 0 10px 30px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(255 255 255 / 8%);
     color-scheme: dark;
   }
 }
@@ -59,6 +63,8 @@
   --brass-soft: #3a2f1f;
   --danger: #ec7b7f;
   --shadow: none;
+  --glass-edge: rgb(255 255 255 / 12%);
+  --glass-shadow: 0 10px 30px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(255 255 255 / 8%);
   color-scheme: dark;
 }
 
@@ -137,7 +143,7 @@ input[type="checkbox"] {
 }
 .app {
   min-height: 100vh;
-  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
 }
 .main {
   max-width: 640px;
@@ -360,14 +366,15 @@ h3 {
 }
 .list-card-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
 }
 .list-title {
-  font-family: var(--serif);
-  font-size: 21px;
-  font-weight: 600;
+  /* A title people type mixes Chinese and Latin: one sans face keeps both the same size and weight. */
+  font-family: var(--sans);
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 .glass-row {
@@ -489,52 +496,188 @@ h3 {
   margin-right: 8px;
 }
 
-/* Tab bar */
-.tabbar {
+/* Floating tab bar: a glass pill with the three tabs, and 记一杯 as its own round button beside it. */
+.dock {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom));
   z-index: 10;
+  transform: translateX(-50%);
+  width: min(100% - 24px, 480px);
   display: flex;
-  justify-content: space-around;
-  align-items: flex-end;
-  padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--line);
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.dock > * {
+  pointer-events: auto;
+}
+.glass-pane {
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+.tabbar {
+  flex: 1;
+  display: flex;
+  padding: 5px;
+  border-radius: 999px;
 }
 .tabbar a {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 72px;
-  min-height: 48px;
-  justify-content: flex-end;
-  color: var(--muted);
+  justify-content: center;
+  gap: 1px;
+  min-height: 52px;
+  border-radius: 999px;
+  color: var(--ink-2);
   text-decoration: none;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 .tabbar a.on {
   color: var(--primary);
-  font-weight: 600;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--primary) 13%, transparent);
 }
-.tab-add-circle {
+.tabbar a {
+  position: relative;
+}
+.tabbar .dot {
+  position: absolute;
+  top: 6px;
+  left: calc(50% + 8px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.badge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  vertical-align: 1px;
+}
+.tabbar .tab-avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  box-shadow: 0 0 0 1.5px currentColor;
+}
+.dock-add {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
-  margin-top: -22px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
   background: var(--primary);
   color: var(--primary-ink);
-  box-shadow: 0 4px 14px rgb(109 26 42 / 35%);
+  box-shadow:
+    0 6px 20px color-mix(in srgb, var(--primary) 40%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 25%);
 }
-.tabbar .tab-add {
-  color: var(--primary);
+.dock-add:active,
+.tabbar a:active {
+  transform: scale(0.94);
+}
+
+/* The header of the three tabs: always the brand, never the page's name. */
+.app-head {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  padding: max(10px, env(safe-area-inset-top)) 16px 8px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 608px;
+  margin: 0 auto;
+  color: var(--ink);
+  text-decoration: none;
+}
+.app-brand .brand {
+  font-size: 24px;
+}
+.app-head + .main .page {
+  padding-top: 6px;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.section-head-title {
+  margin: 0;
+  font-size: 15px;
   font-weight: 600;
+  color: var(--muted);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.segmented button {
+  flex: 1;
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.segmented button.on {
+  background: var(--surface);
+  color: var(--primary);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.group-title {
+  margin: 0 0 -8px;
+  font-size: 15px;
 }
 
 .sync-bar {
