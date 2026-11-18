@@ -306,14 +306,11 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
   const chosen = props.x.descriptors.map((d) => d.id);
   // Families start closed: the whole vocabulary at once is a wall of words.
   const [open, setOpen] = useState<string[]>([]);
+  // A chosen word stays where it is and only lights up. Moving it to a list above made everything
+  // under the finger jump on every tap; the summary of what is chosen sits below the families, so
+  // when it grows it only pushes down what comes after.
   return (
     <div class="aroma-picker">
-      {chosen.length > 0 && (
-        <div class="aroma-chosen">
-          <AromaChips ids={chosen} x={props.x} patch={props.patch} strength={props.strength} />
-          {props.strength && <span class="field-hint">{t("再点一下加强，点到第三下后移除")}</span>}
-        </div>
-      )}
       <input
         type="search"
         class="search small"
@@ -327,9 +324,11 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
             {t(tier === 1 ? tk("一类：来自葡萄") : tier === 2 ? tk("二类：来自酿造") : tk("三类：来自陈年"))}
           </span>
           {FAMILIES.filter((f) => f.tier === tier).map((f) => {
-            const words = wordsOf([f.id], color).filter((d) => hit(d) && !chosen.includes(d.id));
+            const all = wordsOf([f.id], color);
+            const words = all.filter(hit);
             if (!words.length) return null;
             const shown = !!ql || open.includes(f.id);
+            const picked = all.filter((d) => chosen.includes(d.id)).length;
             return (
               <div key={f.id} class="aroma-family">
                 <button
@@ -339,6 +338,7 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
                   onClick={() => setOpen(shown ? open.filter((o) => o !== f.id) : [...open, f.id])}
                 >
                   {shown ? "▾" : "▸"} {p(f.name)}
+                  {picked > 0 && <span class="family-count">{picked}</span>}
                 </button>
                 {shown && (
                   <AromaChips ids={words.map((d) => d.id)} x={props.x} patch={props.patch} strength={props.strength} />
@@ -348,6 +348,24 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
           })}
         </div>
       ))}
+      <ChosenAromas x={props.x} patch={props.patch} strength={props.strength} />
+    </div>
+  );
+}
+
+/** What is chosen so far, under the word lists so that it never pushes them around. */
+function ChosenAromas(props: { x: Tasting; patch: Patch; strength?: boolean; hideEmpty?: boolean }) {
+  const ids = props.x.descriptors.map((d) => d.id);
+  if (props.hideEmpty && !ids.length) return null;
+  return (
+    <div class="aroma-chosen">
+      <span class="tier-label">{t("已选 {n}", { n: ids.length })}</span>
+      {ids.length > 0 ? (
+        <AromaChips ids={ids} x={props.x} patch={props.patch} strength={props.strength} />
+      ) : (
+        <span class="field-hint">{t("点上面的词，选中的会亮起来")}</span>
+      )}
+      {props.strength && ids.length > 0 && <span class="field-hint">{t("再点一下加强，点到第三下后移除")}</span>}
     </div>
   );
 }
@@ -555,7 +573,6 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
         )}
         {q.field === "aromas" && (
           <div class="aroma-guide">
-            {x.descriptors.length > 0 && <AromaChips ids={x.descriptors.map((d) => d.id)} x={x} patch={patch} />}
             {!g && (
               <div class="answers">
                 {BEGINNER_GROUPS.map((b) => (
@@ -614,6 +631,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
                 {t("换个方向再找")}
               </button>
             )}
+            <ChosenAromas x={x} patch={patch} hideEmpty />
           </div>
         )}
         {q.options.length > 0 && (

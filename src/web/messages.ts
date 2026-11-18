@@ -240,6 +240,8 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "再點一下加強，點到第三下後移除",
     en: "Tap again for stronger; a third tap removes it",
   },
+  "已选 {n}": { tw: "已選 {n}", en: "Chosen: {n}" },
+  "点上面的词，选中的会亮起来": { tw: "點上面的詞，選中的會亮起來", en: "Tap a word above; chosen ones light up" },
   "找香气，例如 雪松": { tw: "找香氣，例如 雪松", en: "Find an aroma, e.g. cedar" },
   你描述的是: { tw: "你描述的是", en: "What you described" },
   香气: { tw: "香氣", en: "Aromas" },

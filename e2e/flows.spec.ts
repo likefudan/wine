@@ -174,3 +174,37 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
   await ownerCtx.close();
   await friendCtx.close();
 });
+
+test("choosing an aroma lights it up in place without moving the words around it", async ({ page }) => {
+  await signIn(page);
+  await page.click("text=刚开始认真喝，想学怎么品");
+  await page.click("text=新建酒单");
+  await page.fill('.sheet input[placeholder="Opus One"]', "Calon Segur");
+  await page.fill('.sheet input[placeholder^="例如"]', "Aromas");
+  await page.click("text=建好了");
+  await page.click("text=加下一款酒");
+  await page.fill("input.search", "Calon Segur");
+  await page.click("text=新酒：Calon Segur");
+  await page.fill('input[placeholder="2019"]', "2022");
+  await page.click(".choice >> text=红");
+  await page.click("text=开始品鉴");
+  await page.click(".depth-tabs >> text=进阶");
+
+  await page.click(".family-name >> text=红色水果");
+  const raspberry = page.locator(".aroma-family .chip >> text=覆盆子");
+  const plum = page.locator(".aroma-family .chip >> text=红李子");
+  // Page coordinates, not viewport ones: the tap may scroll the chip into view.
+  const where = () => plum.evaluate((e) => [e.getBoundingClientRect().left, e.getBoundingClientRect().top + scrollY]);
+  const before = await where();
+  await raspberry.click();
+  await expect(raspberry).toHaveAttribute("aria-pressed", "true");
+  expect(await where()).toEqual(before);
+  await expect(page.locator(".family-name", { hasText: "红色水果" }).locator(".family-count")).toHaveText("1");
+  await expect(page.locator(".aroma-chosen .chip")).toHaveText(["覆盆子"]);
+  await plum.click();
+  await expect(page.locator(".aroma-chosen .chip")).toHaveText(["覆盆子", "红李子"]);
+  // Tapping it again in place takes it out.
+  await raspberry.click();
+  await expect(raspberry).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".aroma-chosen .chip")).toHaveText(["红李子"]);
+});
