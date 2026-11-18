@@ -11,7 +11,7 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   page.on("dialog", (d) => d.accept());
   await signIn(page);
   await page.click("text=刚开始认真喝，想学怎么品");
-  await page.click("text=新建酒单");
+  await page.click("text=新建品鉴");
   await page.fill('.sheet input[placeholder="Opus One"]', "Opus One");
   await page.fill('.sheet input[placeholder^="例如"]', "Napa day 1");
   await page.click("text=建好了");
@@ -77,7 +77,7 @@ test("the pages switch to English", async ({ page }) => {
   await page.click(".lang-switch >> text=EN");
   await expect(page.locator("h1")).toHaveText("Me");
   await page.goto("/");
-  await expect(page.locator("text=New list")).toBeVisible();
+  await expect(page.locator("text=New tasting")).toBeVisible();
 });
 
 test("the Google button leaves the app for the sign-in route", async ({ page }) => {
@@ -105,7 +105,7 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
   owner.on("dialog", (d) => d.accept());
   await signIn(owner);
   await owner.click("text=只想快速记个分");
-  await owner.click("text=新建酒单");
+  await owner.click("text=新建品鉴");
   await owner.fill('.sheet input[placeholder^="例如"]', "Napa 第一天");
   await owner.click("text=建好了");
   for (const [wine, year] of [
@@ -172,7 +172,7 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
   await expect(owner.locator(".sheet .members li")).toHaveCount(2);
   await owner.click("text=揭晓：让大家都看到所有评分");
   await expect(owner.locator(".sheet")).toContainText("已揭晓");
-  await owner.click("text=酒单卡片");
+  await owner.click("text=品鉴卡片");
   await expect(owner.locator("img.list-card-img")).toBeVisible();
 
   await friend.reload();
@@ -184,7 +184,7 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
 test("choosing an aroma lights it up in place without moving the words around it", async ({ page }) => {
   await signIn(page);
   await page.click("text=刚开始认真喝，想学怎么品");
-  await page.click("text=新建酒单");
+  await page.click("text=新建品鉴");
   await page.fill('.sheet input[placeholder="Opus One"]', "Calon Segur");
   await page.fill('.sheet input[placeholder^="例如"]', "Aromas");
   await page.click("text=建好了");
@@ -220,4 +220,22 @@ test("choosing an aroma lights it up in place without moving the words around it
   await palate.locator(".aroma-family .chip >> text=黑樱桃").click();
   await expect(palate.locator(".aroma-chosen .chip")).toHaveText(["红李子", "黑樱桃"]);
   await expect(page.locator(".tasting-note p")).toContainText("口中有红李子和黑樱桃");
+});
+
+test("adding a wine from inside a list puts it in that list, with no other choice", async ({ page }) => {
+  await signIn(page);
+  await page.click("text=只想快速记个分");
+  await page.click("text=新建品鉴");
+  await page.fill('.sheet input[placeholder^="例如"]', "Friday at home");
+  await page.click("text=建好了");
+  for (const open of ["text=加下一款酒", ".dock-add"]) {
+    await page.click(open);
+    await expect(page.locator(".add-to-list")).toContainText("Friday at home");
+    await expect(page.locator("text=不属于任何品鉴")).toHaveCount(0);
+    await page.goBack();
+  }
+  // From the tab bar outside a list, the choice is still there.
+  await page.goto("/");
+  await page.click(".dock-add");
+  await expect(page.locator("text=不属于任何品鉴")).toBeVisible();
 });

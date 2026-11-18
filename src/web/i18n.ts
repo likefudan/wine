@@ -6,7 +6,7 @@ import { MESSAGES } from "./messages";
 
 /**
  * 简体 / 繁體 / English, the badminton site's way (lang.ts / i18n.ts / messages.ts there): the code
- * is written in Simplified Chinese and that text is its own key; t("酒单") looks up the other two in
+ * is written in Simplified Chinese and that text is its own key; t("品鉴") looks up the other two in
  * messages.ts. Unlike the badminton site, a phone set to English starts in English (docs/design.zh.md
  * §3.8), and the choice is kept on the account too.
  */

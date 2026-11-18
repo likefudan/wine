@@ -1591,6 +1591,55 @@ html.standalone body {
   }
 }
 
+/* 记一杯 opened from a list: which list the wine goes into. */
+.add-to-list {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.add-to-list strong {
+  margin-left: 4px;
+  color: var(--ink);
+}
+
+/* Which tasting a note belongs to, on top of the note. */
+.page-head.sticky:has(.belongs) {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.belongs {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.belongs strong {
+  margin-left: 2px;
+  color: var(--primary);
+  font-weight: 600;
+}
+.row-list {
+  display: block;
+  color: var(--primary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* 用当前位置 (NearbyPicker) and 品酒地点 (TastingPlace) */
 .nearby {
   margin: -4px 0 4px;
@@ -1822,4 +1871,97 @@ a.pro-score {
 }
 .pro-prompt {
   font-size: 12px;
+}
+
+/* 我的 → 通用 → 导出 */
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 一句话 → 香气标签 */
+.note-words {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.chip.suggest {
+  border-style: dashed;
+  border-color: var(--brass);
+}
+
+/* 和上一款比 */
+.compare-prev {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.compare-line {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+/* 我的 → 成长 */
+.growth {
+  display: grid;
+  gap: 12px;
+}
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+.stat strong {
+  display: block;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--primary);
+}
+.stat span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.notice-card p {
+  margin: 0 0 8px;
+}
+.growth-months {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.growth-month-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.growth-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  margin: 6px 0 4px;
+  overflow: hidden;
+}
+.growth-bar span {
+  display: block;
+  height: 100%;
+  background: var(--brass);
+  border-radius: 999px;
+}
+.chip.static {
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+}
+.chip .count {
+  font-size: 11px;
+  color: var(--muted);
 }
