@@ -219,6 +219,34 @@ labelRoutes.post("/label", async (c) => {
   }
 });
 
+/** Photos a person may keep a day without reading them (分享图 补拍): storage, not AI. */
+export const DAILY_PHOTO_LIMIT = 60;
+
+/** A label photo taken later (分享图), kept as the tasting's photo: no reading, no AI allowance. */
+labelRoutes.post("/photos", async (c) => {
+  requireSameOrigin(c);
+  const user = await requireUser(c);
+  requireApproved(c.env, user);
+  if (!c.env.PHOTOS) throw new HttpError(503, "photos_off", "照片存储还没有开通");
+  const body = await readJson(c.req.raw);
+  const image = typeof body.image === "string" ? body.image.replace(/^data:image\/jpeg;base64,/, "") : "";
+  if (!image || image.length > (MAX_IMAGE_BYTES * 4) / 3 || !/^[A-Za-z0-9+/=]+$/.test(image))
+    throw new HttpError(400, "bad_image", "照片无效，请重拍");
+  const since = new Date(Date.now() - 86400_000).toISOString();
+  const used = await c.env.DB.prepare("SELECT COUNT(*) AS n FROM photos WHERE user_id = ? AND created_at > ?")
+    .bind(user.id, since)
+    .first<{ n: number }>();
+  if ((used?.n ?? 0) >= DAILY_PHOTO_LIMIT) throw new HttpError(429, "photo_limit", "今天上传的照片太多了，明天再试");
+  const photoId = ulid();
+  const key = `labels/${user.id}/${photoId}.jpg`;
+  const bytes = Uint8Array.from(atob(image), (ch) => ch.charCodeAt(0));
+  await c.env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: "image/jpeg" } });
+  await c.env.DB.prepare("INSERT INTO photos (id, user_id, r2_key, kind, created_at) VALUES (?, ?, ?, 'label', ?)")
+    .bind(photoId, user.id, key, now())
+    .run();
+  return c.json({ photoId });
+});
+
 labelRoutes.get("/photos/:id", async (c) => {
   const user = await requireUser(c);
   const pid = c.req.param("id");
