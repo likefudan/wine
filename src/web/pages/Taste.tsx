@@ -43,14 +43,14 @@ import {
   type VintageInfo,
   toDepth,
 } from "../../shared/model";
-import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
+import { BackIcon, BottleIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe, useStore } from "../store";
 import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { TastingPlace } from "../TastingPlace";
-import { BoughtToCellar, TastingFromCellar } from "./Cellar";
+import { AddToCellarSheet, BoughtToCellar, TastingFromCellar } from "./Cellar";
 import { BlindResult, GuessCard, blindShown } from "../Blind";
 import { isBlindId } from "../../shared/blind";
 
@@ -91,6 +91,7 @@ export function Taste() {
   const [switches, setSwitches] = useState(0);
   const [offer, setOffer] = useState<Depth | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [buying, setBuying] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(x);
 
@@ -226,9 +227,14 @@ export function Taste() {
             {t("对答案")}
           </a>
         ) : (
-          <button type="button" class="button block" onClick={() => setSharing(true)}>
-            <ShareIcon /> {t("生成分享图")}
-          </button>
+          <>
+            <button type="button" class="button block" onClick={() => setSharing(true)}>
+              <ShareIcon /> {t("生成分享图")}
+            </button>
+            <button type="button" class="button block" onClick={() => setBuying(true)}>
+              <BottleIcon /> {t("买了这款酒？放进酒窖")}
+            </button>
+          </>
         )}
         <button
           type="button"
@@ -250,6 +256,7 @@ export function Taste() {
           {t("删除这条记录")}
         </button>
       </div>
+      {buying && saved && !blindOpen && <AddToCellarSheet x={saved} onClose={() => setBuying(false)} />}
       {sharing && vintage && (
         <TastingShareSheet
           v={vintage}

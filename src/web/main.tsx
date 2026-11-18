@@ -7,7 +7,7 @@ import { useEffect, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
-import { CellarIcon, GlassIcon, ListIcon, SearchIcon } from "./components";
+import { GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
 import { useHideOnScroll } from "./hideOnScroll";
 import { ConfirmHost } from "./confirm";
@@ -16,7 +16,7 @@ import { RecsPage } from "./pages/Recs";
 import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
-import { CellarLotPage, CellarPage } from "./pages/Cellar";
+import { CellarLotPage, CellarRedirect } from "./pages/Cellar";
 import { Home } from "./pages/Home";
 import { Library } from "./pages/Library";
 import { JoinPage } from "./pages/JoinPage";
@@ -149,13 +149,11 @@ function Shell() {
   const tab =
     path === "/" || path.startsWith("/lists") || path.startsWith("/friends") || path.startsWith("/answers")
       ? "lists"
-      : path.startsWith("/library") || path.startsWith("/wine")
+      : path.startsWith("/library") || path.startsWith("/wine") || path.startsWith("/cellar")
         ? "library"
-        : path.startsWith("/cellar")
-          ? "cellar"
-          : path.startsWith("/me")
-            ? "me"
-            : "";
+        : path.startsWith("/me")
+          ? "me"
+          : "";
   const fullScreen =
     path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add") || path.startsWith("/blind");
   const waiting = usePending();
@@ -201,7 +199,7 @@ function Shell() {
           <Route path="/taste/:id" component={Taste} />
           <Route path="/library" component={Library} />
           <Route path="/wine/:id" component={WinePage} />
-          <Route path="/cellar" component={CellarPage} />
+          <Route path="/cellar" component={CellarRedirect} />
           <Route path="/cellar/add" component={AddToCellar} />
           <Route path="/cellar/new" component={CellarLotPage} />
           <Route path="/cellar/:id" component={CellarLotPage} />
@@ -224,16 +222,12 @@ function Shell() {
               aria-current={tab === "library" ? "page" : undefined}
             >
               <SearchIcon />
-              <span>{t("酒库")}</span>
-            </a>
-            <a href="/cellar" class={tab === "cellar" ? "on" : ""} aria-current={tab === "cellar" ? "page" : undefined}>
-              <CellarIcon />
               {due > 0 && (
                 <span class="dot">
                   <span class="visually-hidden">{t("酒窖提醒")}</span>
                 </span>
               )}
-              <span>{t("酒窖")}</span>
+              <span>{t("酒库")}</span>
             </a>
             <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
               <Avatar />

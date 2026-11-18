@@ -96,11 +96,11 @@ test("recommendations: tonight's bottle, taste profile and a step further", asyn
   // Home: the 酒窖提醒 line comes first; once seen, tonight's bottle (the one past its window) takes its place.
   await expect(page.locator(".cellar-alert")).toBeVisible();
   await expect(page.locator(".recs-home")).toHaveCount(0);
-  await page.click("nav >> text=酒窖");
+  await page.goto("/library?view=cellar");
   await page.click("nav >> text=品鉴");
   await expect(page.locator(".recs-home")).toContainText("Old Vine Cellars");
-  await page.click("nav >> text=酒窖");
-  await page.click(".section-head >> text=今晚开哪瓶");
+  await page.goto("/library?view=cellar");
+  await page.click(".cellar-recs");
   await expect(page).toHaveURL(/\/recs$/);
   await expect(page.locator(".recs")).toContainText("根据你打过分的 6 款酒");
   const first = page.locator(".rec-list").first().locator(".rec-card").first();
