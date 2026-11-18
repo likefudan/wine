@@ -158,11 +158,12 @@ jobs:
 
   # 自动发布: the test site just took this main commit, so release it to production too. Off when the
   # repository variable AUTO_RELEASE is false. When main has moved on, Release leaves it to the newer
-  # commit's run.
+  # commit's run. `!cancelled()` is needed: without it the implied success() also requires check and
+  # e2e, which are skipped when the files were already tested.
   auto-release:
     needs: deploy
     if: >-
-      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+      ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       && vars.AUTO_RELEASE != 'false' && needs.deploy.result == 'success' }}
     permissions:
       contents: write
