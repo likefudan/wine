@@ -1,23 +1,27 @@
-/* 酒窖 (docs/design.zh.md §5): oxblood for every action, old brass for hints and tags, neutrals
-   with a little wine in them. Light is the tasting-room paper, dark is the cellar at night. */
+/* 酒单印刷: the page is a printed wine list. Cream paper, ink, one oxblood accent; serif type; thin
+   rules and dotted leaders between entries instead of boxes; square corners. Dark is the same list
+   under candlelight. Only the floating tab bar stays glass. */
 
 :root {
-  --bg: #f6f0ea;
-  --surface: #fffaf5;
-  --surface-2: #efe5dc;
-  --ink: #2a1a1d;
-  --ink-2: #5e4a4e;
-  --muted: #6f5b5f;
-  --line: #e0d2c8;
-  --primary: #6d1a2a;
-  --primary-ink: #fff7f2;
-  --primary-soft: #f1dde0;
-  --brass: #8a6a33;
-  --brass-soft: #f2e7d2;
-  --danger: #a1262c;
-  --shadow: 0 1px 2px rgb(42 26 29 / 6%), 0 4px 16px rgb(42 26 29 / 6%);
-  --radius: 14px;
-  --glass-tint: rgb(255 250 245 / 6%);
+  --bg: #f1e9d8;
+  --surface: #f8f3e7;
+  --surface-2: #e6dcc6;
+  --ink: #1d1a16;
+  --ink-2: #3d362d;
+  --muted: #6b6152;
+  --line: rgb(29 26 22 / 20%);
+  --line-2: rgb(29 26 22 / 42%);
+  --primary: #7a1f2b;
+  --primary-ink: #f6efe0;
+  --primary-soft: #ead9cd;
+  --fill: #7a1f2b;
+  --fill-ink: #f6efe0;
+  --brass: #75632f;
+  --brass-soft: #e9dfc4;
+  --danger: #9c2a22;
+  --shadow: none;
+  --paper-glow: #f7f1e3;
+  --glass-tint: rgb(248 243 231 / 6%);
   --glass-halo: 0 0 6px rgb(255 255 255 / 90%), 0 0 2px rgb(255 255 255 / 90%);
   --glass-active: color-mix(in srgb, var(--primary) 14%, rgb(255 255 255 / 22%));
   --glass-sheen: linear-gradient(
@@ -28,10 +32,13 @@
   );
   --glass-edge: rgb(255 255 255 / 55%);
   --glass-shadow:
-    0 12px 32px rgb(42 26 29 / 16%), 0 2px 6px rgb(42 26 29 / 8%), inset 0 1px 0.5px rgb(255 255 255 / 85%),
+    0 12px 32px rgb(29 26 22 / 16%), 0 2px 6px rgb(29 26 22 / 8%), inset 0 1px 0.5px rgb(255 255 255 / 85%),
     inset 0 -1px 1px rgb(255 255 255 / 30%), inset 0 0 0 0.5px rgb(255 255 255 / 25%);
+  --radius: 2px;
   --serif-latin: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
-  --serif: "Cormorant Garamond", "Songti SC", "Noto Serif SC", "Noto Serif TC", "Source Han Serif SC", "STSong", serif;
+  --serif:
+    "Cormorant Garamond", "Songti SC", "Songti TC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC",
+    "STSong", "SimSun", serif;
   --sans:
     -apple-system, BlinkMacSystemFont, "PingFang SC", "PingFang TC", "Noto Sans SC", "Noto Sans TC", "Segoe UI", Roboto,
     "Helvetica Neue", sans-serif;
@@ -40,21 +47,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #1a1113;
-    --surface: #24181b;
-    --surface-2: #2f2125;
-    --ink: #f3e8e4;
-    --ink-2: #d4c2be;
-    --muted: #b09c99;
-    --line: #3f2e32;
-    --primary: #c4566a;
-    --primary-ink: #1a1113;
-    --primary-soft: #3d2228;
-    --brass: #d1ad6c;
-    --brass-soft: #3a2f1f;
-    --danger: #ec7b7f;
+    --bg: #16130f;
+    --surface: #201c16;
+    --surface-2: #2b261e;
+    --ink: #ebe2cf;
+    --ink-2: #cfc5b0;
+    --muted: #a3987f;
+    --line: rgb(235 226 207 / 20%);
+    --line-2: rgb(235 226 207 / 42%);
+    --primary: #dc929a;
+    --primary-ink: #16130f;
+    --primary-soft: #3a2427;
+    --fill: #8c2c39;
+    --fill-ink: #f6efe0;
+    --brass: #c9a45c;
+    --brass-soft: #2e2719;
+    --danger: #e8837a;
     --shadow: none;
-    --glass-tint: rgb(36 24 27 / 12%);
+    --paper-glow: #1d1914;
+    --glass-tint: rgb(32 28 22 / 12%);
     --glass-halo: 0 0 6px rgb(0 0 0 / 85%), 0 0 2px rgb(0 0 0 / 85%);
     --glass-active: color-mix(in srgb, var(--primary) 26%, rgb(255 255 255 / 4%));
     --glass-sheen: linear-gradient(
@@ -70,21 +81,25 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #1a1113;
-  --surface: #24181b;
-  --surface-2: #2f2125;
-  --ink: #f3e8e4;
-  --ink-2: #d4c2be;
-  --muted: #b09c99;
-  --line: #3f2e32;
-  --primary: #c4566a;
-  --primary-ink: #1a1113;
-  --primary-soft: #3d2228;
-  --brass: #d1ad6c;
-  --brass-soft: #3a2f1f;
-  --danger: #ec7b7f;
+  --bg: #16130f;
+  --surface: #201c16;
+  --surface-2: #2b261e;
+  --ink: #ebe2cf;
+  --ink-2: #cfc5b0;
+  --muted: #a3987f;
+  --line: rgb(235 226 207 / 20%);
+  --line-2: rgb(235 226 207 / 42%);
+  --primary: #dc929a;
+  --primary-ink: #16130f;
+  --primary-soft: #3a2427;
+  --fill: #8c2c39;
+  --fill-ink: #f6efe0;
+  --brass: #c9a45c;
+  --brass-soft: #2e2719;
+  --danger: #e8837a;
   --shadow: none;
-  --glass-tint: rgb(36 24 27 / 12%);
+  --paper-glow: #1d1914;
+  --glass-tint: rgb(32 28 22 / 12%);
   --glass-halo: 0 0 6px rgb(0 0 0 / 85%), 0 0 2px rgb(0 0 0 / 85%);
   --glass-active: color-mix(in srgb, var(--primary) 26%, rgb(255 255 255 / 4%));
   --glass-sheen: linear-gradient(
@@ -107,9 +122,12 @@ html {
 }
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(120% 60% at 50% 0%, var(--paper-glow) 0%, transparent 70%) no-repeat,
+    var(--bg);
   color: var(--ink);
-  font: 16px / 1.5 var(--sans);
+  font: 17px / 1.55 var(--serif);
+  font-variant-numeric: lining-nums;
   -webkit-tap-highlight-color: transparent;
 }
 a {
@@ -128,8 +146,8 @@ select {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
   background: var(--surface);
 }
 input:focus-visible,
@@ -163,7 +181,7 @@ input[type="checkbox"] {
   color: var(--muted);
 }
 .small {
-  font-size: 13px;
+  font-size: 14px;
 }
 .center {
   text-align: center;
@@ -204,15 +222,16 @@ input[type="checkbox"] {
   z-index: 5;
   margin: 0 -16px;
   padding: 8px 16px;
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1.5px solid var(--ink);
 }
 .page-head-title {
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 600;
 }
 .page-head .brand {
   flex: 1;
@@ -227,7 +246,7 @@ h3 {
   font-family: var(--serif);
   font-weight: 600;
   font-size: 30px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.18em;
 }
 .logo {
   flex: none;
@@ -243,16 +262,18 @@ h3 {
   margin: 0;
 }
 .section-title {
-  margin: 8px 0 6px;
-  font-size: 14px;
-  color: var(--muted);
+  margin: 10px 0 6px;
+  font-size: 13px;
+  color: var(--ink);
   font-weight: 600;
+  letter-spacing: 0.22em;
 }
 .step-title {
   margin: 0 0 4px;
   font-family: var(--serif);
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 600;
+  letter-spacing: 0.14em;
 }
 .sub-title {
   margin: 12px 0 0;
@@ -272,11 +293,11 @@ h3 {
 }
 .notice {
   margin: 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--brass-soft);
-  color: var(--ink);
-  font-size: 14px;
+  padding: 10px 2px;
+  border-top: 0.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
+  color: var(--ink-2);
+  font-size: 15px;
 }
 .row-notice {
   display: flex;
@@ -295,19 +316,26 @@ h3 {
   gap: 6px;
   min-height: 44px;
   padding: 10px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--line-2);
+  background: transparent;
   color: var(--ink);
   font-weight: 600;
+  letter-spacing: 0.06em;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
 }
 .button.primary {
-  background: var(--primary);
+  background: var(--fill);
+  border-color: var(--fill);
+  color: var(--fill-ink);
+}
+/* A small primary is an outline, like a stamp on the margin: only the main action is filled. */
+.button.primary.small {
+  background: transparent;
   border-color: var(--primary);
-  color: var(--primary-ink);
+  color: var(--primary);
 }
 .button.danger {
   color: var(--danger);
@@ -383,15 +411,11 @@ h3 {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 .card {
   display: block;
-  padding: 14px;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  padding: 16px 2px;
+  border-bottom: 0.5px solid var(--line-2);
   color: inherit;
   text-decoration: none;
 }
@@ -401,11 +425,10 @@ h3 {
   gap: 2px;
 }
 .list-title {
-  /* A title people type mixes Chinese and Latin: one sans face keeps both the same size and weight. */
-  font-family: var(--sans);
-  font-size: 19px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
   margin: 0;
 }
 .glass-row {
@@ -424,10 +447,11 @@ h3 {
   gap: 12px;
   width: 100%;
   min-height: 60px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  padding: 12px 2px;
+  border: 0;
+  /* A dotted leader under each entry, as on a printed list. */
+  border-bottom: 1px dotted var(--line-2);
+  background: none;
   color: inherit;
   text-align: left;
   text-decoration: none;
@@ -446,11 +470,13 @@ h3 {
   gap: 8px;
 }
 .row-n {
-  width: 18px;
+  width: 20px;
   flex: none;
   text-align: right;
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--primary);
+  font-family: var(--serif-latin);
+  font-style: italic;
+  font-size: 19px;
 }
 .rows.numbered {
   counter-reset: none;
@@ -458,8 +484,9 @@ h3 {
 .row-score {
   margin-left: auto;
   font-family: var(--serif-latin);
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
   color: var(--primary);
   min-width: 32px;
   text-align: right;
@@ -489,7 +516,7 @@ h3 {
 .wine-producer {
   font-family: var(--serif-latin);
   font-weight: 600;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -515,10 +542,8 @@ h3 {
   align-items: center;
 }
 .catalog-row {
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
+  padding: 12px 2px;
+  border-bottom: 1px dotted var(--line-2);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -642,12 +667,12 @@ h3 {
   border-radius: 50%;
   background:
     linear-gradient(180deg, rgb(255 255 255 / 28%), rgb(255 255 255 / 0%) 55%),
-    color-mix(in srgb, var(--primary) 84%, transparent);
+    color-mix(in srgb, var(--fill) 84%, transparent);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
   backdrop-filter: blur(12px) saturate(180%);
-  color: var(--primary-ink);
+  color: var(--fill-ink);
   box-shadow:
-    0 8px 22px color-mix(in srgb, var(--primary) 38%, transparent),
+    0 8px 22px color-mix(in srgb, var(--fill) 38%, transparent),
     inset 0 1px 0.5px rgb(255 255 255 / 55%),
     inset 0 -1px 1px rgb(255 255 255 / 15%);
 }
@@ -661,25 +686,36 @@ h3 {
   position: sticky;
   top: 0;
   z-index: 8;
-  padding: max(10px, env(safe-area-inset-top)) 16px 8px;
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  padding: max(10px, env(safe-area-inset-top)) 16px 0;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   backdrop-filter: blur(16px) saturate(160%);
 }
 .app-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
   max-width: 608px;
   margin: 0 auto;
   color: var(--ink);
   text-decoration: none;
 }
 .app-brand .brand {
-  font-size: 24px;
+  font-size: 25px;
+}
+/* The double rule under a list's masthead. */
+.app-head::after {
+  content: "";
+  display: block;
+  max-width: 608px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
 }
 .app-head + .main .page {
-  padding-top: 6px;
+  padding-top: 12px;
 }
 .section-head {
   display: flex;
@@ -689,9 +725,10 @@ h3 {
 }
 .section-head-title {
   margin: 0;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--muted);
+  letter-spacing: 0.3em;
+  color: var(--ink);
 }
 .visually-hidden {
   position: absolute;
@@ -705,41 +742,38 @@ h3 {
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--surface-2);
+  border-top: 0.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
 }
 .segmented button {
   flex: 1 0 auto;
   padding: 0 10px;
   white-space: nowrap;
-  min-height: 38px;
+  min-height: 42px;
   border: 0;
-  border-radius: 999px;
   background: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink-2);
 }
 .segmented button.on {
-  background: var(--surface);
   color: var(--primary);
   font-weight: 700;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 6px;
 }
 .group {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
+  padding: 16px 0 8px;
+  border-top: 1.5px solid var(--ink);
 }
 .group-title {
   margin: 0 0 -8px;
   font-size: 15px;
+  letter-spacing: 0.14em;
 }
 
 /* In the flow, not sticky: a sticky bar sat over each page's own sticky header (完成, 返回). */
@@ -849,7 +883,7 @@ h3 {
   position: relative;
   max-width: 100%;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: #000;
   touch-action: none;
 }
@@ -931,7 +965,7 @@ h3 {
 .search {
   min-height: 48px;
   font-size: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .search.small {
   min-height: 40px;
@@ -953,18 +987,18 @@ h3 {
 .chip {
   min-height: 40px;
   padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border-radius: var(--radius);
+  border: 0.75px solid var(--line-2);
+  background: transparent;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   white-space: nowrap;
 }
 .choice button.on,
 .chip.on {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-ink);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
 }
 .chip.on.warn {
   background: var(--danger);
@@ -1009,9 +1043,8 @@ h3 {
 .chip-form input {
   width: 92px;
   min-height: 40px;
-  border-radius: 999px;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* Score */
@@ -1031,8 +1064,8 @@ h3 {
 }
 .score-value {
   font-family: var(--serif-latin);
-  font-size: 40px;
-  font-weight: 600;
+  font-size: 44px;
+  font-weight: 500;
   color: var(--primary);
   line-height: 1;
 }
@@ -1078,7 +1111,8 @@ h3 {
   max-height: 92vh;
   overflow-y: auto;
   background: var(--bg);
-  border-radius: 18px 18px 0 0;
+  border-radius: 0;
+  border-top: 2px solid var(--ink);
   padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
 }
 .sheet-head {
@@ -1101,7 +1135,8 @@ h3 {
   width: 100%;
   max-width: 360px;
   background: var(--bg);
-  border-radius: 16px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
   padding: 20px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -1157,8 +1192,8 @@ h3 {
 }
 .lang-switch {
   display: inline-flex;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
   overflow: hidden;
   align-self: flex-start;
 }
@@ -1166,13 +1201,13 @@ h3 {
   min-width: 48px;
   min-height: 36px;
   border: 0;
-  background: var(--surface);
+  background: transparent;
   cursor: pointer;
   font-size: 14px;
 }
 .lang-switch button.on {
-  background: var(--primary);
-  color: var(--primary-ink);
+  background: var(--ink);
+  color: var(--bg);
 }
 .depth-cards {
   display: flex;
@@ -1186,9 +1221,8 @@ h3 {
   text-align: left;
   padding: 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--line-2);
+  background: transparent;
   cursor: pointer;
 }
 .depth-card strong {
@@ -1208,39 +1242,35 @@ h3 {
 .depth-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 4px;
-  border-radius: 12px;
-  background: var(--surface-2);
+  border-top: 0.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
 }
 .depth-tabs button {
-  min-height: 40px;
+  min-height: 42px;
   border: 0;
-  border-radius: 9px;
   background: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink-2);
 }
 .depth-tabs button.on {
-  background: var(--surface);
   color: var(--primary);
   font-weight: 700;
-  box-shadow: var(--shadow);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 6px;
 }
 .steps {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 .step {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  padding: 18px 0;
+  border-top: 1.5px solid var(--ink);
 }
 .hues {
   display: flex;
@@ -1254,7 +1284,7 @@ h3 {
   gap: 4px;
   padding: 8px;
   min-width: 72px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 2px solid transparent;
   background: none;
   cursor: pointer;
@@ -1285,8 +1315,8 @@ h3 {
   min-width: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--primary);
-  color: var(--primary-ink);
+  background: var(--fill);
+  color: var(--fill-ink);
   font-size: 12px;
   line-height: 18px;
   text-align: center;
@@ -1331,9 +1361,9 @@ h3 {
   display: none;
 }
 .tasting-note {
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  background: var(--brass-soft);
+  padding: 14px 2px;
+  border-top: 0.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
 }
 .tasting-note p {
   margin: 4px 0 0;
@@ -1401,9 +1431,9 @@ h3 {
   text-align: left;
   padding: 12px 14px;
   min-height: 52px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--bg);
+  border-radius: var(--radius);
+  border: 0.75px solid var(--line-2);
+  background: transparent;
   cursor: pointer;
 }
 .answer span {
@@ -1426,11 +1456,9 @@ h3 {
 }
 .why {
   margin: 0;
-  padding: 10px 12px;
-  border-left: 3px solid var(--brass);
-  background: var(--brass-soft);
-  border-radius: 0 8px 8px 0;
-  font-size: 14px;
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid var(--brass);
+  font-size: 15px;
 }
 .q-nav {
   display: flex;
@@ -1511,7 +1539,7 @@ h3 {
   list-style: none;
   border-radius: var(--radius);
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--ink);
   box-shadow: var(--shadow);
 }
 .suggestions button {
@@ -1519,7 +1547,7 @@ h3 {
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -1586,9 +1614,9 @@ h3 {
   margin-left: 52px;
   min-height: 32px;
   padding: 4px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--brass-soft);
+  border-radius: var(--radius);
+  border: 0.75px solid var(--brass);
+  background: transparent;
   color: var(--ink);
   font-size: 13px;
   cursor: pointer;
@@ -1601,7 +1629,7 @@ h3 {
   width: min(240px, 70vw);
   height: auto;
   margin: 0 auto;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: #fff;
   padding: 8px;
 }
@@ -1638,13 +1666,12 @@ h3 {
   flex: none;
 }
 .note {
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
+  padding: 12px 2px;
+  border-bottom: 1px dotted var(--line-2);
 }
 .note.mine {
-  border-color: var(--primary);
+  padding-left: 10px;
+  border-left: 2px solid var(--primary);
 }
 .note-head {
   display: flex;
@@ -1663,7 +1690,7 @@ h3 {
 .list-card-img {
   display: block;
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .join .list-title {
   margin: 0;
@@ -1674,8 +1701,7 @@ h3 {
   gap: 10px;
   padding: 14px;
   border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-2);
 }
 .join-box p {
   margin: 0;
@@ -1702,9 +1728,8 @@ h3 {
   width: auto;
   min-width: 10em;
   min-height: 40px;
-  border-radius: 999px;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: 15px;
 }
 .grape-more .chip-form input {
   width: 140px;
@@ -1756,10 +1781,9 @@ html.standalone body {
 /* 记一杯 opened from a list: which list the wine goes into. */
 .add-to-list {
   margin: 0;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--primary-soft);
-  font-size: 14px;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--primary);
+  font-size: 15px;
   color: var(--ink-2);
 }
 .add-to-list strong {
@@ -1815,7 +1839,7 @@ html.standalone body {
   list-style: none;
   border-radius: var(--radius);
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--ink);
   max-height: 46vh;
   overflow-y: auto;
 }
@@ -1827,7 +1851,7 @@ html.standalone body {
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -1904,9 +1928,7 @@ html.standalone body {
   gap: 10px;
   padding: 14px;
   border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--line-2);
 }
 .pro-card p {
   margin: 0;
@@ -1917,12 +1939,13 @@ html.standalone body {
 }
 .pro-badge {
   align-self: flex-start;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--brass-soft);
-  color: var(--ink);
+  padding: 1px 8px;
+  border-radius: var(--radius);
+  border: 0.75px solid var(--brass);
+  color: var(--brass);
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.08em;
 }
 .pro-pending {
   flex-direction: row;
@@ -2133,7 +2156,7 @@ a.pro-score {
   margin-top: 4px;
 }
 .friend-note {
-  padding: 12px;
+  padding: 14px 2px;
 }
 .friend-who {
   display: flex;
@@ -2149,7 +2172,7 @@ a.pro-score {
 .friend-new {
   margin-left: 8px;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--brass);
   color: var(--bg);
   font-size: 12px;
@@ -2199,7 +2222,7 @@ a.pro-score {
 }
 .share-card-wait {
   aspect-ratio: 4 / 5;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--surface-2);
   display: flex;
   align-items: center;
@@ -2287,8 +2310,7 @@ a.pro-score {
   gap: 8px;
   padding: 14px;
   border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-2);
 }
 .open-left {
   margin: 0;
@@ -2395,9 +2417,9 @@ a.pro-score {
 .stock-tag {
   align-self: flex-start;
   margin-top: 2px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--brass-soft);
+  padding: 0 8px;
+  border-radius: var(--radius);
+  border: 0.75px solid var(--brass);
   color: var(--brass);
   font-size: 12px;
   font-weight: 600;
@@ -2462,9 +2484,9 @@ a.pro-score {
   align-items: center;
   gap: 6px;
   padding: 10px 2px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
+  border: 0.75px solid var(--line-2);
+  border-radius: var(--radius);
+  background: transparent;
   color: var(--ink);
   font: inherit;
   font-size: 13px;
@@ -2474,6 +2496,7 @@ a.pro-score {
   background: var(--primary-soft);
 }
 .guess-card {
+  padding: 14px;
   border: 1.5px solid var(--brass);
 }
 .guess-table {

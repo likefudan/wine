@@ -1,5 +1,6 @@
 import "@fontsource/cormorant-garamond/500.css";
 import "@fontsource/cormorant-garamond/600.css";
+import "@fontsource/cormorant-garamond/500-italic.css";
 import "./styles.css";
 import { render } from "preact";
 import { LocationProvider, Route, Router, useLocation } from "preact-iso";
@@ -279,6 +280,11 @@ render(
   </LocationProvider>,
   document.getElementById("app")!,
 );
+
+// The Chinese serif for phones that have none of their own (Android mostly). Loaded after the first
+// paint, and each page then fetches only the slices of it whose characters it shows.
+void import("@fontsource/noto-serif-sc/400.css");
+void import("@fontsource/noto-serif-sc/600.css");
 
 if ("serviceWorker" in navigator && !navigator.webdriver && location.hostname !== "localhost")
   addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}));
