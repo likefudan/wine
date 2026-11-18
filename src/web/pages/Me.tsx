@@ -1,9 +1,8 @@
-import { useLocation } from "preact-iso";
+import { lazy, useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import { exportName, toCsv, toJson } from "../../shared/export";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member, OWNER_ONLY_MODELS } from "../../shared/model";
 import { Choice, Field } from "../components";
-import { CostsPanel } from "../Costs";
 import { GrowthPanel } from "../Growth";
 import { TastePanel } from "./Recs";
 import { Face, ProfileSheet } from "../Profile";
@@ -24,6 +23,9 @@ import {
   useStore,
 } from "../store";
 import { type Theme, savedTheme, setTheme } from "../theme";
+
+/** Only the site's owners open 模型开销: its own file. */
+const CostsPanel = lazy(() => import("../Costs").then((m) => m.CostsPanel));
 
 /** One line on each label model, from reading the same cellar photos with each (2026-11). */
 const LABEL_MODEL_HINT: Record<LabelModel, string> = {

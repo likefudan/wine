@@ -21,7 +21,7 @@ import { VINTAGE_SELECT, type VintageRow } from "./data";
 import { claudeUsage, logCall, requireBudget } from "./costs";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
-import { AZURE_HOST, aiEnabled } from "./label";
+import { azureHost, aiEnabled } from "./label";
 
 /**
  * 专业评价 (docs/design.zh.md §3.2). The first person to ask about a vintage starts one lookup by
@@ -127,7 +127,7 @@ export interface LookupAnswer {
 async function askWithSearch(env: Env, prompt: string, userId: string | null = null): Promise<LookupAnswer> {
   const client = new Anthropic({
     apiKey: env.AZURE_FOUNDRY_API_KEY!,
-    baseURL: `${AZURE_HOST}/anthropic`,
+    baseURL: `${azureHost(env)}/anthropic`,
     timeout: 90_000,
     maxRetries: 0,
   });

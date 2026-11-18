@@ -11,7 +11,9 @@ import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/g
 import {
   LEVEL_WORDS,
   L2_SWEETNESS,
+  QUALITY_WORDS,
   beginnerQuestions,
+  forLevelTwo,
   glassColor,
   huesFor,
   l2SweetnessOf,
@@ -86,6 +88,14 @@ describe("the Level 2 table", () => {
       [3, "中"],
       [5, "高"],
     ]);
+  });
+
+  it("offers only Level 2 colours and quality words, keeping one already chosen", () => {
+    expect(forLevelTwo(huesFor("white"))).toEqual(["lemon", "gold", "amber"]);
+    expect(forLevelTwo(huesFor("red"))).toEqual(["purple", "ruby", "garnet", "tawny"]);
+    expect(forLevelTwo(huesFor("white"), "lemon-green")).toContain("lemon-green");
+    expect(forLevelTwo(Object.keys(QUALITY_WORDS))).not.toContain("faulty");
+    expect(forLevelTwo(Object.keys(QUALITY_WORDS), "faulty")[0]).toBe("faulty");
   });
 });
 

@@ -7,7 +7,7 @@ import { requireApproved, requireSameOrigin, requireUser } from "./auth";
 import { claudeUsage, logCall, requireBudget } from "./costs";
 import type { Env } from "./env";
 import { HttpError, readJson } from "./http";
-import { AZURE_HOST, aiEnabled, claimJob } from "./label";
+import { azureHost, aiEnabled, claimJob } from "./label";
 
 /**
  * 分享图: one tasting written up as a critic's note, from what the person recorded and nothing else.
@@ -107,7 +107,7 @@ async function write(
     try {
       const client = new Anthropic({
         apiKey: env.AZURE_FOUNDRY_API_KEY!,
-        baseURL: `${AZURE_HOST}/anthropic`,
+        baseURL: `${azureHost(env)}/anthropic`,
         timeout: 40_000,
         maxRetries: 0,
       });

@@ -1,16 +1,18 @@
-import { useLocation, useRoute } from "preact-iso";
+import { lazy, useLocation, useRoute } from "preact-iso";
 import { useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../../shared/descriptors";
 import { glassColor, tastingNote } from "../../shared/guide";
 import { FriendsOnWine } from "../Friends";
-import { BackIcon, BottleIcon, Glass, WineName } from "../components";
+import { BackIcon, BottleIcon, Glass, ShareIcon, WineName } from "../components";
 import { DEPTH_INFO } from "../depths";
 import { ProReviews } from "../Reviews";
 import { currentLang, fmtDate, p, t } from "../i18n";
 import { saveTasting, useStore } from "../store";
-import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { AddToCellarSheet, WineCellar } from "./Cellar";
 import { openTasting } from "./ListPage";
+
+/** Drawn only when someone taps 生成分享图: its own file, loaded then. */
+const TastingShareSheet = lazy(() => import("../TastingCard").then((m) => m.TastingShareSheet));
 
 /** One wine: every time I've tasted it, with the note each answer adds up to. */
 export function WinePage() {

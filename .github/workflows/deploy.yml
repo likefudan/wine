@@ -74,6 +74,10 @@ jobs:
         run: npm ci --no-audit --no-fund && npm run build
       - if: steps.go.outputs.ok == 'true'
         run: node scripts/prepare-deploy.mjs "$TARGET"
+      # A point to roll the database back to (wrangler d1 time-travel restore DB --bookmark=…).
+      - if: steps.go.outputs.ok == 'true'
+        continue-on-error: true
+        run: npx wrangler d1 time-travel info DB $([ "$TARGET" = staging ] && echo --env staging) | tee -a "$GITHUB_STEP_SUMMARY"
       - if: steps.go.outputs.ok == 'true'
         run: npx wrangler d1 migrations apply DB --remote $([ "$TARGET" = staging ] && echo --env staging)
       - if: steps.go.outputs.ok == 'true'
@@ -87,6 +91,7 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
+          AZURE_FOUNDRY_ENDPOINT: ${{ secrets.AZURE_FOUNDRY_ENDPOINT }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       - if: steps.go.outputs.ok == 'true'
         run: node scripts/smoke.mjs

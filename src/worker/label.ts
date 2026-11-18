@@ -14,7 +14,9 @@ import { HttpError, now, readJson } from "./http";
  * when the bucket is there, as the tasting's cover.
  */
 
-export const AZURE_HOST = "https://happy-badminton-jay-main-1.openai.azure.com";
+const DEFAULT_AZURE_HOST = "https://happy-badminton-jay-main-1.openai.azure.com";
+/** The Azure resource the AI calls go to: AZURE_FOUNDRY_ENDPOINT when set, so staging can use its own. */
+export const azureHost = (env: Env) => (env.AZURE_FOUNDRY_ENDPOINT || DEFAULT_AZURE_HOST).replace(/\/+$/, "");
 /** Tried after the person's own choice, when it fails: one more model, never a chain. */
 const FALLBACK: string[] = ["claude-sonnet-5-5", "claude-fable-5-1"];
 
@@ -73,7 +75,7 @@ type Raw = { text: string; usage: Usage };
 async function askClaude(env: Env, model: string, image: string): Promise<Raw> {
   const client = new Anthropic({
     apiKey: env.AZURE_FOUNDRY_API_KEY!,
-    baseURL: `${AZURE_HOST}/anthropic`,
+    baseURL: `${azureHost(env)}/anthropic`,
     timeout: 45_000,
     maxRetries: 0,
   });
@@ -99,7 +101,7 @@ async function askClaude(env: Env, model: string, image: string): Promise<Raw> {
 
 /** Other models, through Foundry's OpenAI-style endpoint; they are asked for JSON in words. */
 async function askOpenAi(env: Env, model: string, image: string): Promise<Raw> {
-  const res = await fetch(`${AZURE_HOST}/openai/v1/chat/completions`, {
+  const res = await fetch(`${azureHost(env)}/openai/v1/chat/completions`, {
     method: "POST",
     headers: { "api-key": env.AZURE_FOUNDRY_API_KEY!, "content-type": "application/json" },
     signal: AbortSignal.timeout(45_000),
