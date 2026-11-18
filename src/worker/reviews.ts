@@ -17,6 +17,7 @@ import {
 } from "../shared/reviews";
 import { type UserRow, isOwner, requireApproved, requireSameOrigin, requireUser } from "./auth";
 import { VINTAGE_SELECT, type VintageRow } from "./data";
+import { claudeUsage, logCall } from "./costs";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 import { AZURE_HOST, aiEnabled } from "./label";
@@ -119,7 +120,7 @@ export interface LookupAnswer {
   usage: { input: number; output: number; searches: number };
 }
 
-async function askWithSearch(env: Env, prompt: string): Promise<LookupAnswer> {
+async function askWithSearch(env: Env, prompt: string, userId: string | null = null): Promise<LookupAnswer> {
   const client = new Anthropic({
     apiKey: env.AZURE_FOUNDRY_API_KEY!,
     baseURL: `${AZURE_HOST}/anthropic`,
@@ -140,6 +141,8 @@ async function askWithSearch(env: Env, prompt: string): Promise<LookupAnswer> {
     usage.input += res.usage.input_tokens;
     usage.output += res.usage.output_tokens;
     usage.searches += res.usage.server_tool_use?.web_search_requests ?? 0;
+    // 模型开销: each request is billed on its own, searches included, whatever becomes of the answer.
+    await logCall(env, { userId, feature: "review", model: REVIEW_MODEL, usage: claudeUsage(res.usage) });
     blocks.push(...res.content);
     if (res.stop_reason !== "pause_turn") break;
     messages.push({ role: "assistant", content: res.content as Anthropic.ContentBlockParam[] });
@@ -328,7 +331,7 @@ async function runLookup(env: Env, user: UserRow, v: VintageRow, jobId: string):
   const db = env.DB;
   const links = searchLinks(v.producer, v.wine, v.year);
   try {
-    const answer = await reviewDeps.ask(env, lookupPrompt(v));
+    const answer = await reviewDeps.ask(env, lookupPrompt(v), user.id);
     const review = verify(answer, links);
     const at = now();
     await db.batch([
