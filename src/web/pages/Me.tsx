@@ -3,6 +3,7 @@ import { useEffect, useState } from "preact/hooks";
 import { exportName, toCsv, toJson } from "../../shared/export";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
 import { Choice, Field } from "../components";
+import { CostsPanel } from "../Costs";
 import { GrowthPanel } from "../Growth";
 import { LangSwitch } from "../LangSwitch";
 import { ask } from "../confirm";
@@ -88,7 +89,7 @@ export function MePage() {
     { id: "growth", label: t("成长") },
     { id: "tasting", label: t("记录偏好") },
     { id: "general", label: t("通用") },
-    ...(me.owner ? [{ id: "members" as const, label: t("成员") }] : []),
+    ...(me.owner ? [{ id: "members" as const, label: t("管理") }] : []),
   ];
   const tab: MeTab = tabs.some((x) => x.id === query.tab) ? (query.tab as MeTab) : "growth";
   const pick = (id: MeTab) => route(id === "growth" ? "/me" : `/me?tab=${id}`, true);
@@ -216,7 +217,32 @@ export function MePage() {
           </button>
         </>
       )}
-      {tab === "members" && <Members />}
+      {tab === "members" && (
+        <>
+          <div class="segmented sub" role="tablist" aria-label={t("管理")}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={query.view !== "costs"}
+              class={query.view !== "costs" ? "on" : ""}
+              onClick={() => route("/me?tab=members", true)}
+            >
+              {t("成员")}
+              {waiting > 0 && <span class="badge">{waiting}</span>}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={query.view === "costs"}
+              class={query.view === "costs" ? "on" : ""}
+              onClick={() => route("/me?tab=members&view=costs", true)}
+            >
+              {t("模型开销")}
+            </button>
+          </div>
+          {query.view === "costs" ? <CostsPanel /> : <Members />}
+        </>
+      )}
     </div>
   );
 }

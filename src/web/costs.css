@@ -1,0 +1,124 @@
+/* 我的 → 管理 → 模型开销 (Costs.tsx) */
+.segmented.sub {
+  margin-top: -4px;
+}
+.costs {
+  display: grid;
+  gap: 12px;
+}
+.cost-head {
+  gap: 4px;
+}
+.cost-big {
+  font-size: 32px;
+  line-height: 1.15;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.cost-bars {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 140px;
+  margin-top: 12px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.cost-bar {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.cost-bar-fill {
+  display: block;
+  width: 100%;
+  max-width: 28px;
+  margin: 0 auto;
+  border-radius: 4px 4px 0 0;
+  background: var(--primary);
+  opacity: 0.4;
+}
+.cost-bar.on .cost-bar-fill {
+  opacity: 1;
+}
+.cost-bar-tick {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cost-bar.on .cost-bar-tick {
+  color: var(--ink);
+  font-weight: 700;
+}
+.cost-split li {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.cost-split-bar {
+  position: absolute;
+  left: 0;
+  bottom: 3px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--brass);
+}
+.cost-prices summary {
+  cursor: pointer;
+  margin: 0;
+}
+.cost-prices[open] summary {
+  margin-bottom: 4px;
+}
+.price-row {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.price-model {
+  overflow-wrap: anywhere;
+}
+.price-fields {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.price-fields .field-label {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.price-fields input {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 6px;
+}
+.price-row > .button {
+  justify-self: start;
+}
+.notice-inline {
+  color: var(--danger);
+}
+.cost-split-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cost-split-name .muted {
+  white-space: nowrap;
+}
