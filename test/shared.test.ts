@@ -3,6 +3,7 @@ import { avaOf } from "../src/shared/ava";
 import { appellationsIn, areasIn, placePath, tidyPlace } from "../src/shared/place";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
 import { toCsv, toJson } from "../src/shared/export";
+import { compareLine, nudge, previousTasting } from "../src/shared/compare";
 import { aromasInNote } from "../src/shared/notewords";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
@@ -318,5 +319,62 @@ describe("aromas in a note", () => {
   it("reads 奶油 as each language means it", () => {
     expect(aromasInNote("奶油", "zh-CN")).toEqual(["cream"]);
     expect(aromasInNote("奶油", "zh-TW")).toEqual(["butter"]);
+  });
+});
+
+describe("compare with the last wine", () => {
+  const base = {
+    vintageId: "V",
+    tastedAt: "",
+    depth: "beginner" as const,
+    appearance: {},
+    extra: {},
+    guesses: {},
+    descriptors: [],
+    quality: null,
+    buyAgain: null,
+    boughtQty: null,
+    priceUsd: null,
+    note: null,
+    photoId: null,
+    updatedAt: "2026-11-18T00:00:00Z",
+  };
+  const items = [
+    { id: "I1", listId: "L", vintageId: "V1", position: 0, priceUsd: null, createdAt: "" },
+    { id: "I2", listId: "L", vintageId: "V2", position: 1, priceUsd: null, createdAt: "" },
+    { id: "I3", listId: "L", vintageId: "V3", position: 2, priceUsd: null, createdAt: "" },
+    { id: "J1", listId: "M", vintageId: "V4", position: 0, priceUsd: null, createdAt: "" },
+  ];
+  const t1 = {
+    ...base,
+    id: "T1",
+    listItemId: "I1",
+    nose: {},
+    palate: { tannin: 3 as const, acidity: 4 as const },
+    score: 90,
+  };
+  const t3 = {
+    ...base,
+    id: "T3",
+    listItemId: "I3",
+    nose: {},
+    palate: { tannin: 5 as const, acidity: 4 as const },
+    score: 93,
+  };
+
+  it("finds the nearest earlier wine I have a note on, in the same list", () => {
+    expect(previousTasting(t3, items, [t1, t3])?.id).toBe("T1");
+    expect(previousTasting(t1, items, [t1, t3])).toBeNull();
+    expect(previousTasting({ id: "X", listItemId: null }, items, [t1])).toBeNull();
+  });
+
+  it("says how they differ and keeps nudges on the scale", () => {
+    expect(compareLine("zh-CN", t3, t1)).toBe("和上一款比：酸度差不多，单宁更高，我的分高 3 分");
+    expect(compareLine("en", t3, t1)).toBe(
+      "Compared with the last wine: acidity about the same, tannin higher, 3 points higher on my score",
+    );
+    expect(nudge("palate.tannin", 5, 1)).toBe(5);
+    expect(nudge("palate.sweetness", 5, 1)).toBe(6);
+    expect(nudge("palate.body", 1, -1)).toBe(1);
   });
 });

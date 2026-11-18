@@ -30,6 +30,12 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Aromas in your note; tap to add as tags:",
   },
   全部加上: { tw: "全部加上", en: "Add all" },
+  差不多: { tw: "差不多", en: "About the same" },
+  上一款: { tw: "上一款", en: "the last wine" },
+  "说不准的话，和上一款（{wine}）比：": {
+    tw: "說不準的話，和上一款（{wine}）比：",
+    en: "Not sure? Compare it with the last wine ({wine}):",
+  },
   导出我的数据: { tw: "匯出我的資料", en: "Export my data" },
   "数据永远是你自己的。CSV 可以用 Excel、Numbers 打开，一行一条笔记；JSON 是完整备份。": {
     tw: "資料永遠是你自己的。CSV 可以用 Excel、Numbers 開啟，一列一筆筆記；JSON 是完整備份。",

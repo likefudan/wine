@@ -29,6 +29,7 @@ import {
   swatch,
   tastingNote,
 } from "../../shared/guide";
+import { COMPARABLE, compareLine, isComparable, nudge, previousTasting, scaleValue } from "../../shared/compare";
 import { aromasInNote } from "../../shared/notewords";
 import { DEPTHS, type Depth, type Tasting, type TastingDescriptor, type VintageInfo } from "../../shared/model";
 import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
@@ -62,6 +63,11 @@ export function Taste() {
     const item = saved?.listItemId ? s.items.find((i) => i.id === saved.listItemId) : undefined;
     return item ? s.lists.find((l) => l.id === item.listId) : undefined;
   });
+  const prevTasting = useStore((s) => (saved ? previousTasting(saved, s.items, s.tastings) : null));
+  const prevVintage = useStore((s) =>
+    prevTasting ? s.vintages.find((v) => v.id === prevTasting.vintageId) : undefined,
+  );
+  const prev: Prev | null = prevTasting ? { t: prevTasting, v: prevVintage } : null;
   const [x, setX] = useState<Tasting | undefined>(saved);
   const [switches, setSwitches] = useState(0);
   const [offer, setOffer] = useState<Depth | null>(null);
@@ -174,9 +180,9 @@ export function Taste() {
       )}
       <TastingPlace id={x.id} fresh={query.new === "1"} />
       {x.depth === "quick" && <Quick x={x} v={vintage} patch={patch} />}
-      {x.depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} />}
+      {x.depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} prev={prev} />}
       {(x.depth === "standard" || x.depth === "expert") && (
-        <Systematic x={x} v={vintage} patch={patch} expert={x.depth === "expert"} />
+        <Systematic x={x} v={vintage} patch={patch} expert={x.depth === "expert"} prev={prev} />
       )}
       <div class="taste-foot">
         <button
@@ -443,8 +449,44 @@ function Hues(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
   );
 }
 
-function Note(props: { x: Tasting; v: VintageInfo }) {
+/** 和上一款比: one step less, the same, or one step more than the last wine, on this question's scale. */
+function CompareAnswers(props: {
+  prev: Prev;
+  field: keyof typeof COMPARABLE;
+  current: number | undefined;
+  onPick: (value: number) => void;
+}) {
+  const { prev, field } = props;
+  const base = scaleValue(prev.t, field)!;
+  const words = COMPARABLE[field];
+  const opts: { dir: -1 | 0 | 1; label: string }[] = [
+    { dir: -1, label: p(words.less) },
+    { dir: 0, label: t("差不多") },
+    { dir: 1, label: p(words.more) },
+  ];
+  const name = prev.v ? `${prev.v.producer} ${prev.v.wine}` : t("上一款");
+  return (
+    <div class="compare-prev">
+      <p class="small muted">{t("说不准的话，和上一款（{wine}）比：", { wine: name })}</p>
+      <div class="chips">
+        {opts.map((o) => (
+          <button
+            key={o.dir}
+            type="button"
+            class={props.current !== undefined && props.current === nudge(field, base, o.dir) ? "chip on" : "chip"}
+            onClick={() => props.onPick(nudge(field, base, o.dir))}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Note(props: { x: Tasting; v: VintageInfo; prev?: Prev | null }) {
   const { x, v } = props;
+  const vs = props.prev ? compareLine(currentLang(), x, props.prev.t) : "";
   const text = tastingNote(
     currentLang(),
     v.color,
@@ -453,11 +495,16 @@ function Note(props: { x: Tasting; v: VintageInfo }) {
     x.palate,
     x.descriptors.map((d) => d.id),
   );
-  if (!text) return null;
+  if (!text && !vs) return null;
   return (
     <div class="tasting-note">
-      <span class="tier-label">{t("你描述的是")}</span>
-      <p>{text}</p>
+      {text && (
+        <>
+          <span class="tier-label">{t("你描述的是")}</span>
+          <p>{text}</p>
+        </>
+      )}
+      {vs && <p class="small compare-line">{vs}</p>}
     </div>
   );
 }
@@ -556,7 +603,13 @@ function chosenOption(q: GuideQuestion, x: Tasting) {
   return best.value;
 }
 
-function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: boolean }) {
+/** My note on the wine before this one in the same list (和上一款比), and that wine. */
+interface Prev {
+  t: Tasting;
+  v: VintageInfo | undefined;
+}
+
+function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: boolean; prev: Prev | null }) {
   const { x, v, patch } = props;
   const questions = beginnerQuestions(v.color);
   const [step, setStep] = useState(props.fresh ? 0 : questions.length);
@@ -573,7 +626,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
   if (step >= questions.length)
     return (
       <div class="steps">
-        <Note x={x} v={v} />
+        <Note x={x} v={v} prev={props.prev} />
         <div class="beginner-done">
           <button type="button" class="link small" onClick={() => go(0)}>
             {t("重新走一遍问题")}
@@ -691,6 +744,14 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
             ))}
           </div>
         )}
+        {props.prev && isComparable(q.field) && scaleValue(props.prev.t, q.field) !== undefined && (
+          <CompareAnswers
+            prev={props.prev}
+            field={q.field}
+            current={scaleValue(x, q.field)}
+            onPick={(value) => setAnswer(value)}
+          />
+        )}
         <button type="button" class="why-toggle" aria-expanded={why} onClick={() => setWhy(!why)}>
           {t("为什么问这个？")}
         </button>
@@ -716,7 +777,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
 
 // ── 进阶 / 专业 ──────────────────────────────────────────────────────────────────────────────
 
-function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: boolean }) {
+function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: boolean; prev: Prev | null }) {
   const { x, v, patch, expert } = props;
   const a = x.appearance,
     n = x.nose,
@@ -1002,7 +1063,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
         {expert && <FinishTimer value={pl.finishSeconds} onChange={(s) => setP({ finishSeconds: s })} />}
       </section>
 
-      <Note x={x} v={v} />
+      <Note x={x} v={v} prev={props.prev} />
 
       <section class="step">
         <h2 class="step-title">4 · {t("结论")}</h2>

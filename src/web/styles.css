@@ -1731,3 +1731,14 @@ html.standalone body {
   border-style: dashed;
   border-color: var(--brass);
 }
+
+/* 和上一款比 */
+.compare-prev {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.compare-line {
+  margin-top: 6px;
+  color: var(--muted);
+}
