@@ -1071,17 +1071,37 @@ h3 {
   color: var(--ink-2);
   font-size: 14px;
 }
-.invite-row {
+.member-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--line);
 }
-.invite-row span:first-child {
+.member-who {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.member-who > * {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.inline-form .grow {
+  flex: 1;
+}
+.inline-form:has(.grow) {
+  align-items: flex-start;
+}
+.inline-form:has(.grow) > .button {
+  margin-top: 26px;
 }
 .filters {
   margin-top: -4px;

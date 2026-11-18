@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { PlaceDetails, PlaceSuggestion } from "../shared/model";
-import { requireUser } from "./auth";
+import { requireApproved, requireUser } from "./auth";
 import type { Env } from "./env";
 
 /**
@@ -92,11 +92,11 @@ export async function placeDetails(env: Env, id: string, session: string): Promi
 }
 
 placesRoutes.get("/places", async (c) => {
-  await requireUser(c);
+  requireApproved(c.env, await requireUser(c));
   return c.json({ places: await suggestPlaces(c.env, c.req.query("q") ?? "", c.req.query("s") ?? "") });
 });
 
 placesRoutes.get("/places/:id", async (c) => {
-  await requireUser(c);
+  requireApproved(c.env, await requireUser(c));
   return c.json({ place: await placeDetails(c.env, c.req.param("id"), c.req.query("s") ?? "") });
 });

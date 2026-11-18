@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel } from "../../shared/model";
+import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
 import { Choice, Field } from "../components";
 import { LangSwitch } from "../LangSwitch";
 import { DEPTH_INFO } from "../depths";
@@ -120,7 +120,7 @@ export function MePage() {
           {syncing ? t("同步中…") : t("立即同步")}
         </button>
       </section>
-      {me.owner && <Invites />}
+      {me.owner && <Members />}
       <button type="button" class="button danger block" onClick={logout}>
         {t("退出登录")}
       </button>
@@ -129,59 +129,111 @@ export function MePage() {
 }
 
 /** 站长 only: who may sign in (docs/design.zh.md §2). QR invitations come with 第二期. */
-function Invites() {
-  const [list, setList] = useState<{ email: string; joined: boolean }[] | null>(null);
-  const [email, setEmail] = useState("");
+/** 开放注册 (owners): approve newcomers, stop or restore accounts, and set 每天免审核名额. */
+function Members() {
+  const [list, setList] = useState<Member[] | null>(null);
+  const [perDay, setPerDay] = useState("");
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const load = () =>
-    api<{ invites: { email: string; joined: boolean }[] }>("/api/invites")
-      .then((r) => setList(r.invites))
+    api<{ members: Member[]; autoApprovePerDay: number }>("/api/members")
+      .then((r) => {
+        setList(r.members);
+        setPerDay(String(r.autoApprovePerDay));
+      })
       .catch(() => setList([]));
   useEffect(() => void load(), []);
-  const add = async (e: Event) => {
-    e.preventDefault();
+  const run = async (f: () => Promise<unknown>) => {
     setError(null);
     try {
-      await api("/api/invites", { body: { email } });
-      setEmail("");
+      await f();
       void load();
     } catch (err) {
       setError(err instanceof ApiError ? tm(err.message) : t("没有网络"));
     }
   };
+  const setStatus = (id: string, status: "active" | "disabled") =>
+    run(() => api(`/api/members/${id}`, { body: { status } }));
+  const savePerDay = (e: Event) => {
+    e.preventDefault();
+    void run(async () => {
+      await api("/api/settings/auto-approve", { body: { perDay: Number(perDay) } });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    });
+  };
+  const pending = list?.filter((m) => m.status === "pending") ?? [];
+  const others = list?.filter((m) => m.status !== "pending") ?? [];
+  const row = (m: Member, actions: preact.ComponentChildren) => (
+    <li key={m.id} class="member-row">
+      <span class="member-who">
+        <strong>{m.name ?? m.email}</strong>
+        <span class="muted small">
+          {m.email} · {fmtDate(m.createdAt, false)}
+          {m.status === "disabled" ? ` · ${t("已停用")}` : m.approvedBy === "auto" ? ` · ${t("免审核")}` : ""}
+        </span>
+      </span>
+      {actions}
+    </li>
+  );
   return (
     <section class="step">
-      <h2 class="step-title">{t("邀请朋友")}</h2>
-      <p class="hint">{t("把朋友的 Google 邮箱加进来，他们就能登录。")}</p>
-      <form class="inline-form" onSubmit={add}>
-        <input
-          type="email"
-          placeholder="friend@gmail.com"
-          value={email}
-          onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
-        />
-        <button type="submit" class="button small" disabled={!email}>
-          {t("添加")}
+      <h2 class="step-title">{t("成员")}</h2>
+      <form class="inline-form" onSubmit={savePerDay}>
+        <label class="field grow">
+          <span class="field-label">{t("每天免审核名额")}</span>
+          <input
+            inputMode="numeric"
+            value={perDay}
+            maxLength={4}
+            onInput={(e) => setPerDay((e.target as HTMLInputElement).value.replace(/\D/g, ""))}
+          />
+          <span class="field-hint">
+            {t("24 小时内前这么多位新用户注册后直接能用；之后的要你审核。填 0 = 全部审核。")}
+          </span>
+        </label>
+        <button type="submit" class="button small" disabled={perDay === ""}>
+          {saved ? t("已保存") : t("保存")}
         </button>
       </form>
       {error && <p class="notice">{error}</p>}
+      <h3 class="section-title">{t("待审核 ({n})", { n: pending.length })}</h3>
+      {pending.length === 0 && <p class="muted small">{t("没有待审核的人")}</p>}
       <ul class="rows plain">
-        {list?.map((i) => (
-          <li key={i.email} class="invite-row">
-            <span>{i.email}</span>
-            <span class="muted small">{i.joined ? t("已加入") : t("未登录过")}</span>
-            <button
-              type="button"
-              class="link danger small"
-              onClick={async () => {
-                await api(`/api/invites/${encodeURIComponent(i.email)}`, { method: "DELETE" }).catch(() => {});
-                void load();
-              }}
-            >
-              {t("移除")}
-            </button>
-          </li>
-        ))}
+        {pending.map((m) =>
+          row(
+            m,
+            <span class="member-actions">
+              <button type="button" class="button small primary" onClick={() => setStatus(m.id, "active")}>
+                {t("通过")}
+              </button>
+              <button type="button" class="link danger small" onClick={() => setStatus(m.id, "disabled")}>
+                {t("拒绝")}
+              </button>
+            </span>,
+          ),
+        )}
+      </ul>
+      <h3 class="section-title">{t("所有成员 ({n})", { n: others.length })}</h3>
+      <ul class="rows plain">
+        {others.map((m) =>
+          row(
+            m,
+            m.status === "disabled" ? (
+              <button type="button" class="link small" onClick={() => setStatus(m.id, "active")}>
+                {t("恢复")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                class="link danger small"
+                onClick={() => confirm(t("停用后对方不能再登录。确定？")) && setStatus(m.id, "disabled")}
+              >
+                {t("停用")}
+              </button>
+            ),
+          ),
+        )}
       </ul>
     </section>
   );

@@ -65,6 +65,7 @@ export function Home() {
   const items = useStore((s) => s.items);
   const vintages = useStore((s) => s.vintages);
   const tastings = useStore((s) => s.tastings);
+  const me = useStore((s) => s.me);
   const [adding, setAdding] = useState(false);
   const vById = new Map(vintages.map((v) => [v.id, v]));
   const loose = tastings.filter((x) => !x.listItemId).slice(0, 5);
@@ -76,6 +77,11 @@ export function Home() {
         <h1 class="brand">{t("酒单")}</h1>
         <Avatar />
       </header>
+      {me && !me.approved && (
+        <p class="notice">
+          {t("你的账号正在等站长审核。现在就能正常记录；拍酒标识别和酒庄地址联想要等审核通过后才能用。")}
+        </p>
+      )}
       <button type="button" class="button primary block" onClick={() => setAdding(true)}>
         ＋ {t("新建酒单")}
       </button>

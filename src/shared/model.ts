@@ -210,7 +210,19 @@ export interface Me {
   depth: Depth | null;
   /** null = the default (LABEL_MODELS[0]). */
   labelModel: LabelModel | null;
+  /** false while waiting for an owner's approval (开放注册): no label reading or place lookups. */
+  approved: boolean;
   owner: boolean;
+}
+
+/** 我的 → 成员 (owners only). */
+export interface Member {
+  id: string;
+  email: string;
+  name: string | null;
+  status: "active" | "pending" | "disabled";
+  createdAt: string;
+  approvedBy: string | null;
 }
 
 /** Everything of one person's, for the phone's own copy (GET /api/sync). */
