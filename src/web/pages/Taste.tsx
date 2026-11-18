@@ -29,6 +29,7 @@ import {
   swatch,
   tastingNote,
 } from "../../shared/guide";
+import { aromasInNote } from "../../shared/notewords";
 import { DEPTHS, type Depth, type Tasting, type TastingDescriptor, type VintageInfo } from "../../shared/model";
 import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
 import { ask } from "../confirm";
@@ -263,16 +264,47 @@ function Conclusion(props: { x: Tasting; patch: Patch; expert?: boolean; standar
           </div>
         </>
       )}
-      <Field label={t("一句话")}>
-        <textarea
-          rows={props.expert ? 5 : 2}
-          maxLength={4000}
-          value={x.note ?? ""}
-          placeholder={t("可以用键盘上的话筒说")}
-          onInput={(e) => patch({ note: (e.target as HTMLTextAreaElement).value || null })}
-        />
-      </Field>
+      <NoteField x={x} patch={patch} rows={props.expert ? 5 : 2} />
     </section>
+  );
+}
+
+/**
+ * 一句话, and under it the vocabulary words the note mentions that aren't tags yet (自由文字转香气标签,
+ * src/shared/notewords.ts): one tap adds them, so「很多黑樱桃和雪茄盒」becomes two tags.
+ */
+function NoteField(props: { x: Tasting; patch: Patch; rows: number }) {
+  const { x, patch } = props;
+  const have = new Set(x.descriptors.map((d) => d.id));
+  const found = aromasInNote(x.note, currentLang()).filter((id) => !have.has(id));
+  const add = (ids: string[]) => patch({ descriptors: [...x.descriptors, ...ids.map((id) => ({ id, intensity: 2 }))] });
+  return (
+    <Field label={t("一句话")}>
+      <textarea
+        rows={props.rows}
+        maxLength={4000}
+        value={x.note ?? ""}
+        placeholder={t("可以用键盘上的话筒说")}
+        onInput={(e) => patch({ note: (e.target as HTMLTextAreaElement).value || null })}
+      />
+      {found.length > 0 && (
+        <div class="note-words">
+          <span class="small muted">{t("笔记里提到的香气，点一下加为标签：")}</span>
+          <div class="chips">
+            {found.map((id) => (
+              <button key={id} type="button" class="chip suggest" onClick={() => add([id])}>
+                + {p(DESCRIPTOR_BY_ID.get(id)!.name)}
+              </button>
+            ))}
+            {found.length > 1 && (
+              <button type="button" class="link small" onClick={() => add(found)}>
+                {t("全部加上")}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </Field>
   );
 }
 
@@ -488,15 +520,7 @@ function Quick(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
         )}
       </section>
       <section class="step">
-        <Field label={t("一句话")}>
-          <textarea
-            rows={2}
-            maxLength={4000}
-            value={x.note ?? ""}
-            placeholder={t("可以用键盘上的话筒说")}
-            onInput={(e) => patch({ note: (e.target as HTMLTextAreaElement).value || null })}
-          />
-        </Field>
+        <NoteField x={x} patch={patch} rows={2} />
         <Field label={t("还会买吗？")} group>
           <Choice
             label={t("还会买吗？")}

@@ -25,6 +25,11 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "有 {n} 筆修改在手機上，稍後自動上傳",
     en: "{n} changes are on this phone; they'll upload shortly",
   },
+  "笔记里提到的香气，点一下加为标签：": {
+    tw: "筆記裡提到的香氣，點一下加為標籤：",
+    en: "Aromas in your note; tap to add as tags:",
+  },
+  全部加上: { tw: "全部加上", en: "Add all" },
   导出我的数据: { tw: "匯出我的資料", en: "Export my data" },
   "数据永远是你自己的。CSV 可以用 Excel、Numbers 打开，一行一条笔记；JSON 是完整备份。": {
     tw: "資料永遠是你自己的。CSV 可以用 Excel、Numbers 開啟，一列一筆筆記；JSON 是完整備份。",
