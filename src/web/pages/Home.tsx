@@ -2,6 +2,7 @@ import { useLocation } from "preact-iso";
 import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import { LIST_KINDS, type ListKind, type ListPlace, type PlaceKind } from "../../shared/model";
+import { Logo } from "../Logo";
 import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
 import { fmtDate, t, tk } from "../i18n";
@@ -127,6 +128,7 @@ export function Home() {
   return (
     <div class="page">
       <header class="page-head">
+        <Logo size={34} class="head-logo" />
         <h1 class="brand">{t("酒单")}</h1>
         <Avatar />
       </header>
