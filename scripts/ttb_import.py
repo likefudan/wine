@@ -22,8 +22,9 @@ COLORS = {
     "81": "white",  # TABLE WHITE WINE
     "84": "sparkling",  # SPARKLING WINE/CHAMPAGNE
     "85": "sparkling",  # CARBONATED WINE
-    "86": "dessert",  # DESSERT RED/WHITE/ROSE (TTB's own grouping)
-    "88": "dessert",  # DESSERT /PORT/SHERRY/(COOKING) WINE
+    # 88 "DESSERT /PORT/SHERRY/(COOKING) WINE" is US tax law's dessert wine: anything over 14% alcohol,
+    # most big Cabernets and Zinfandels included, so it says nothing about colour.
+    "88": None,
 }
 SMALL = {"and", "of", "the", "de", "du", "la", "le", "di", "del", "von", "van", "y", "et"}
 KEEP_UPPER = {"llc", "inc", "usa", "ii", "iii", "iv", "ava", "nv"}
@@ -32,13 +33,14 @@ KEEP_UPPER = {"llc", "inc", "usa", "ii", "iii", "iv", "ava", "nv"}
 def title(s: str) -> str:
     """OLD OAKS WINERY -> Old Oaks Winery; SHANNON'S BLEND -> Shannon's Blend."""
     out = []
+    s = re.sub(r"[\x00-\x1f\x7f]", " ", s)
     for i, w in enumerate(s.strip().lower().split()):
         if w in KEEP_UPPER:
             out.append(w.upper())
         elif i and w in SMALL:
             out.append(w)
         else:
-            out.append(re.sub(r"(^|[-/(.])([a-z])", lambda m: m.group(1) + m.group(2).upper(), w))
+            out.append(re.sub(r"(^|[-/(.&])([a-z])", lambda m: m.group(1) + m.group(2).upper(), w))
     return " ".join(out)
 
 
@@ -56,11 +58,18 @@ def main(src: str, dst: str, lwin_csv: str | None) -> None:
                 wine = r["WINE"] if r["WINE"] not in ("", "NA") else producer
                 known.add(key(producer, wine))
     latest = {}
-    for r in csv.DictReader(open(src, encoding="utf-8-sig")):
-        color = COLORS.get(r["Class/Type"].strip())
-        brand = r["Brand Name"].strip()
-        if not color or not brand:
+    rows = csv.reader(open(src, encoding="utf-8-sig"))
+    head = next(rows)
+    for row in rows:
+        # TTB does not quote its CSV: a comma or line break inside a name shifts the columns. Skip those.
+        if len(row) != len(head) or not re.fullmatch(r"\d\d/\d\d/\d{4}", row[3]):
             continue
+        r = dict(zip(head, row))
+        code = r["Class/Type"].strip()
+        brand = r["Brand Name"].strip()
+        if code not in COLORS or not brand:
+            continue
+        color = COLORS[code]
         producer = title(brand)
         wine = title(r["Fanciful Name"]) or producer
         k = key(producer, wine)

@@ -130,7 +130,8 @@ def walk(a, b, out, seen):
         raise SystemExit(f"could not read the result count for {a}..{b}")
     if n == 0:
         return
-    if n > 1000 and a < b:
+    # The registry never reports more than 1,000 matches, so 1,000 means "maybe more": split.
+    if n >= 1000 and a < b:
         mid = a + (b - a) // 2
         walk(a, mid, out, seen)
         walk(mid + dt.timedelta(days=1), b, out, seen)
@@ -147,8 +148,8 @@ def walk(a, b, out, seen):
             out.writerow(row)
             new += 1
     print(f"{a}..{b}: {n} found, {len(rows)} exported, {new} new", file=sys.stderr, flush=True)
-    if n > 1000:
-        print(f"  warning: one day holds {n} > 1000 records; some are missing", file=sys.stderr)
+    if n >= 1000:
+        print(f"  warning: {a} alone reaches the 1,000-row limit; some may be missing", file=sys.stderr)
 
 
 start = dt.date.fromisoformat(args[0])
