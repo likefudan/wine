@@ -539,18 +539,22 @@ h3 {
   align-items: center;
   gap: 10px;
   pointer-events: none;
-  transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Coming back: a gentle ease-out, slow enough to see it rise. */
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
-/* Scrolling on down the page slides the bar out below the screen; scrolling back brings it up. */
+/* Scrolling on down the page slides the bar out below the screen; scrolling back brings it up.
+   Leaving is slower still, easing in and out, so it visibly sinks away instead of vanishing. */
 .dock.hidden {
   transform: translate(-50%, calc(100% + max(12px, env(safe-area-inset-bottom)) + 16px));
+  transition: transform 0.7s cubic-bezier(0.45, 0, 0.25, 1);
 }
 .dock.hidden > * {
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .dock {
-    transition-duration: 0.12s;
+  .dock,
+  .dock.hidden {
+    transition-duration: 0.15s;
   }
 }
 .dock > * {
