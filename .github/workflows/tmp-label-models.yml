@@ -1,0 +1,66 @@
+name: tmp-label-models
+# Temporary: compares label reading on Azure models. Photos come from and results go to the private
+# R2 bucket (never into the repo or the logs); the log shows only timings and counts.
+on:
+  pull_request:
+    paths: [.github/workflows/tmp-label-models.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
+    steps:
+      - name: Fetch the photos
+        run: |
+          mkdir photos
+          for n in 1051 1052 1053 1054; do
+            npx -y wrangler@4 r2 object get "wine-photos-staging/tmp-model-test/IMG_$n.jpg" --file "photos/IMG_$n.jpg" --remote > /dev/null
+          done
+          ls -la photos
+      - name: Ask the models
+        shell: python
+        run: |
+          import base64, json, os, time, urllib.request, urllib.error, glob
+          HOST = "https://happy-badminton-jay-main-1.openai.azure.com"
+          KEY = os.environ["AZURE_FOUNDRY_API_KEY"]
+          imgs = [base64.b64encode(open(f, "rb").read()).decode() for f in sorted(glob.glob("photos/*.jpg"))]
+          PROMPT = ("These 4 photos show a home wine cellar. Identify every bottle whose label you can read. "
+                    "Reply with JSON only: {\"bottles\": [{\"photo\": 1-4, \"producer\": \"\", \"wine\": \"\", \"vintage\": \"\", "
+                    "\"region\": \"\", \"count\": 1, \"confidence\": \"high|medium|low\"}]}. Do not guess labels you cannot read.")
+          def call(url, headers, body):
+              t = time.time()
+              r = urllib.request.Request(url, data=json.dumps(body).encode(), headers={"content-type": "application/json", **headers})
+              try:
+                  with urllib.request.urlopen(r, timeout=300) as resp:
+                      return resp.status, json.loads(resp.read()), time.time() - t
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()[:600], time.time() - t
+              except Exception as e:
+                  return 0, str(e)[:300], time.time() - t
+          def openai_body(model):
+              content = [{"type": "text", "text": PROMPT}] + [
+                  {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + b}} for b in imgs]
+              return {"model": model, "messages": [{"role": "user", "content": content}], "max_tokens": 8000}
+          results = {}
+          for model in ["Kimi-K3.1-Pro", "DeepSeek-V4.1-Flash-1017"]:
+              tries = [(f"{HOST}/openai/v1/chat/completions", openai_body(model)),
+                       (f"{HOST}/openai/deployments/{model}/chat/completions?api-version=2024-10-21", openai_body(model))]
+              for url, body in tries:
+                  st, out, sec = call(url, {"api-key": KEY}, body)
+                  results.setdefault(model, []).append({"url": url.replace(HOST, ""), "status": st, "seconds": round(sec, 1), "out": out})
+                  print(model, url.replace(HOST, ""), "HTTP", st, f"{sec:.1f}s")
+                  if st == 200: break
+          for model in ["claude-fable-5-2"]:
+              content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b}} for b in imgs]
+              content.append({"type": "text", "text": PROMPT})
+              st, out, sec = call(f"{HOST}/anthropic/v1/messages", {"x-api-key": KEY, "anthropic-version": "2023-06-01"},
+                                  {"model": model, "max_tokens": 8000, "messages": [{"role": "user", "content": content}]})
+              results[model] = [{"status": st, "seconds": round(sec, 1), "out": out}]
+              print(model, "HTTP", st, f"{sec:.1f}s")
+          json.dump(results, open("results.json", "w"), ensure_ascii=False, indent=1)
+      - name: Store the results in R2
+        run: npx -y wrangler@4 r2 object put wine-photos-staging/tmp-model-test/results.json --file results.json --content-type application/json --remote > /dev/null
