@@ -4,6 +4,7 @@ import { glassColor } from "../../shared/guide";
 import { type Board, type BoardItem, LIST_KINDS, type ListKind, type ListPlace } from "../../shared/model";
 import { EveryoneSheet, ShareSheet } from "../Sharing";
 import { BackIcon, Choice, Field, Glass, Sheet, WineName } from "../components";
+import { ask } from "../confirm";
 import { fmtDate, t, tm } from "../i18n";
 import {
   ApiError,
@@ -176,7 +177,9 @@ export function ListPage() {
                       type="button"
                       class="icon-button danger"
                       aria-label={t("移除")}
-                      onClick={() => confirm(t("从酒单移除这款酒？你的笔记会留在酒库里。")) && removeItem(i.id)}
+                      onClick={async () =>
+                        (await ask(t("从酒单移除这款酒？你的笔记会留在酒库里。"))) && removeItem(i.id)
+                      }
                     >
                       ✕
                     </button>
@@ -253,7 +256,7 @@ function MemberSettings(props: { listId: string; onClose: () => void; onLeft: ()
           type="button"
           class="button danger"
           onClick={async () => {
-            if (!confirm(t("退出这份酒单？你记的笔记会留在你的酒库里。"))) return;
+            if (!(await ask(t("退出这份酒单？你记的笔记会留在你的酒库里。")))) return;
             try {
               await leaveList(props.listId);
               props.onLeft();
@@ -322,8 +325,8 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
         <button
           type="button"
           class="button danger"
-          onClick={() => {
-            if (!confirm(t("删除这份酒单？里面的笔记会留在你的酒库里。"))) return;
+          onClick={async () => {
+            if (!(await ask(t("删除这份酒单？里面的笔记会留在你的酒库里。"), { ok: t("删除") }))) return;
             deleteList(list.id);
             props.onDeleted();
           }}

@@ -6,6 +6,7 @@ import { LocationProvider, Route, Router, useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
+import { ConfirmHost } from "./confirm";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
 import { Home } from "./pages/Home";
@@ -196,6 +197,7 @@ render(
   // real page loads, or a click just changes the address bar until the page is reloaded.
   <LocationProvider scope={/^\/(?!api\/)/}>
     <Shell />
+    <ConfirmHost />
   </LocationProvider>,
   document.getElementById("app")!,
 );

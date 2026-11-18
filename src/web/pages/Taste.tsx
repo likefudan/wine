@@ -30,6 +30,7 @@ import {
 } from "../../shared/guide";
 import { DEPTHS, type Depth, type Tasting, type VintageInfo } from "../../shared/model";
 import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
+import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, getState, saveTasting, updateMe, useStore } from "../store";
@@ -161,8 +162,8 @@ export function Taste() {
         <button
           type="button"
           class="link danger small"
-          onClick={() => {
-            if (!confirm(t("删除这条品鉴记录？"))) return;
+          onClick={async () => {
+            if (!(await ask(t("删除这条品鉴记录？"), { ok: t("删除") }))) return;
             if (timer.current) clearTimeout(timer.current);
             timer.current = null;
             latest.current = undefined;
