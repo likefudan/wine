@@ -129,6 +129,8 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   产区: { tw: "產區", en: "Region" },
   国家: { tw: "國家", en: "Country" },
   子产区: { tw: "子產區", en: "Appellation" },
+  "属于 {area}": { tw: "屬於 {area}", en: "In {area}" },
+  酒标上最小的产区: { tw: "酒標上最小的產區", en: "The most precise one on the label" },
   "酒精度 %": { tw: "酒精濃度 %", en: "Alcohol %" },
   开始品鉴: { tw: "開始品飲", en: "Start tasting" },
   返回搜索: { tw: "返回搜尋", en: "Back to search" },

@@ -606,6 +606,10 @@ h3 {
   gap: 10px;
   align-items: flex-end;
 }
+/* A row where one field has a hint under it: line the boxes up by their labels instead. */
+.field-row.top {
+  align-items: flex-start;
+}
 .check {
   display: flex;
   align-items: center;
