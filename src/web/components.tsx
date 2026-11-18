@@ -206,3 +206,16 @@ export const GlassIcon = () => (
     />
   </svg>
 );
+/** 酒窖: a bottle with its label. */
+export const CellarIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+    <path
+      d="M10 3h4v3.5c2 .9 3 2.6 3 4.5v9.5H7V11c0-1.9 1-3.6 3-4.5z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linejoin="round"
+    />
+    <path d="M7 14h10" stroke="currentColor" stroke-width="2" />
+  </svg>
+);

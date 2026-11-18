@@ -2197,3 +2197,121 @@ a.pro-score {
 .versus-missed .button {
   flex: none;
 }
+
+/* 酒窖 */
+.cellar-sum {
+  margin: 0;
+  font-size: 15px;
+}
+.cellar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cellar-group.past .section-title,
+.cellar-group.last .section-title {
+  color: var(--primary);
+}
+.done-lots {
+  margin-top: 8px;
+  opacity: 0.7;
+}
+.open-bottle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.open-left {
+  margin: 0;
+  font-size: 15px;
+}
+.open-left strong {
+  font-family: var(--serif-latin);
+  font-size: 30px;
+  color: var(--primary);
+}
+.before {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.row.compact {
+  min-height: 48px;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stepper .button {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 20px;
+  padding: 0;
+}
+.stepper input {
+  width: 72px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.price-input {
+  display: flex;
+  gap: 6px;
+}
+.price-input input {
+  flex: 1;
+  min-width: 64px;
+}
+.price-input select {
+  flex: none;
+  width: auto;
+  padding: 10px 6px;
+}
+.window-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.cellar-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.cellar-alert-go {
+  margin-left: auto;
+  font-size: 20px;
+  color: var(--brass);
+}
+.cellar-line p {
+  margin: 0 0 8px;
+}
+.cellar-line a {
+  color: inherit;
+}
+.window-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.window-row input {
+  flex: 1;
+  min-width: 0;
+}
+.open-window {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.open-window.past,
+.open-window.last {
+  color: var(--primary);
+  font-weight: 600;
+}

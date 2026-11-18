@@ -1,3 +1,4 @@
+import type { CellarLot } from "./cellar";
 import { DESCRIPTOR_BY_ID, type Tri } from "./descriptors";
 import { grapeName } from "./grapes";
 import { COLOR_WORDS, QUALITY_WORDS, pick, tastingNote } from "./guide";
@@ -15,6 +16,8 @@ export interface ExportData {
   items: ListItem[];
   vintages: VintageInfo[];
   tastings: Tasting[];
+  /** 酒窖 lots, drunk ones included. */
+  cellar?: CellarLot[];
 }
 
 const T = (zh: string, tw: string, en: string): Tri => ({ zh, tw, en });
@@ -119,6 +122,7 @@ export function toJson(data: ExportData, exportedAt = new Date().toISOString()):
       items: data.items,
       vintages: data.vintages,
       tastings: data.tastings,
+      cellar: data.cellar ?? [],
     },
     null,
     2,

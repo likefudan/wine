@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { type CellarLot, MAX_QTY, type ProWindow, isCurrency, parseWindow } from "../shared/cellar";
 import { isDescriptorId } from "../shared/descriptors";
 import { tidyPlace } from "../shared/place";
 import {
@@ -127,12 +128,47 @@ interface TastingRow {
   note: string | null;
   photo_id: string | null;
   location: string | null;
+  cellar_id: string | null;
   updated_at: string;
 }
 
+interface CellarRow {
+  id: string;
+  vintage_id: string;
+  qty: number;
+  size_ml: number;
+  location: string | null;
+  bought_on: string | null;
+  price: number | null;
+  currency: string | null;
+  source: string | null;
+  drink_from: number | null;
+  drink_to: number | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const cellarLot = (r: CellarRow): CellarLot => ({
+  id: r.id,
+  vintageId: r.vintage_id,
+  qty: r.qty,
+  sizeMl: r.size_ml,
+  location: r.location,
+  boughtOn: r.bought_on,
+  price: r.price,
+  currency: r.currency,
+  source: r.source,
+  drinkFrom: r.drink_from,
+  drinkTo: r.drink_to,
+  note: r.note,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+});
+
 export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
   const db = env.DB;
-  const [lists, items, tastings, descriptors] = await db.batch([
+  const [lists, items, tastings, descriptors, cellar, windows] = await db.batch([
     db
       .prepare(
         `SELECT l.*, (SELECT COUNT(*) FROM list_members x WHERE x.list_id = l.id) AS member_count
@@ -150,11 +186,23 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         "SELECT d.tasting_id, d.descriptor_id, d.intensity FROM tasting_descriptors d JOIN tastings t ON t.id = d.tasting_id WHERE t.user_id = ?",
       )
       .bind(user.id),
+    db.prepare("SELECT * FROM cellar WHERE user_id = ? ORDER BY created_at DESC").bind(user.id),
+    // The critics' drinking window for what is in my cellar: the shared lookup, else my own paste-back.
+    db
+      .prepare(
+        `SELECT c.vintage_id, coalesce(
+           (SELECT json_extract(r.data, '$.drinkWindow') FROM pro_reviews r WHERE r.vintage_id = c.vintage_id AND r.data IS NOT NULL),
+           (SELECT json_extract(i.data, '$.drinkWindow') FROM pro_review_imports i WHERE i.vintage_id = c.vintage_id AND i.user_id = ?1)
+         ) AS window
+         FROM (SELECT DISTINCT vintage_id FROM cellar WHERE user_id = ?1) c`,
+      )
+      .bind(user.id),
   ]);
   const vintages = await db
     .prepare(
       `${VINTAGE_SELECT} WHERE v.id IN (
         SELECT vintage_id FROM tastings WHERE user_id = ?1
+        UNION SELECT vintage_id FROM cellar WHERE user_id = ?1
         UNION SELECT i.vintage_id FROM list_items i JOIN list_members m ON m.list_id = i.list_id AND m.user_id = ?1)`,
     )
     .bind(user.id)
@@ -225,9 +273,15 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         note: t.note,
         photoId: t.photo_id,
         location: t.location ? cleanLocation(parse(t.location)) : null,
+        cellarId: t.cellar_id,
         updatedAt: t.updated_at,
       }),
     ),
+    cellar: (cellar!.results as unknown as CellarRow[]).map(cellarLot),
+    proWindows: (windows!.results as { vintage_id: string; window: string | null }[]).flatMap((r): ProWindow[] => {
+      const w = parseWindow(r.window);
+      return w && r.window ? [{ vintageId: r.vintage_id, ...w, text: r.window }] : [];
+    }),
   };
 }
 
@@ -515,6 +569,16 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
     typeof t.photoId === "string" && ID_RE.test(t.photoId) ? t.photoId : null,
     updatedAt,
   ];
+  // 开一瓶: only a lot of my own. An older app does not send `cellarId`: keep what is there.
+  const keepCellar = t.cellarId === undefined;
+  let cellarId: string | null = null;
+  if (!keepCellar && t.cellarId) {
+    const lot = await db
+      .prepare("SELECT id FROM cellar WHERE id = ? AND user_id = ?")
+      .bind(id(t.cellarId), user.id)
+      .first<{ id: string }>();
+    cellarId = lot?.id ?? null;
+  }
   // An older app does not send `location`: keep what is there.
   const keepLocation = t.location === undefined;
   const loc = keepLocation ? null : cleanLocation(t.location);
@@ -525,17 +589,18 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
           .prepare(
             `UPDATE tastings SET vintage_id = ?, list_item_id = ?, tasted_at = ?, depth = ?, appearance = ?, nose = ?,
              palate = ?, extra = ?, guesses = ?, quality = ?, score = ?, buy_again = ?, bought_qty = ?, price_usd = ?,
-             note = ?, photo_id = ?, updated_at = ?, location = CASE WHEN ? THEN location ELSE ? END WHERE id = ?`,
+             note = ?, photo_id = ?, updated_at = ?, location = CASE WHEN ? THEN location ELSE ? END,
+             cellar_id = CASE WHEN ? THEN cellar_id ELSE ? END WHERE id = ?`,
           )
-          .bind(...values, keepLocation ? 1 : 0, location, tid)
+          .bind(...values, keepLocation ? 1 : 0, location, keepCellar ? 1 : 0, cellarId, tid)
       : db
           .prepare(
             `INSERT INTO tastings (vintage_id, list_item_id, tasted_at, depth, appearance, nose, palate, extra, guesses,
              quality, score, buy_again, bought_qty, price_usd, note, photo_id, updated_at, id, user_id, created_at,
-             location)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             location, cellar_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
-          .bind(...values, tid, user.id, now(), location),
+          .bind(...values, tid, user.id, now(), location, cellarId),
     db.prepare("DELETE FROM tasting_descriptors WHERE tasting_id = ?").bind(tid),
     ...descriptors.map((d) =>
       db
@@ -547,6 +612,70 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
 
 async function deleteTasting(db: DB, user: UserRow, tastingId: string) {
   await db.prepare("DELETE FROM tastings WHERE id = ? AND user_id = ?").bind(id(tastingId), user.id).run();
+}
+
+const year = (v: unknown): number | null =>
+  v === null || v === undefined || v === ""
+    ? null
+    : Number.isInteger(v) && (v as number) >= 1900 && (v as number) <= 2200
+      ? (v as number)
+      : fail("年份无效");
+
+async function putCellar(db: DB, user: UserRow, l: CellarLot) {
+  const cid = id(l?.id);
+  const existing = await db
+    .prepare("SELECT user_id, updated_at FROM cellar WHERE id = ?")
+    .bind(cid)
+    .first<{ user_id: string; updated_at: string }>();
+  if (existing && existing.user_id !== user.id) fail("只能修改自己的酒窖");
+  const updatedAt = iso(l.updatedAt);
+  // A later change from another phone already arrived (开了一瓶 there): keep it.
+  if (existing && existing.updated_at > updatedAt) return;
+  const vintageId = await resolveVintage(db, id(l.vintageId));
+  const qty = Number.isInteger(l.qty) && l.qty >= 0 && l.qty <= MAX_QTY ? l.qty : fail("数量无效");
+  const size = Number.isInteger(l.sizeMl) && l.sizeMl >= 50 && l.sizeMl <= 30_000 ? l.sizeMl : 750;
+  let from = year(l.drinkFrom);
+  let to = year(l.drinkTo);
+  if (from !== null && to !== null && from > to) [from, to] = [to, from];
+  const values = [
+    vintageId,
+    qty,
+    size,
+    clampText(l.location, 80),
+    typeof l.boughtOn === "string" && DATE_RE.test(l.boughtOn) ? l.boughtOn : null,
+    optNum(l.price, 0, 10_000_000),
+    isCurrency(l.currency) ? l.currency : null,
+    clampText(l.source, 120),
+    from,
+    to,
+    clampText(l.note, 1000),
+    updatedAt,
+  ];
+  if (existing)
+    await db
+      .prepare(
+        `UPDATE cellar SET vintage_id = ?, qty = ?, size_ml = ?, location = ?, bought_on = ?, price = ?, currency = ?,
+         source = ?, drink_from = ?, drink_to = ?, note = ?, updated_at = ? WHERE id = ?`,
+      )
+      .bind(...values, cid)
+      .run();
+  else
+    await db
+      .prepare(
+        `INSERT INTO cellar (vintage_id, qty, size_ml, location, bought_on, price, currency, source, drink_from, drink_to,
+         note, updated_at, id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(...values, cid, user.id, iso(l.createdAt))
+      .run();
+}
+
+async function deleteCellar(db: DB, user: UserRow, cellarId: string) {
+  const cid = id(cellarId);
+  // The notes on bottles opened from it stay; they just no longer point at it.
+  await db.batch([
+    db.prepare("UPDATE tastings SET cellar_id = NULL WHERE cellar_id = ? AND user_id = ?").bind(cid, user.id),
+    db.prepare("DELETE FROM cellar WHERE id = ? AND user_id = ?").bind(cid, user.id),
+  ]);
 }
 
 async function putMe(db: DB, user: UserRow, o: Extract<Op, { op: "putMe" }>) {
@@ -591,6 +720,12 @@ export async function applyOp(db: DB, user: UserRow, o: Op): Promise<OpResult> {
         break;
       case "putMe":
         await putMe(db, user, o);
+        break;
+      case "putCellar":
+        await putCellar(db, user, o.lot);
+        break;
+      case "deleteCellar":
+        await deleteCellar(db, user, o.id);
         break;
       default:
         return { ok: false, error: "未知操作" };
