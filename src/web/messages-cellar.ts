@@ -98,4 +98,13 @@ export const CELLAR_MESSAGES: Record<string, { tw: string; en: string }> = {
   放回酒窖: { tw: "放回酒窖", en: "Put it back" },
   只能修改自己的酒窖: { tw: "只能修改自己的酒窖", en: "You can only change your own cellar" },
   数量无效: { tw: "數量無效", en: "Invalid quantity" },
+  "存 {n} 瓶": { tw: "存 {n} 瓶", en: "{n} in stock" },
+  开一瓶: { tw: "開一瓶", en: "Open one" },
+  "喝过的和买过的每一款酒都会出现在这里，离线也能搜。": {
+    tw: "喝過的和買過的每一款酒都會出現在這裡，離線也能搜尋。",
+    en: "Every wine you've tasted or bought shows up here, searchable offline.",
+  },
+  还没喝: { tw: "還沒喝", en: "Not tasted yet" },
+  "更多：瓶子大小、适饮期、备注": { tw: "更多：瓶子大小、適飲期、備註", en: "More: bottle size, drinking window, note" },
+  "买了这款酒？放进酒窖": { tw: "買了這款酒？放進酒窖", en: "Bought this wine? Add it to the cellar" },
 };

@@ -2315,3 +2315,40 @@ a.pro-score {
   color: var(--primary);
   font-weight: 600;
 }
+.library-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.library-head .segmented {
+  flex: 1;
+}
+.seg-count {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.stock-tag {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--brass-soft);
+  color: var(--brass);
+  font-size: 12px;
+  font-weight: 600;
+}
+.wine-cellar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wine-cellar .section-title {
+  margin: 0;
+}
+.wine-cellar .row-wrap .row {
+  flex: 1;
+}
+.card-with-action .card-action.second {
+  top: 52px;
+}

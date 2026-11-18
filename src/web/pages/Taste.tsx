@@ -37,14 +37,14 @@ import {
   type VintageInfo,
   toDepth,
 } from "../../shared/model";
-import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
+import { BackIcon, BottleIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe, useStore } from "../store";
 import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { TastingPlace } from "../TastingPlace";
-import { BoughtToCellar, TastingFromCellar } from "./Cellar";
+import { AddToCellarSheet, BoughtToCellar, TastingFromCellar } from "./Cellar";
 
 /**
  * 品鉴: one sheet, four depths over the same fields (docs/design.zh.md §3.3, §3.4). Switching depth
@@ -79,6 +79,7 @@ export function Taste() {
   const [switches, setSwitches] = useState(0);
   const [offer, setOffer] = useState<Depth | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [buying, setBuying] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(x);
 
@@ -197,6 +198,9 @@ export function Taste() {
         <button type="button" class="button block" onClick={() => setSharing(true)}>
           <ShareIcon /> {t("生成分享图")}
         </button>
+        <button type="button" class="button block" onClick={() => setBuying(true)}>
+          <BottleIcon /> {t("买了这款酒？放进酒窖")}
+        </button>
         <button
           type="button"
           class="link danger small"
@@ -217,6 +221,7 @@ export function Taste() {
           {t("删除这条记录")}
         </button>
       </div>
+      {buying && saved && <AddToCellarSheet x={saved} onClose={() => setBuying(false)} />}
       {sharing && (
         <TastingShareSheet
           v={vintage}

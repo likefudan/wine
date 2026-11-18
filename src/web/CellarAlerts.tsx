@@ -61,7 +61,7 @@ export function CellarAlertCard() {
     n("past") ? t("{n} 瓶已过适饮期", { n: n("past") }) : null,
   ].filter(Boolean);
   return (
-    <a href="/cellar" class="notice cellar-alert">
+    <a href="/library?view=cellar" class="notice cellar-alert">
       <strong>{t("酒窖提醒")}</strong> {parts.join(t("，"))}
       <span class="cellar-alert-go" aria-hidden="true">
         ›

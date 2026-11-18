@@ -19,7 +19,7 @@ import {
 import { glassColor } from "../../shared/guide";
 import { type Tasting, type VintageInfo, nameKey, yearLabel } from "../../shared/model";
 import type { ReviewsView } from "../../shared/reviews";
-import { BackIcon, Field, Glass, WineName } from "../components";
+import { BackIcon, Field, Glass, Sheet, WineName } from "../components";
 import { ask } from "../confirm";
 import { currentLang, fmtDate, t, tk } from "../i18n";
 import { SuggestInput } from "../SuggestInput";
@@ -73,7 +73,15 @@ function useWindows() {
   };
 }
 
-export function CellarPage() {
+/** The old 酒窖 tab's address (links, the home screen): now a view of the 酒库. */
+export function CellarRedirect() {
+  const { route } = useLocation();
+  useEffect(() => route("/library?view=cellar", true), []);
+  return null;
+}
+
+/** 酒库 → 酒窖: only what I have in stock, grouped by what to drink first. */
+export function CellarView() {
   const lots = useStore((s) => s.cellar);
   const vintages = useStore((s) => s.vintages);
   const [q, setQ] = useState("");
@@ -120,13 +128,7 @@ export function CellarPage() {
   const wines = new Set(full.map((l) => l.vintageId)).size;
 
   return (
-    <div class="page">
-      <div class="section-head">
-        <h1 class="section-head-title">{t("酒窖")}</h1>
-        <a href="/cellar/add" class="button small primary">
-          ＋ {t("放进酒窖")}
-        </a>
-      </div>
+    <>
       {full.length === 0 ? (
         <div class="empty">
           <p>{t("买了酒就放进来：放在哪、花了多少、什么时候喝。到了适饮期会提醒你，开一瓶就顺手记一杯。")}</p>
@@ -191,7 +193,7 @@ export function CellarPage() {
           )}
         </section>
       )}
-    </div>
+    </>
   );
 }
 
@@ -267,7 +269,7 @@ export function CellarLotPage() {
     return (
       <div class="page">
         <p class="empty">{t("找不到这瓶酒")}</p>
-        <a href="/cellar">{t("回到酒窖")}</a>
+        <a href="/library?view=cellar">{t("回到酒窖")}</a>
       </div>
     );
 
@@ -345,7 +347,7 @@ export function CellarLotPage() {
           onClick={async () => {
             if (!(await ask(t("删除这条酒窖记录？喝过的笔记会留着。"), { ok: t("删除"), danger: true }))) return;
             deleteLot(lot.id);
-            route("/cellar", true);
+            route("/library?view=cellar", true);
           }}
         >
           {t("删除这条记录")}
@@ -448,8 +450,10 @@ function TastedRow(props: { x: Tasting }) {
   );
 }
 
-function LotForm(props: { lot: CellarLot; change: (c: Partial<CellarLot>) => void }) {
+function LotForm(props: { lot: CellarLot; change: (c: Partial<CellarLot>) => void; compact?: boolean }) {
   const { lot, change } = props;
+  // In the quick sheet only what people fill in at the till; the rest behind 更多.
+  const [more, setMore] = useState(!props.compact);
   const lots = useStore((s) => s.cellar);
   const lists = useStore((s) => s.lists);
   const locations = [...new Set(lots.map((l) => l.location).filter((x): x is string => !!x))];
@@ -496,21 +500,23 @@ function LotForm(props: { lot: CellarLot; change: (c: Partial<CellarLot>) => voi
           </button>
         </div>
       </Field>
-      <Field label={t("瓶子大小")} group>
-        <div class="chips">
-          {BOTTLE_SIZES.map((ml) => (
-            <button
-              key={ml}
-              type="button"
-              class={lot.sizeMl === ml ? "chip on" : "chip"}
-              aria-pressed={lot.sizeMl === ml}
-              onClick={() => change({ sizeMl: ml })}
-            >
-              {sizeLabel(ml)}
-            </button>
-          ))}
-        </div>
-      </Field>
+      {more && (
+        <Field label={t("瓶子大小")} group>
+          <div class="chips">
+            {BOTTLE_SIZES.map((ml) => (
+              <button
+                key={ml}
+                type="button"
+                class={lot.sizeMl === ml ? "chip on" : "chip"}
+                aria-pressed={lot.sizeMl === ml}
+                onClick={() => change({ sizeMl: ml })}
+              >
+                {sizeLabel(ml)}
+              </button>
+            ))}
+          </div>
+        </Field>
+      )}
       <Field label={t("放在哪里")} hint={t("例如：家里酒柜第 3 层、公司、存酒仓库")}>
         <SuggestInput
           name="location"
@@ -562,36 +568,45 @@ function LotForm(props: { lot: CellarLot; change: (c: Partial<CellarLot>) => voi
           </span>
         </Field>
       </div>
-      <Field label={t("适饮期")} group hint={t("不填的话，按酒评或你笔记里写的适饮期提醒")}>
-        <div class="window-row">
-          <input
-            inputMode="numeric"
-            aria-label={t("从哪一年")}
-            maxLength={4}
-            placeholder={t("从")}
-            value={lot.drinkFrom ?? ""}
-            onInput={(e) => change({ drinkFrom: yearOf((e.target as HTMLInputElement).value) })}
-          />
-          <span class="muted">–</span>
-          <input
-            inputMode="numeric"
-            aria-label={t("到哪一年")}
-            maxLength={4}
-            placeholder={t("到")}
-            value={lot.drinkTo ?? ""}
-            onInput={(e) => change({ drinkTo: yearOf((e.target as HTMLInputElement).value) })}
-          />
-        </div>
-        <WindowHints lot={lot} change={change} />
-      </Field>
-      <Field label={t("备注")}>
-        <textarea
-          rows={2}
-          maxLength={1000}
-          value={lot.note ?? ""}
-          onInput={(e) => change({ note: (e.target as HTMLTextAreaElement).value || null })}
-        />
-      </Field>
+      {!more && (
+        <button type="button" class="link small" onClick={() => setMore(true)}>
+          {t("更多：瓶子大小、适饮期、备注")}
+        </button>
+      )}
+      {more && (
+        <>
+          <Field label={t("适饮期")} group hint={t("不填的话，按酒评或你笔记里写的适饮期提醒")}>
+            <div class="window-row">
+              <input
+                inputMode="numeric"
+                aria-label={t("从哪一年")}
+                maxLength={4}
+                placeholder={t("从")}
+                value={lot.drinkFrom ?? ""}
+                onInput={(e) => change({ drinkFrom: yearOf((e.target as HTMLInputElement).value) })}
+              />
+              <span class="muted">–</span>
+              <input
+                inputMode="numeric"
+                aria-label={t("到哪一年")}
+                maxLength={4}
+                placeholder={t("到")}
+                value={lot.drinkTo ?? ""}
+                onInput={(e) => change({ drinkTo: yearOf((e.target as HTMLInputElement).value) })}
+              />
+            </div>
+            <WindowHints lot={lot} change={change} />
+          </Field>
+          <Field label={t("备注")}>
+            <textarea
+              rows={2}
+              maxLength={1000}
+              value={lot.note ?? ""}
+              onInput={(e) => change({ note: (e.target as HTMLTextAreaElement).value || null })}
+            />
+          </Field>
+        </>
+      )}
     </div>
   );
 }
@@ -702,12 +717,98 @@ export function BoughtToCellar(props: { x: Tasting }) {
   const added = useStore((s) => s.cellar.some((l) => l.vintageId === x.vintageId && l.createdAt >= x.tastedAt));
   if (!x.boughtQty) return null;
   return added ? (
-    <a class="small" href="/cellar">
+    <a class="small" href="/library?view=cellar">
       {t("已放进酒窖")} ›
     </a>
   ) : (
     <a class="button small" href={`/cellar/new?v=${x.vintageId}&qty=${x.boughtQty}&from=${x.id}`}>
       ＋ {t("把这 {n} 瓶放进酒窖", { n: x.boughtQty })}
     </a>
+  );
+}
+
+/**
+ * On a wine's page (酒库 → one wine): the bottles of it I have, each lot with where it is and its
+ * window, and 开一瓶 right there.
+ */
+export function WineCellar(props: { vintageId: string }) {
+  const { route } = useLocation();
+  const lots = useStore((s) => s.cellar.filter((l) => l.vintageId === props.vintageId && l.qty > 0));
+  const windows = useWindows();
+  const lang = currentLang();
+  return (
+    <section class="wine-cellar">
+      <div class="section-head">
+        <h2 class="section-title">
+          {t("酒窖")}
+          {lots.length > 0 && <span class="muted"> · {t("存 {n} 瓶", { n: bottleCount(lots) })}</span>}
+        </h2>
+        <a class="link small" href={`/cellar/new?v=${props.vintageId}`}>
+          ＋ {t("放进酒窖")}
+        </a>
+      </div>
+      {lots.length > 0 && (
+        <ul class="rows">
+          {lots.map((l) => {
+            const { w, status } = windows(l);
+            const sub = [
+              l.sizeMl !== 750 ? sizeLabel(l.sizeMl) : null,
+              w ? `${t("适饮期")} ${windowLabel(w, lang)}` : null,
+              t(STATUS_TITLE[status]),
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <li key={l.id} class="row-wrap">
+                <a class="row" href={`/cellar/${l.id}`}>
+                  <span class="row-main">
+                    <span>
+                      <strong class="num">×{l.qty}</strong> {l.location || t("未写位置")}
+                    </span>
+                    <span class={`row-list ${status}`}>{sub}</span>
+                  </span>
+                </a>
+                <button
+                  type="button"
+                  class="button small"
+                  onClick={() => {
+                    const x = openBottle(l.id);
+                    if (x) route(`/taste/${x.id}?new=1`);
+                  }}
+                >
+                  {t("开一瓶")}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/**
+ * 放进酒窖 from a note (Ke Li 2026-11-18): a sheet over the page with what people fill in when they
+ * buy — how many, when, where, from whom, how much — filled from the note where it can be.
+ */
+export function AddToCellarSheet(props: { x: Tasting; onClose: () => void }) {
+  const [lot, setLot] = useState(() =>
+    newLot(props.x.vintageId, { from: props.x.id, qty: String(props.x.boughtQty ?? 1) }),
+  );
+  return (
+    <Sheet title={t("放进酒窖")} onClose={props.onClose}>
+      <LotForm lot={lot} change={(c) => setLot({ ...lot, ...c })} compact />
+      <button
+        type="button"
+        class="button primary block"
+        disabled={lot.qty < 1}
+        onClick={() => {
+          saveLot(lot);
+          props.onClose();
+        }}
+      >
+        {t("放进酒窖")}
+      </button>
+    </Sheet>
   );
 }

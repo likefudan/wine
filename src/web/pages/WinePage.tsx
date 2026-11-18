@@ -3,12 +3,13 @@ import { useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../../shared/descriptors";
 import { glassColor, tastingNote } from "../../shared/guide";
 import { FriendsOnWine } from "../Friends";
-import { BackIcon, Glass, WineName } from "../components";
+import { BackIcon, BottleIcon, Glass, WineName } from "../components";
 import { DEPTH_INFO } from "../depths";
 import { ProReviews } from "../Reviews";
 import { currentLang, fmtDate, p, t } from "../i18n";
 import { saveTasting, useStore } from "../store";
 import { ShareIcon, TastingShareSheet } from "../TastingCard";
+import { AddToCellarSheet, WineCellar } from "./Cellar";
 import { openTasting } from "./ListPage";
 
 /** One wine: every time I've tasted it, with the note each answer adds up to. */
@@ -22,8 +23,8 @@ export function WinePage() {
   );
   const items = useStore((s) => s.items);
   const lists = useStore((s) => s.lists);
-  const cellar = useStore((s) => s.cellar.filter((l) => l.vintageId === params.id && l.qty > 0));
   const [sharing, setSharing] = useState<string | null>(null);
+  const [buying, setBuying] = useState<string | null>(null);
   if (!v)
     return (
       <div class="page">
@@ -69,19 +70,7 @@ export function WinePage() {
           ))}
         </p>
       )}
-      {cellar.length > 0 && (
-        <p class="notice cellar-line">
-          {cellar.map((l, i) => (
-            <span key={l.id}>
-              {i > 0 && " · "}
-              <a href={`/cellar/${l.id}`}>
-                {t("酒窖里 {n} 瓶", { n: l.qty })}
-                {l.location ? ` · ${l.location}` : ""}
-              </a>
-            </span>
-          ))}
-        </p>
-      )}
+      <WineCellar vintageId={v.id} />
       <ul class="cards">
         {sorted.map((x) => {
           const l = listOf(x.listItemId);
@@ -129,6 +118,14 @@ export function WinePage() {
               >
                 <ShareIcon />
               </button>
+              <button
+                type="button"
+                class="icon-button card-action second"
+                aria-label={t("放进酒窖")}
+                onClick={() => setBuying(x.id)}
+              >
+                <BottleIcon />
+              </button>
             </li>
           );
         })}
@@ -142,6 +139,9 @@ export function WinePage() {
       <button type="button" class="button primary block" onClick={() => openTasting(route, v.id, null)}>
         ＋ {t("再记一次")}
       </button>
+      {buying && sorted.some((x) => x.id === buying) && (
+        <AddToCellarSheet x={sorted.find((x) => x.id === buying)!} onClose={() => setBuying(null)} />
+      )}
       {sharing && sorted.some((x) => x.id === sharing) && (
         <TastingShareSheet
           v={v}
