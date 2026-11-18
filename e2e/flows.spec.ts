@@ -21,6 +21,11 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await page.click("text=新酒：Opus One");
   await page.fill('input[placeholder="2019"]', "2019");
   await page.click(".choice >> text=红");
+  // Grapes are tapped, not typed: two common ones, one from the longer list.
+  await page.click(".grape-picker >> text=赤霞珠");
+  await page.click(".grape-picker >> text=梅洛");
+  await page.selectOption(".grape-more select", "Cabernet Franc");
+  await expect(page.locator(".grape-picker .chip.on")).toHaveText(["赤霞珠", "梅洛", "品丽珠"]);
   await page.click("text=开始品鉴");
 
   // 入门: plain questions, one at a time.
@@ -52,6 +57,7 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await page.click(".tabbar >> text=酒库");
   await page.fill("input.search", "黑醋栗");
   await expect(page.locator(".rows .row")).toHaveCount(1);
+  await expect(page.locator(".rows .row .wine-sub")).toContainText("赤霞珠 / 梅洛 / 品丽珠");
   await page.fill("input.search", "cassis nothing");
   await expect(page.locator(".rows .row")).toHaveCount(0);
 

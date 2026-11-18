@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { avaOf } from "../src/shared/ava";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
-import { canonicalGrape, grapeName } from "../src/shared/grapes";
+import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, tastingNote } from "../src/shared/guide";
-import { ID_RE, nameKey, ulid } from "../src/shared/model";
+import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
 
 describe("vocabulary", () => {
   it("has unique ids, every word in a family, all three languages", () => {
@@ -67,6 +67,19 @@ describe("helpers", () => {
     expect(canonicalGrape("shiraz")).toBe("Syrah");
     expect(grapeName("Chardonnay", "zh-TW")).toBe("夏多內");
     expect(canonicalGrape("Blaufränkisch")).toBe("Blaufränkisch");
+    expect(canonicalGrape("Tannat")).toBe("Tannat");
+    expect(canonicalGrape("Not A Grape")).toBe("Not A Grape");
+  });
+
+  it("offers known grapes as one-tap chips for every colour", () => {
+    const known = new Set(GRAPES.map((g) => g.en));
+    for (const c of [...COLORS, undefined]) {
+      const common = commonGrapes(c);
+      expect(common.length).toBeGreaterThan(4);
+      for (const g of common) expect(known.has(g), g).toBe(true);
+    }
+    expect(commonGrapes("white")[0]).toBe("Chardonnay");
+    expect(new Set(GRAPES.map((g) => g.zh)).size).toBe(GRAPES.length);
   });
 
   it("gives a glass colour without an appearance", () => {

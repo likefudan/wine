@@ -1,7 +1,8 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { AVA_NAMES, avaOf } from "../../shared/ava";
-import { GRAPES, canonicalGrape, grapeName } from "../../shared/grapes";
+import { canonicalGrape } from "../../shared/grapes";
+import { GrapePicker } from "../GrapePicker";
 import { COLOR_WORDS } from "../../shared/guide";
 import {
   COLORS,
@@ -14,7 +15,7 @@ import {
 } from "../../shared/model";
 import { ProducerInput } from "../ProducerInput";
 import { BackIcon, CameraIcon, Choice, Field, Glass, WineName } from "../components";
-import { currentLang, p, t, tm } from "../i18n";
+import { p, t, tm } from "../i18n";
 import { ApiError, addItem, addVintage, api, blankTasting, getState, saveTasting, useStore } from "../store";
 import { glassColor } from "../../shared/guide";
 
@@ -44,7 +45,7 @@ interface Draft {
   region: string;
   country: string;
   appellation: string;
-  grapes: string;
+  grapes: string[];
   abv: string;
   lwin?: number | null;
   place?: ProducerPlace | null;
@@ -58,7 +59,7 @@ const EMPTY: Draft = {
   region: "",
   country: "",
   appellation: "",
-  grapes: "",
+  grapes: [],
   abv: "",
 };
 
@@ -179,7 +180,7 @@ export function AddWine() {
         region: rd.region,
         country: rd.country,
         appellation: rd.appellation,
-        grapes: rd.grapes.join(", "),
+        grapes: rd.grapes.map(canonicalGrape),
         abv: rd.abv ? String(rd.abv) : "",
       });
       if (!rd.confident) setScanError(t("有些字看不清，请核对一下"));
@@ -411,7 +412,6 @@ function WineForm(props: {
   const year = d.nv ? 0 : Number(d.year);
   const yearOk = d.nv || (Number.isInteger(year) && year >= 1900 && year <= new Date().getFullYear() + 1);
   const ok = d.producer.trim() && d.color && yearOk;
-  const lang = currentLang();
   const submit = (e: Event) => {
     e.preventDefault();
     if (!ok) return;
@@ -425,11 +425,7 @@ function WineForm(props: {
       country: d.country.trim() || null,
       region: d.region.trim() || null,
       appellation: d.appellation.trim() || null,
-      grapes: d.grapes
-        .split(/[,，、/]/)
-        .map((g) => g.trim())
-        .filter(Boolean)
-        .map(canonicalGrape),
+      grapes: d.grapes,
       abv: Number(d.abv) > 0 ? Number(d.abv) : null,
       lwin: d.lwin ?? null,
       place: d.place ?? null,
@@ -482,19 +478,14 @@ function WineForm(props: {
           onChange={(v) => setD({ ...d, color: v })}
         />
       </Field>
-      <Field label={t("葡萄品种")} hint={t("多个用逗号隔开")}>
-        <input
+      <Field label={t("葡萄品种")} hint={t("可多选，混酿就都点上")} group>
+        <GrapePicker
+          label={t("葡萄品种")}
           value={d.grapes}
-          onInput={set("grapes")}
-          placeholder={grapeName("Cabernet Sauvignon", lang)}
-          list="grape-list"
+          color={d.color}
+          onChange={(grapes) => setD((x) => ({ ...x, grapes }))}
         />
       </Field>
-      <datalist id="grape-list">
-        {GRAPES.map((g) => (
-          <option key={g.en} value={grapeName(g.en, lang)} />
-        ))}
-      </datalist>
       <div class="field-row">
         <Field label={t("产区")}>
           <input value={d.region} maxLength={80} onInput={set("region")} placeholder="Napa Valley" />
