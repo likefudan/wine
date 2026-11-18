@@ -1,7 +1,10 @@
 // Translations for every page text, keyed by the Simplified Chinese in the code (test/i18n.test.ts
 // checks none is missing). zh-TW uses Taiwan phrasing (登入, 網路, 品飲), not a character swap.
 
+import { REVIEW_MESSAGES } from "./messages-reviews";
+
 export const MESSAGES: Record<string, { tw: string; en: string }> = {
+  ...REVIEW_MESSAGES,
   我的分: { tw: "我的分數", en: "My score" },
   拖动打分: { tw: "拖動評分", en: "Slide to score" },
   清除: { tw: "清除", en: "Clear" },

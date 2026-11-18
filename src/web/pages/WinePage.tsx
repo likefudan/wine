@@ -3,6 +3,7 @@ import { DESCRIPTOR_BY_ID } from "../../shared/descriptors";
 import { glassColor, tastingNote } from "../../shared/guide";
 import { BackIcon, Glass, WineName } from "../components";
 import { DEPTH_INFO } from "../depths";
+import { ProReviews } from "../Reviews";
 import { currentLang, fmtDate, p, t } from "../i18n";
 import { useStore } from "../store";
 import { openTasting } from "./ListPage";
@@ -105,6 +106,11 @@ export function WinePage() {
           );
         })}
       </ul>
+      <ProReviews
+        key={v.id}
+        v={v}
+        tasted={tastings.some((x) => x.score !== null || x.descriptors.length > 0 || !!x.note)}
+      />
       <button type="button" class="button primary block" onClick={() => openTasting(route, v.id, null)}>
         ＋ {t("再记一次")}
       </button>
