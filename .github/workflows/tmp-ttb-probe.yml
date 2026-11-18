@@ -2,7 +2,7 @@
 name: tmp TTB probe
 on:
   pull_request:
-    paths: [".github/workflows/tmp-ttb-probe.yml", "scripts/ttb_probe.py"]
+    paths: [".github/workflows/tmp-ttb-probe.yml", "scripts/ttb_export.py"]
 permissions:
   contents: read
 jobs:
@@ -11,7 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: pip install -q requests beautifulsoup4 certifi
-      - run: >
-          python3 scripts/ttb_probe.py
-          https://ttbonline.gov/colasonline/publicSearchColasBasic.do
-          https://ttbonline.gov/colasonline/publicSearchColasAdvanced.do
+      - run: python3 scripts/ttb_export.py 2026-10-01 2026-10-03 probe.csv --probe
