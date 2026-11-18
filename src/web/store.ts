@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import {
+  type Board,
   type Depth,
   type LabelModel,
   type Lang,
@@ -10,6 +11,7 @@ import {
   type SyncData,
   type Tasting,
   type VintageInfo,
+  type Visibility,
   type WineList,
   ulid,
 } from "../shared/model";
@@ -295,18 +297,27 @@ export function newList(
   place: WineList["place"] = null,
 ): WineList {
   const at = new Date().toISOString();
-  const l: WineList = { id: ulid(), title, kind, startsOn, place, note: null, createdAt: at, updatedAt: at };
+  const l: WineList = {
+    id: ulid(),
+    title,
+    kind,
+    startsOn,
+    place,
+    note: null,
+    createdAt: at,
+    updatedAt: at,
+    ownerId: state.me?.id,
+    visibility: "private",
+    blind: true,
+    revealedAt: null,
+    members: 1,
+  };
   saveList(l);
   return l;
 }
 
 export function deleteList(id: string) {
-  const itemIds = new Set(state.items.filter((i) => i.listId === id).map((i) => i.id));
-  set({
-    lists: state.lists.filter((l) => l.id !== id),
-    items: state.items.filter((i) => i.listId !== id),
-    tastings: state.tastings.map((t) => (t.listItemId && itemIds.has(t.listItemId) ? { ...t, listItemId: null } : t)),
-  });
+  dropList(id);
   enqueue({ op: "deleteList", id });
 }
 
@@ -388,6 +399,82 @@ export function updateMe(change: { locale?: Lang; depth?: Depth; labelModel?: La
   if (!state.me) return;
   set({ me: { ...state.me, ...change } });
   enqueue({ op: "putMe", ...change });
+}
+
+// ── Sharing (needs the network) ──────────────────────────────────────────────────────────────
+
+/** A shared list as I may see it; `k` is the QR code's key when I have not joined yet. */
+export const fetchBoard = (listId: string, k?: string | null) =>
+  api<Board>(`/api/lists/${listId}/board${k ? `?k=${encodeURIComponent(k)}` : ""}`);
+
+/** The owner's switches; the server answers with the list as it now is. */
+export async function shareList(
+  listId: string,
+  change: { visibility?: Visibility; blind?: boolean; revealed?: boolean; joinOpen?: boolean; newKey?: boolean },
+): Promise<Board> {
+  const b = await api<Board>(`/api/lists/${listId}/share`, { body: change });
+  set({
+    lists: state.lists.map((l) =>
+      l.id === listId
+        ? {
+            ...l,
+            visibility: b.list.visibility,
+            blind: b.list.blind,
+            revealedAt: b.list.revealedAt,
+            members: b.memberCount,
+          }
+        : l,
+    ),
+  });
+  return b;
+}
+
+/** 扫码加入, then my copy is fetched again so the list and its wines are on the phone. */
+export async function joinList(listId: string, k: string): Promise<void> {
+  await api<Board>(`/api/lists/${listId}/join`, { body: { k } });
+  await flush();
+}
+
+export async function leaveList(listId: string): Promise<void> {
+  await api(`/api/lists/${listId}/leave`, { body: {} });
+  dropList(listId);
+}
+
+export async function removeMember(listId: string, userId: string): Promise<Board> {
+  return api<Board>(`/api/lists/${listId}/members/${userId}/remove`, { body: {} });
+}
+
+/** Takes a list off the phone, keeping my notes in it as notes outside any list. */
+function dropList(id: string) {
+  const itemIds = new Set(state.items.filter((i) => i.listId === id).map((i) => i.id));
+  set({
+    lists: state.lists.filter((l) => l.id !== id),
+    items: state.items.filter((i) => i.listId !== id),
+    tastings: state.tastings.map((t) => (t.listItemId && itemIds.has(t.listItemId) ? { ...t, listItemId: null } : t)),
+  });
+}
+
+/**
+ * A QR code scanned while signed out: kept across the Google sign-in (which comes back to "/"), so
+ * the app can finish joining. Only for an hour, so a forgotten one does not surprise anyone later.
+ */
+const JOIN_KEY = "pending_join";
+export function rememberJoin(listId: string, k: string) {
+  try {
+    localStorage.setItem(JOIN_KEY, JSON.stringify({ listId, k, at: Date.now() }));
+  } catch {
+    // private mode: the friend scans again after signing in
+  }
+}
+export function takePendingJoin(): { listId: string; k: string } | null {
+  try {
+    const raw = localStorage.getItem(JOIN_KEY);
+    localStorage.removeItem(JOIN_KEY);
+    const j = raw ? (JSON.parse(raw) as { listId: string; k: string; at: number }) : null;
+    return j && Date.now() - j.at < 3600_000 ? j : null;
+  } catch {
+    return null;
+  }
 }
 
 export const clearRejected = () => set({ rejected: null }, false);

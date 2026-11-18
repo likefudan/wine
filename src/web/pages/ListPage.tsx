@@ -1,10 +1,23 @@
 import { useLocation, useRoute } from "preact-iso";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
-import { LIST_KINDS, type ListKind, type ListPlace } from "../../shared/model";
+import { type Board, type BoardItem, LIST_KINDS, type ListKind, type ListPlace } from "../../shared/model";
+import { EveryoneSheet, ShareSheet } from "../Sharing";
 import { BackIcon, Choice, Field, Glass, Sheet, WineName } from "../components";
-import { fmtDate, t } from "../i18n";
-import { blankTasting, deleteList, getState, moveItem, removeItem, saveList, saveTasting, useStore } from "../store";
+import { fmtDate, t, tm } from "../i18n";
+import {
+  ApiError,
+  blankTasting,
+  deleteList,
+  fetchBoard,
+  getState,
+  leaveList,
+  moveItem,
+  removeItem,
+  saveList,
+  saveTasting,
+  useStore,
+} from "../store";
 import { mapsUrl } from "../PlaceInput";
 import { KIND_NAMES, ListPlaceField, placeFor } from "./Home";
 
@@ -27,6 +40,24 @@ export function ListPage() {
   const tastings = useStore((s) => s.tastings);
   const [editing, setEditing] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [everyone, setEveryone] = useState<string | null>(null);
+  const [board, setBoard] = useState<Board | null>(null);
+  const [shareError, setShareError] = useState("");
+  const syncedAt = useStore((s) => s.syncedAt);
+  const me = useStore((s) => s.me);
+  // Everyone's notes come from the server, which applies 盲评; refreshed after each upload.
+  useEffect(() => {
+    if (!list || navigator.onLine === false) return;
+    let live = true;
+    fetchBoard(list.id).then(
+      (b) => live && setBoard(b),
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [list?.id, syncedAt]);
   if (!list)
     return (
       <div class="page">
@@ -39,6 +70,18 @@ export function ListPage() {
     .map((i) => tastings.find((x) => x.listItemId === i.id)?.score)
     .filter((n): n is number => typeof n === "number");
   const best = scores.length ? Math.max(...scores) : null;
+  const shared = (board?.memberCount ?? list.members ?? 1) > 1;
+  const boardItem = (id: string) => board?.items.find((b) => b.id === id);
+  const openShare = async () => {
+    setShareError("");
+    try {
+      setBoard(await fetchBoard(list.id));
+      setSharing(true);
+    } catch (e) {
+      setShareError(e instanceof ApiError ? tm(e.message) : t("没有网络，分享要联网才能用"));
+    }
+  };
+  const everyoneItem = everyone ? boardItem(everyone) : undefined;
 
   return (
     <div class="page">
@@ -64,10 +107,30 @@ export function ListPage() {
             </a>
           )}
         </div>
-        <button type="button" class="link" onClick={() => setSettings(true)}>
-          {t("设置")}
-        </button>
+        <span class="head-actions">
+          <button type="button" class="link" onClick={openShare}>
+            {t("分享")}
+          </button>
+          <button type="button" class="link" onClick={() => setSettings(true)}>
+            {t("设置")}
+          </button>
+        </span>
       </header>
+      {shareError && (
+        <p class="notice" role="alert">
+          {shareError}
+        </p>
+      )}
+      {shared && board && (
+        <p class="muted small share-line">
+          {t("{n} 人一起记", { n: board.memberCount })} ·{" "}
+          {!board.list.blind
+            ? t("大家的评分互相可见")
+            : board.list.revealedAt
+              ? t("已揭晓")
+              : t("盲评中：交了自己的评价才能看别人的")}
+        </p>
+      )}
       {items.length === 0 ? (
         <p class="empty">{t("按上酒顺序一款款加进来，喝一款记一款。")}</p>
       ) : (
@@ -120,13 +183,16 @@ export function ListPage() {
                   </span>
                 </div>
               ) : (
-                <button type="button" class="row" onClick={() => openTasting(route, v.id, i.id)}>
-                  <Glass color={glassColor(v.color, mine?.appearance, v.year)} />
-                  <WineName v={v} />
-                  <span class={`row-score num${mine?.score !== null && mine?.score === best ? " best" : ""}`}>
-                    {mine?.score ?? (mine ? "✓" : t("记"))}
-                  </span>
-                </button>
+                <div class="row-stack">
+                  <button type="button" class="row" onClick={() => openTasting(route, v.id, i.id)}>
+                    <Glass color={glassColor(v.color, mine?.appearance, v.year)} />
+                    <WineName v={v} />
+                    <span class={`row-score num${mine?.score !== null && mine?.score === best ? " best" : ""}`}>
+                      {mine?.score ?? (mine ? "✓" : t("记"))}
+                    </span>
+                  </button>
+                  {shared && <EveryoneChip b={boardItem(i.id)} onClick={() => setEveryone(i.id)} />}
+                </div>
               )}
             </li>
           );
@@ -135,8 +201,71 @@ export function ListPage() {
       <a class="button primary block" href={`/add?list=${list.id}`}>
         ＋ {t("加下一款酒")}
       </a>
-      {settings && <ListSettings listId={list.id} onClose={() => setSettings(false)} onDeleted={() => route("/")} />}
+      {settings &&
+        (list.ownerId && list.ownerId !== me?.id ? (
+          <MemberSettings listId={list.id} onClose={() => setSettings(false)} onLeft={() => route("/")} />
+        ) : (
+          <ListSettings listId={list.id} onClose={() => setSettings(false)} onDeleted={() => route("/")} />
+        ))}
+      {sharing && board && <ShareSheet board={board} onChange={setBoard} onClose={() => setSharing(false)} />}
+      {everyoneItem && (
+        <EveryoneSheet
+          item={everyoneItem}
+          onTaste={() => {
+            setEveryone(null);
+            openTasting(route, everyoneItem.vintage.id, everyoneItem.id);
+          }}
+          onClose={() => setEveryone(null)}
+        />
+      )}
     </div>
+  );
+}
+
+/** 大家: under each wine of a shared list, how many rated it and (once open to me) their average. */
+function EveryoneChip(props: { b: BoardItem | undefined; onClick: () => void }) {
+  const b = props.b;
+  if (!b || b.rated === 0) return null;
+  return (
+    <button type="button" class="everyone-chip" onClick={props.onClick}>
+      {b.open
+        ? b.avg !== null
+          ? t("大家 {n} 人 · 平均 {avg}", { n: b.rated, avg: b.avg })
+          : t("大家 {n} 人已评 · 看笔记", { n: b.rated })
+        : `🔒 ${t("{n} 人已评", { n: b.rated })}`}
+    </button>
+  );
+}
+
+/** A list someone else made: I can only leave it. */
+function MemberSettings(props: { listId: string; onClose: () => void; onLeft: () => void }) {
+  const [error, setError] = useState("");
+  return (
+    <Sheet title={t("酒单设置")} onClose={props.onClose}>
+      <div class="form">
+        <p class="muted">{t("这份酒单是别人建的，只有创建者能改名称和设置。你可以往里加酒、记自己的感受。")}</p>
+        {error && (
+          <p class="notice" role="alert">
+            {error}
+          </p>
+        )}
+        <button
+          type="button"
+          class="button danger"
+          onClick={async () => {
+            if (!confirm(t("退出这份酒单？你记的笔记会留在你的酒库里。"))) return;
+            try {
+              await leaveList(props.listId);
+              props.onLeft();
+            } catch (e) {
+              setError(e instanceof ApiError ? tm(e.message) : t("没有网络，分享要联网才能用"));
+            }
+          }}
+        >
+          {t("退出酒单")}
+        </button>
+      </div>
+    </Sheet>
   );
 }
 

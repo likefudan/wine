@@ -81,3 +81,96 @@ test("the Google button leaves the app for the sign-in route", async ({ page }) 
   // client router must not swallow the click.
   await expect(page).toHaveURL(/\/login\?error=not_configured/);
 });
+
+/** Sets a range input the way a finger would, so Preact's onInput sees it. */
+async function slide(page: Page, label: string, value: number) {
+  await page.locator(`input[type="range"][aria-label="${label}"]`).evaluate((el, v) => {
+    const input = el as HTMLInputElement;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, String(v));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+test("a friend scans the Napa list's QR code, joins, and sees the scores only after handing in", async ({
+  browser,
+}) => {
+  const ownerCtx = await browser.newContext();
+  const owner = await ownerCtx.newPage();
+  owner.on("dialog", (d) => d.accept());
+  await signIn(owner);
+  await owner.click("text=只想快速记个分");
+  await owner.click("text=新建酒单");
+  await owner.fill('.sheet input[placeholder^="例如"]', "Napa 第一天");
+  await owner.click("text=建好了");
+  for (const [wine, year] of [
+    ["Caymus Vineyards", "2021"],
+    ["Silver Oak Napa Valley", "2019"],
+  ] as const) {
+    await owner.click("text=加下一款酒");
+    await owner.fill("input.search", wine);
+    await owner.click(`text=新酒：${wine}`);
+    await owner.fill('input[placeholder="2019"]', year);
+    await owner.click(".choice >> text=红");
+    await owner.click("text=开始品鉴");
+    await slide(owner, "我的分", wine.startsWith("Caymus") ? 90 : 94);
+    await owner.click("header >> text=完成");
+  }
+  await expect(owner.locator(".rows.numbered .row")).toHaveCount(2);
+  await expect
+    .poll(() =>
+      owner.evaluate(() =>
+        fetch("/api/sync")
+          .then((r) => r.json())
+          .then((d) => d.tastings.length),
+      ),
+    )
+    .toBe(2);
+
+  await owner.click("header >> text=分享");
+  await expect(owner.locator(".sheet img.qr")).toBeVisible();
+  const listId = owner.url().split("/lists/")[1]!;
+  const key = (await owner.evaluate((id) => fetch(`/api/lists/${id}/board`).then((r) => r.json()), listId)).key;
+  const link = `/l/${listId}?k=${key}`;
+
+  // The friend scans it, signed out: the wines, no scores, and a sign-in button.
+  const friendCtx = await browser.newContext();
+  const friend = await friendCtx.newPage();
+  await friend.goto(link);
+  await expect(friend.locator("h1.list-title")).toHaveText("Napa 第一天");
+  await expect(friend.locator(".rows .row")).toHaveCount(2);
+  await expect(friend.locator(".row-score")).toHaveCount(0);
+  await friend.click("text=用 Google 登录并加入");
+  // No Google on the test site: sign in by email instead; the app finishes joining afterwards.
+  await friend.fill('input[type="email"]', `friend${Date.now()}@example.com`);
+  await friend.click("text=Dev login");
+  await expect(friend).toHaveURL(new RegExp(`/lists/${listId}$`));
+  await expect(friend.locator(".rows.numbered .row")).toHaveCount(2);
+  // 盲评: only how many rated it.
+  await expect(friend.locator(".everyone-chip").first()).toHaveText("🔒 1 人已评");
+
+  // A friend new to the site starts at 入门: one plain question at a time.
+  await friend.locator(".rows.numbered .row").first().click();
+  await expect(friend.locator(".q-ask")).toHaveText("杯里的酒最像哪个颜色？");
+  await friend.click(".depth-tabs >> text=快记");
+  await slide(friend, "我的分", 86);
+  await friend.click("header >> text=完成");
+  await expect(friend.locator(".everyone-chip").first()).toHaveText("大家 2 人 · 平均 88");
+  await expect(friend.locator(".everyone-chip").nth(1)).toHaveText("🔒 1 人已评");
+  await friend.locator(".everyone-chip").first().click();
+  await expect(friend.locator(".sheet .note")).toHaveCount(2);
+  await expect(friend.locator(".sheet .note.mine .row-score")).toHaveText("86");
+
+  // The owner sees the friend joined, and reveals everything.
+  await owner.reload();
+  await owner.click("header >> text=分享");
+  await expect(owner.locator(".sheet .members li")).toHaveCount(2);
+  await owner.click("text=揭晓：让大家都看到所有评分");
+  await expect(owner.locator(".sheet")).toContainText("已揭晓");
+  await owner.click("text=酒单卡片");
+  await expect(owner.locator("img.list-card-img")).toBeVisible();
+
+  await friend.reload();
+  await expect(friend.locator(".everyone-chip").nth(1)).toHaveText("大家 1 人 · 平均 94");
+  await ownerCtx.close();
+  await friendCtx.close();
+});

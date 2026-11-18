@@ -67,7 +67,7 @@ const iso = (v: unknown): string =>
 
 // ── Reading ──────────────────────────────────────────────────────────────────────────────────
 
-interface VintageRow {
+export interface VintageRow {
   id: string;
   wine_id: string;
   year: number;
@@ -129,7 +129,8 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
   const [lists, items, tastings, descriptors] = await db.batch([
     db
       .prepare(
-        `SELECT l.* FROM lists l JOIN list_members m ON m.list_id = l.id AND m.user_id = ? ORDER BY l.created_at DESC`,
+        `SELECT l.*, (SELECT COUNT(*) FROM list_members x WHERE x.list_id = l.id) AS member_count
+         FROM lists l JOIN list_members m ON m.list_id = l.id AND m.user_id = ? ORDER BY l.created_at DESC`,
       )
       .bind(user.id),
     db
@@ -178,6 +179,11 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         note: l.note ?? null,
         createdAt: l.created_at!,
         updatedAt: l.updated_at!,
+        ownerId: l.owner_id!,
+        visibility: l.visibility === "public" ? "public" : "private",
+        blind: !!l.blind,
+        revealedAt: l.revealed_at ?? null,
+        members: Number(l.member_count) || 1,
       }),
     ),
     items: (items!.results as Record<string, string | number | null>[]).map(

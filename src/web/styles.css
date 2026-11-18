@@ -1180,3 +1180,124 @@ h3 {
 .sync-status {
   margin: 8px 0 12px;
 }
+
+/* ── 分享与共同评价 ─────────────────────────────────────────────────────────── */
+.head-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.share-line {
+  margin: -4px 0 0;
+}
+.row-stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.everyone-chip {
+  align-self: flex-start;
+  margin-left: 52px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--brass-soft);
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+.share .lead {
+  margin: 0;
+}
+.qr {
+  display: block;
+  width: min(240px, 70vw);
+  height: auto;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px;
+}
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.share-actions .button {
+  flex: 1 1 auto;
+}
+.members,
+.notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.members li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.members li .link {
+  margin-left: auto;
+}
+.avatar.small {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+  flex: none;
+}
+.note {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.note.mine {
+  border-color: var(--primary);
+}
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.note p {
+  margin: 6px 0 0;
+}
+.note-sentence {
+  font-size: 14px;
+}
+.note-text {
+  font-style: italic;
+}
+.list-card-img {
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+}
+.join .list-title {
+  margin: 0;
+}
+.join-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.join-box p {
+  margin: 0;
+}
+.member-faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
