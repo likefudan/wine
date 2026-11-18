@@ -3,15 +3,18 @@ name: Review spike
 # One-off trial for design doc 3.2 (pro reviews): reads Wine-Searcher / CellarTracker pages and asks
 # Claude web search / web fetch about ~20 Napa wines, politely (scripts/review_spike.py).
 # Results go to the test site's private bucket at spike/ and to the run's artifacts.
+# Findings: docs/review-spike.zh.md. Actions → Review spike → Run workflow to repeat it.
 on:
   workflow_dispatch:
     inputs:
       limit:
         description: "只测前几款（留空是全部）"
         default: ""
-  push:
-    branches: ["claude/**"]
-    paths: ["scripts/review_spike.py", ".github/workflows/review-spike.yml"]
+      mode:
+        description: "full（全部读法）或 structured（4 款酒的结构化输出重跑）"
+        type: choice
+        options: [full, structured]
+        default: full
 
 permissions:
   contents: read
@@ -27,7 +30,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       SPIKE_LIMIT: ${{ inputs.limit || '' }}
-      SPIKE_MODE: structured
+      SPIKE_MODE: ${{ inputs.mode }}
     steps:
       - uses: actions/checkout@v7
       - run: pip install -q anthropic requests
