@@ -6,6 +6,7 @@ import { toCsv, toJson } from "../src/shared/export";
 import { compareLine, nudge, previousTasting } from "../src/shared/compare";
 import { growthOf, suggestStandard } from "../src/shared/growth";
 import { aromasInNote } from "../src/shared/notewords";
+import { versus } from "../src/shared/versus";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
@@ -510,5 +511,21 @@ describe("分享图", () => {
       "cedar, fine",
       "tannins.",
     ]);
+  });
+});
+
+describe("我 vs 专业", () => {
+  it("splits aromas into both, missed (with a same-family near word) and mine only", () => {
+    const v = versus(
+      ["blackcurrant", "raspberry", "violet", "raspberry", "not-a-word"],
+      ["blackcurrant", "red-cherry", "cedar", "blackcurrant"],
+    );
+    expect(v.both).toEqual(["blackcurrant"]);
+    expect(v.missed).toEqual([
+      { id: "red-cherry", near: "raspberry" },
+      { id: "cedar", near: null },
+    ]);
+    expect(v.mine).toEqual(["raspberry", "violet"]);
+    expect(versus([], ["cedar"])).toEqual({ both: [], missed: [{ id: "cedar", near: null }], mine: [] });
   });
 });

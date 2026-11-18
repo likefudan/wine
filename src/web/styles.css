@@ -2065,3 +2065,39 @@ a.pro-score {
 .share-card .list-card-img {
   box-shadow: var(--shadow);
 }
+
+/* 我 vs 专业 (Versus.tsx) */
+.versus {
+  margin-top: 10px;
+}
+.versus-title {
+  margin: 0;
+  font-size: 16px;
+}
+.versus-label {
+  margin-bottom: -4px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.versus-missed {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.versus-missed li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.versus-word {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.versus-missed .button {
+  flex: none;
+}
