@@ -37,4 +37,5 @@ jobs:
       - name: Export
         run: python3 scripts/ttb_export.py "${{ inputs.from }}" "${{ inputs.to || '' }}" ttb.csv
       - run: npx wrangler r2 object put wine-photos-staging/ttb/ttb.csv --file ttb.csv --remote
-      - run: echo "### TTB: $(($(wc -l < ttb.csv) - 1)) label approvals saved to ttb/ttb.csv" >> "$GITHUB_STEP_SUMMARY"
+      - name: Summary
+        run: echo "### TTB — $(($(wc -l < ttb.csv) - 1)) label approvals saved to ttb/ttb.csv" >> "$GITHUB_STEP_SUMMARY"
