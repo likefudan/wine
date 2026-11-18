@@ -1,7 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono } from "hono";
+import type { Usage } from "../shared/costs";
 import { COLORS, ID_RE, LABEL_MODELS, type LabelModel, isLabelModel, ulid } from "../shared/model";
 import { requireApproved, requireSameOrigin, requireUser } from "./auth";
+import { claudeUsage, logCall } from "./costs";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 
@@ -64,7 +66,7 @@ const PROMPT = `This is a phone photo of a wine bottle's label. Read what the la
 - confident: false when the photo is not a wine label, is unreadable, or you are guessing the producer.
 Only use what is on the label or follows directly from it. Never invent a vintage.`;
 
-type Raw = { text: string; usage: { input: number; output: number } };
+type Raw = { text: string; usage: Usage };
 
 /** Claude, through Foundry's Anthropic endpoint, with the answer held to SCHEMA. */
 async function askClaude(env: Env, model: string, image: string): Promise<Raw> {
@@ -90,7 +92,7 @@ async function askClaude(env: Env, model: string, image: string): Promise<Raw> {
   } as Anthropic.MessageCreateParamsNonStreaming);
   return {
     text: response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""),
-    usage: { input: response.usage.input_tokens, output: response.usage.output_tokens },
+    usage: claudeUsage(response.usage),
   };
 }
 
@@ -142,15 +144,18 @@ async function readLabel(
   env: Env,
   image: string,
   chosen: string | null,
-): Promise<{ reading: LabelReading; model: string; usage: { input: number; output: number } }> {
+  userId: string,
+): Promise<{ reading: LabelReading; model: string; usage: Usage }> {
   let last: unknown;
   for (const model of modelsFor(chosen)) {
+    let billed: Usage | null = null;
     try {
       const api = LABEL_MODELS.find((m) => m.id === model)?.api ?? "anthropic";
       const { text, usage } =
         api === "openai" ? await askOpenAi(env, model, image) : await askClaude(env, model, image);
+      billed = usage;
       const r = jsonIn(text) as LabelReading;
-      return {
+      const done = {
         reading: {
           producer: String(r.producer ?? "").slice(0, 120),
           wine: String(r.wine ?? "").slice(0, 160),
@@ -166,7 +171,12 @@ async function readLabel(
         model,
         usage,
       };
+      billed = null;
+      await logCall(env, { userId, feature: "label", model, usage });
+      return done;
     } catch (e) {
+      // It answered, but not with a label we could read: billed all the same.
+      if (billed) await logCall(env, { userId, feature: "label", model, usage: billed, ok: false });
       last = e;
     }
   }
@@ -202,7 +212,7 @@ labelRoutes.post("/label", async (c) => {
   }
   const jobId = ulid();
   try {
-    const { reading, model, usage } = await readLabel(c.env, image, user.label_model);
+    const { reading, model, usage } = await readLabel(c.env, image, user.label_model, user.id);
     await c.env.DB.prepare(
       "INSERT INTO ai_jobs (id, user_id, kind, status, model, input_tokens, output_tokens, created_at) VALUES (?, ?, 'label', 'done', ?, ?, ?, ?)",
     )

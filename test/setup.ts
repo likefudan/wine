@@ -14,6 +14,7 @@ const TABLES = [
   "wines",
   "producers",
   "photos",
+  "ai_calls",
   "ai_jobs",
   "invites",
   "sessions",
