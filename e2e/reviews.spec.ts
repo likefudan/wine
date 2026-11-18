@@ -44,12 +44,14 @@ test("a wine's page looks up critic reviews and takes an answer from my own AI",
         },
       },
     ];
-    await fetch("/api/ops", {
+    const res = await fetch("/api/ops", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ops }),
     });
-    return vintageId;
+    // An Opus One 2019 another test made is the same wine: the server answers with its id.
+    const { results } = (await res.json()) as { results: { vintageId?: string }[] };
+    return results[0]?.vintageId ?? vintageId;
   });
 
   const review = {
