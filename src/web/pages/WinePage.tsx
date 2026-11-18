@@ -1,4 +1,5 @@
 import { useLocation, useRoute } from "preact-iso";
+import { useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../../shared/descriptors";
 import { glassColor, tastingNote } from "../../shared/guide";
 import { FriendsOnWine } from "../Friends";
@@ -6,6 +7,7 @@ import { BackIcon, Glass, WineName } from "../components";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, fmtDate, p, t } from "../i18n";
 import { useStore } from "../store";
+import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { openTasting } from "./ListPage";
 
 /** One wine: every time I've tasted it, with the note each answer adds up to. */
@@ -19,6 +21,7 @@ export function WinePage() {
   );
   const items = useStore((s) => s.items);
   const lists = useStore((s) => s.lists);
+  const [sharing, setSharing] = useState<string | null>(null);
   if (!v)
     return (
       <div class="page">
@@ -76,7 +79,7 @@ export function WinePage() {
             x.descriptors.map((d) => d.id),
           );
           return (
-            <li key={x.id}>
+            <li key={x.id} class="card-with-action">
               <a class="card" href={`/taste/${x.id}`}>
                 <div class="list-card-head">
                   <strong class="num big-score">{x.score ?? "—"}</strong>
@@ -102,6 +105,14 @@ export function WinePage() {
                 )}
                 {x.note && <p class="quote">{x.note}</p>}
               </a>
+              <button
+                type="button"
+                class="icon-button card-action"
+                aria-label={t("分享这条记录")}
+                onClick={() => setSharing(x.id)}
+              >
+                <ShareIcon />
+              </button>
             </li>
           );
         })}
@@ -110,6 +121,9 @@ export function WinePage() {
       <button type="button" class="button primary block" onClick={() => openTasting(route, v.id, null)}>
         ＋ {t("再记一次")}
       </button>
+      {sharing && sorted.some((x) => x.id === sharing) && (
+        <TastingShareSheet v={v} x={sorted.find((x) => x.id === sharing)!} onClose={() => setSharing(null)} />
+      )}
     </div>
   );
 }

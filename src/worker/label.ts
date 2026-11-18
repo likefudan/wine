@@ -12,7 +12,7 @@ import { HttpError, now, readJson } from "./http";
  * when the bucket is there, as the tasting's cover.
  */
 
-const AZURE_HOST = "https://happy-badminton-jay-main-1.openai.azure.com";
+export const AZURE_HOST = "https://happy-badminton-jay-main-1.openai.azure.com";
 /** Tried after the person's own choice, when it fails. */
 const FALLBACK: string[] = ["claude-sonnet-5-5", "claude-fable-5-1"];
 /** Per person per day (§2): reading labels is the only thing here that costs money. */

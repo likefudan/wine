@@ -9,6 +9,7 @@ import { aromasInNote } from "../src/shared/notewords";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
+import { type ProseTasting, type ProseWine, tastingFacts, wineFacts, wrap } from "../src/shared/prose";
 
 describe("vocabulary", () => {
   it("has unique ids, every word in a family, all three languages", () => {
@@ -451,5 +452,63 @@ describe("growth", () => {
     expect(suggestStandard(growthOf(many, vintages), "beginner")).toBe(true);
     expect(suggestStandard(growthOf(many, vintages), "standard")).toBe(false);
     expect(suggestStandard(growthOf(many.slice(1), vintages), "beginner")).toBe(false);
+  });
+});
+
+describe("分享图", () => {
+  const wine: ProseWine = {
+    producer: "Ridge",
+    wine: "Monte Bello",
+    year: 2016,
+    color: "red",
+    country: "USA",
+    region: "California",
+    area: null,
+    appellation: "Santa Cruz Mountains",
+    grapes: ["Cabernet Sauvignon"],
+    abv: 13.5,
+  };
+  const base: ProseTasting = {
+    appearance: {},
+    nose: {},
+    palate: {},
+    extra: {},
+    descriptors: [],
+    quality: null,
+    score: 95,
+    note: null,
+  };
+
+  it("gives the model only what was recorded", () => {
+    expect(tastingFacts(base)).toEqual([]);
+    const facts = tastingFacts({
+      ...base,
+      appearance: { intensity: 3, hue: "ruby" },
+      descriptors: [
+        { id: "blackcurrant", intensity: 3 },
+        { id: "nope", intensity: 2 },
+      ],
+      palate: { tannin: 4, tanninTexture: "fine", finish: 5, finishSeconds: 12 },
+      quality: "outstanding",
+      note: "像雪松盒子",
+    });
+    expect(facts.join("\n")).toContain("Appearance: deep, ruby");
+    expect(facts.join("\n")).toContain("Aromas: Blackcurrant (prominent)");
+    expect(facts.join("\n")).toContain("medium+ tannin (fine-grained)");
+    expect(facts.join("\n")).toContain("long finish (about 12 seconds)");
+    expect(facts.join("\n")).toContain("«像雪松盒子»");
+    expect(facts.join("\n")).not.toContain("95");
+    expect(facts.join("\n")).not.toContain("nope");
+    expect(wineFacts(wine)).toContain("From: USA > California > Santa Cruz Mountains");
+  });
+
+  it("wraps CJK and Latin text without starting a line with a closing mark", () => {
+    const measure = (s: string) => s.length;
+    expect(wrap(measure, "黑醋栗与雪松，单宁细腻。", 6)).toEqual(["黑醋栗与雪", "松，单宁细", "腻。"]);
+    expect(wrap(measure, "Blackcurrant and cedar, fine tannins.", 16)).toEqual([
+      "Blackcurrant and",
+      "cedar, fine",
+      "tannins.",
+    ]);
   });
 });

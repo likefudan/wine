@@ -1185,7 +1185,9 @@ h3 {
 }
 .taste-foot {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
   /* Keep the last button clear of the bottom edge: on iPhone Safari a tap there only brings back
      the toolbar, and in a home-screen app it sits under the home indicator. */
   padding-bottom: calc(48px + env(safe-area-inset-bottom));
@@ -1858,4 +1860,47 @@ html.standalone body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+/* 分享图 (TastingCard.tsx) */
+.card-with-action {
+  position: relative;
+}
+.card-with-action .card {
+  padding-right: 52px;
+}
+.card-action {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--muted);
+}
+.taste-foot .button svg {
+  vertical-align: -4px;
+}
+.share-card-wait {
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.share-card-wait.tall {
+  aspect-ratio: 9 / 16;
+}
+.share-card-opts {
+  display: flex;
+  gap: 10px;
+}
+.share-card-opts .segmented {
+  flex: 1;
+}
+.share-card textarea {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.share-card .list-card-img {
+  box-shadow: var(--shadow);
 }

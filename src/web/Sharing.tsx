@@ -338,7 +338,7 @@ export function mostDebated(items: BoardItem[]): string | null {
 // ── 酒单卡片 ────────────────────────────────────────────────────────────────────────────────
 
 const W = 1080;
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -467,7 +467,7 @@ export async function drawListCard(b: Board): Promise<string> {
 }
 
 /** The 杯痕 logo (see Logo.tsx) at (x, y), `size` px square. */
-function drawLogo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+export function drawLogo(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
   const ring = new Path2D(RING_PATH);
   const ghost = new Path2D();
   // GHOST_TRANSFORM as a matrix: translate(6.5 -5.5) rotate(140 32 32), then scale(.93) about the centre.
