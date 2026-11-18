@@ -1192,8 +1192,9 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
         <Field label={t("酒精")} group>
           <Choice
             label={t("酒精")}
-            value={pl.alcohol}
-            options={levels(LEVEL_WORDS) as { value: 1 | 2 | 3 | 4 | 5; label: string }[]}
+            // Level 3 judges alcohol in three steps, not five.
+            value={l2ThreeOf(pl.alcohol)}
+            options={l2Three(LEVEL_WORDS).map((o) => ({ value: o.value as 1 | 3 | 5, label: p(o.label) }))}
             onChange={(val) => setP({ alcohol: val })}
           />
         </Field>

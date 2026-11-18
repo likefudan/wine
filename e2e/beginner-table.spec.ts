@@ -43,4 +43,8 @@ test("a beginner fills in the table directly, then starts again by the questions
   await expect(on("单宁")).toHaveCount(0);
   await expect(on("甜度")).toHaveCount(0);
   await expect(table.locator(".aroma-chosen .chip")).toHaveCount(0);
+
+  // 进阶 follows Level 3, which also judges alcohol in three steps.
+  await page.click(".depth-tabs >> text=进阶");
+  await expect(page.locator('.choice[aria-label="酒精"] button')).toHaveText(["低", "中", "高"]);
 });
