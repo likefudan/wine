@@ -7,7 +7,7 @@ import { BackIcon, Glass, WineName } from "../components";
 import { DEPTH_INFO } from "../depths";
 import { ProReviews } from "../Reviews";
 import { currentLang, fmtDate, p, t } from "../i18n";
-import { useStore } from "../store";
+import { saveTasting, useStore } from "../store";
 import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { openTasting } from "./ListPage";
 
@@ -128,7 +128,15 @@ export function WinePage() {
         ＋ {t("再记一次")}
       </button>
       {sharing && sorted.some((x) => x.id === sharing) && (
-        <TastingShareSheet v={v} x={sorted.find((x) => x.id === sharing)!} onClose={() => setSharing(null)} />
+        <TastingShareSheet
+          v={v}
+          x={sorted.find((x) => x.id === sharing)!}
+          onClose={() => setSharing(null)}
+          onPhoto={(photoId) => {
+            const x = sorted.find((x) => x.id === sharing);
+            if (x) saveTasting({ ...x, photoId });
+          }}
+        />
       )}
     </div>
   );

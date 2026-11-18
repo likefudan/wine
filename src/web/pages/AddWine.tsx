@@ -28,6 +28,7 @@ import { BackIcon, CameraIcon, Choice, Field, Glass, WineName } from "../compone
 import { p, t, tm } from "../i18n";
 import { ApiError, addItem, addVintage, api, blankTasting, getState, saveTasting, useStore } from "../store";
 import { glassColor } from "../../shared/guide";
+import { shrink } from "../photo";
 
 /**
  * 确定一款酒 (docs/design.zh.md §3.1): type a few letters (my own wines first, then everyone's), or
@@ -85,17 +86,6 @@ function placeDraft(p: {
 }) {
   const x = tidyPlace({ country: p.country, region: p.region, area: p.area ?? null, appellation: p.appellation });
   return { country: x.country ?? "", region: x.region ?? "", area: x.area ?? "", appellation: x.appellation ?? "" };
-}
-
-/** Shrinks a photo to 1600px on its long side, as a JPEG, base64 (about 300 KB). */
-async function shrink(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.82).split(",")[1]!;
 }
 
 const matches = (v: VintageInfo, q: string) => {
