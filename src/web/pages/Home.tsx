@@ -4,6 +4,7 @@ import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import { LIST_KINDS, type ListKind, type ListPlace, type PlaceKind } from "../../shared/model";
 import { FriendsSection } from "../Friends";
+import { RecsHomeCard } from "./Recs";
 import { NearbyPicker } from "../NearbyPicker";
 import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
@@ -168,6 +169,7 @@ export function Home() {
         </p>
       )}
       <CellarAlertCard />
+      <RecsHomeCard />
       <FriendsSection />
       {sorted.length === 0 && (
         <div class="empty">
