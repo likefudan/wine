@@ -1,5 +1,6 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
+import { AVA_NAMES, avaOf } from "../../shared/ava";
 import { GRAPES, canonicalGrape, grapeName } from "../../shared/grapes";
 import { COLOR_WORDS } from "../../shared/guide";
 import {
@@ -391,6 +392,17 @@ function WineForm(props: {
 }) {
   const [d, setD] = useState<Draft>(props.draft);
   const set = (k: keyof Draft) => (e: Event) => setD({ ...d, [k]: (e.target as HTMLInputElement).value });
+  // Picking an American appellation fills in the region and country if they are empty.
+  const setAppellation = (e: Event) => {
+    const appellation = (e.target as HTMLInputElement).value;
+    const ava = avaOf(appellation);
+    setD((x) => ({
+      ...x,
+      appellation,
+      region: x.region || ava?.region || "",
+      country: x.country || (ava ? "USA" : ""),
+    }));
+  };
   const year = d.nv ? 0 : Number(d.year);
   const yearOk = d.nv || (Number.isInteger(year) && year >= 1900 && year <= new Date().getFullYear() + 1);
   const ok = d.producer.trim() && d.color && yearOk;
@@ -486,9 +498,14 @@ function WineForm(props: {
           <input value={d.country} maxLength={60} onInput={set("country")} placeholder="USA" />
         </Field>
       </div>
+      <datalist id="ava-list">
+        {AVA_NAMES.map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
       <div class="field-row">
         <Field label={t("子产区")}>
-          <input value={d.appellation} maxLength={80} onInput={set("appellation")} placeholder="Oakville" />
+          <input value={d.appellation} maxLength={80} onInput={setAppellation} placeholder="Oakville" list="ava-list" />
         </Field>
         <Field label={t("酒精度 %")}>
           <input inputMode="decimal" value={d.abv} maxLength={5} onInput={set("abv")} placeholder="14.5" />
