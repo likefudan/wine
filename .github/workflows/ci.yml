@@ -2,7 +2,8 @@ name: CI
 
 # Pull requests: checks only.
 # Merge to main: checks, then deploy to the test site (wine-staging.llmat.dev).
-# Push a release tag v* (e.g. v2026.11.18): checks, then deploy to production (wine.llmat.dev).
+# Push a release tag v* (e.g. v2026.11.18), or run release.yml: checks, then deploy to production (wine.llmat.dev).
+# Run workflow by hand: on main → redeploys staging; on a v* tag → deploys that release to production.
 # Deploys need the repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID; without them
 # the deploy jobs say so and stop without failing.
 on:
