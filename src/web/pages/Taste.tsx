@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import {
   BEGINNER_GROUPS,
   type DESCRIPTORS,
+  type Level,
   DESCRIPTOR_BY_ID,
   FAMILIES,
   type Tri,
@@ -23,7 +24,11 @@ import {
   SWEETNESS_WORDS,
   beginnerQuestions,
   glassColor,
-  levelTwoSheet,
+  INTENSITY_WORDS,
+  L2_SWEETNESS,
+  l2SweetnessOf,
+  l2Three,
+  l2ThreeOf,
   huesFor,
   swatch,
   tastingNote,
@@ -202,7 +207,7 @@ export function Taste() {
       <TastingPlace id={x.id} fresh={query.new === "1"} />
       {saved && !blindOpen && <TastingFromCellar x={saved} fresh={query.new === "1"} />}
       {depth === "quick" && <Quick x={x} v={v} patch={patch} />}
-      {depth === "beginner" && <Beginner x={x} v={v} patch={patch} fresh={query.new === "1"} prev={prev} />}
+      {depth === "beginner" && <Beginner x={x} v={v} patch={patch} prev={prev} />}
       {depth === "standard" && <Systematic x={x} v={v} patch={patch} prev={prev} />}
       {blindOpen && <GuessCard x={x} color={v.color} onChange={(guesses) => patch({ guesses })} />}
       <div class="taste-foot">
@@ -416,7 +421,15 @@ function AromaChips(props: { ids: string[]; w: Words; strength?: boolean; row?: 
 }
 
 /** The whole vocabulary, by family, with a search box. */
-function AromaPicker(props: { x: Tasting; v: VintageInfo; w: Words; strength?: boolean; placeholder?: string }) {
+function AromaPicker(props: {
+  x: Tasting;
+  v: VintageInfo;
+  w: Words;
+  strength?: boolean;
+  placeholder?: string;
+  /** Whose word list: 入门 offers WSET Level 2's, 进阶 Level 3's. */
+  level?: Level;
+}) {
   const [q, setQ] = useState("");
   const color = redLike(props.v, props.x);
   const ql = q.trim().toLowerCase();
@@ -447,7 +460,7 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; w: Words; strength?: b
             {t(tier === 1 ? tk("一类：来自葡萄") : tier === 2 ? tk("二类：来自酿造") : tk("三类：来自陈年"))}
           </span>
           {FAMILIES.filter((f) => f.tier === tier).map((f) => {
-            const all = wordsOf([f.id], color, "L3");
+            const all = wordsOf([f.id], color, props.level ?? "L3");
             const words = all.filter(hit);
             if (!words.length) return null;
             const picked = all.filter((d) => chosen.includes(d.id)).length;
@@ -546,27 +559,133 @@ function CompareAnswers(props: {
   );
 }
 
-/** What 入门's answers add up to, item by item on the WSET Level 2 grid. */
-function LevelTwoSheet(props: { x: Tasting; v: VintageInfo }) {
-  const sections = levelTwoSheet(currentLang(), props.v.color, props.x);
+/**
+ * 入门's table, item by item as on the WSET Level 2 grid. The questions are one way to fill it in;
+ * here every item can be changed directly. Three steps (four for sweetness) where 进阶 has five.
+ */
+function LevelTwoTable(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Prev | null }) {
+  const { x, v, patch } = props;
+  const a = x.appearance,
+    n = x.nose,
+    pl = x.palate;
+  const setA = (c: Partial<Tasting["appearance"]>) => patch({ appearance: { ...a, ...c } });
+  const setN = (c: Partial<Tasting["nose"]>) => patch({ nose: { ...n, ...c } });
+  const setP = (c: Partial<Tasting["palate"]>) => patch({ palate: { ...pl, ...c } });
+  const steps = (s: { value: number; label: Tri }[]) => s.map((o) => ({ value: o.value, label: p(o.label) }));
+  const three = (label: string, words: Tri[], value: number | undefined, set: (v: 1 | 3 | 5 | undefined) => void) => (
+    <Field label={label} group>
+      <Choice
+        label={label}
+        value={l2ThreeOf(value)}
+        options={steps(l2Three(words))}
+        onChange={(val) => set(val as 1 | 3 | 5 | undefined)}
+      />
+    </Field>
+  );
+  const flavours: Words = {
+    value: (pl.flavours ?? []).map((id) => ({ id, intensity: 2 })),
+    set: (d) => setP({ flavours: d.map((s) => s.id) }),
+  };
   return (
-    <section class="step sheet">
-      <h2 class="step-title">{t("品鉴表")}</h2>
-      <p class="hint">{t("你的回答，按 WSET 二级品鉴的项目整理")}</p>
-      {sections.map((s) => (
-        <div key={s.name.en} class="sheet-section">
-          <h3 class="sub-title">{p(s.name)}</h3>
-          <dl class="sheet-rows">
-            {s.rows.map((r) => (
-              <div key={r.label.en} class="sheet-row">
-                <dt>{p(r.label)}</dt>
-                <dd class={r.value ? "" : "muted"}>{r.value ?? "—"}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ))}
-    </section>
+    <div class="steps level-two">
+      <section class="step">
+        <h2 class="step-title">1 · {t("外观")}</h2>
+        <Field label={t("澄清度")} group>
+          <Choice
+            label={t("澄清度")}
+            value={a.clarity}
+            options={[
+              { value: "clear" as const, label: t("清澈") },
+              { value: "hazy" as const, label: t("浑浊") },
+            ]}
+            onChange={(val) => setA({ clarity: val })}
+          />
+        </Field>
+        <Field label={t("颜色深浅")} group>
+          <Choice
+            label={t("颜色深浅")}
+            value={a.intensity}
+            options={levels(DEPTH_WORDS) as { value: 1 | 2 | 3; label: string }[]}
+            onChange={(val) => setA({ intensity: val })}
+          />
+        </Field>
+        <span class="field-label">{t("颜色")}</span>
+        <Hues x={x} v={v} patch={patch} />
+      </section>
+
+      <section class="step">
+        <h2 class="step-title">2 · {t("闻香")}</h2>
+        <Field label={t("状态")} group>
+          <Choice
+            label={t("状态")}
+            value={n.condition}
+            options={[
+              { value: "clean" as const, label: t("干净") },
+              { value: "unclean" as const, label: t("不干净") },
+            ]}
+            onChange={(val) => setN({ condition: val })}
+          />
+        </Field>
+        {three(t("香气强度"), INTENSITY_WORDS, n.intensity, (val) => setN({ intensity: val }))}
+        <span class="field-label">{t("香气特征")}</span>
+        <AromaPicker x={x} v={v} w={aromasOf(x, patch)} level="L2" />
+      </section>
+
+      <section class="step">
+        <h2 class="step-title">3 · {t("入口")}</h2>
+        <Field label={t("甜度")} group>
+          <Choice
+            label={t("甜度")}
+            value={l2SweetnessOf(pl.sweetness)}
+            options={steps(L2_SWEETNESS)}
+            onChange={(val) => setP({ sweetness: val as 1 | 2 | 3 | 5 | undefined })}
+          />
+        </Field>
+        {three(t("酸度"), LEVEL_WORDS, pl.acidity, (val) => setP({ acidity: val }))}
+        {(v.color === "red" || pl.tannin) && three(t("单宁"), LEVEL_WORDS, pl.tannin, (val) => setP({ tannin: val }))}
+        {three(t("酒精"), LEVEL_WORDS, pl.alcohol, (val) => setP({ alcohol: val }))}
+        {three(t("酒体"), BODY_WORDS, pl.body, (val) => setP({ body: val }))}
+        {(v.color === "sparkling" || pl.mousse) && (
+          <Field label={t("气泡")} group>
+            <Choice
+              label={t("气泡")}
+              value={pl.mousse}
+              options={Object.entries(MOUSSE_WORDS).map(([k, w]) => ({
+                value: k as NonNullable<typeof pl.mousse>,
+                label: p(w),
+              }))}
+              onChange={(val) => setP({ mousse: val })}
+            />
+          </Field>
+        )}
+        {three(t("风味强度"), INTENSITY_WORDS, pl.flavour, (val) => setP({ flavour: val }))}
+        <span class="field-label">{t("风味特征")}</span>
+        <button
+          type="button"
+          class="button small same-as-nose"
+          disabled={!x.descriptors.length}
+          onClick={() => setP({ flavours: [...new Set([...(pl.flavours ?? []), ...x.descriptors.map((d) => d.id)])] })}
+        >
+          {t("和闻到的一样")}
+        </button>
+        <AromaPicker x={x} v={v} w={flavours} level="L2" placeholder={t("找风味，例如 黑醋栗")} />
+        {three(t("余味"), FINISH_WORDS, pl.finish, (val) => setP({ finish: val }))}
+      </section>
+
+      <Note x={x} v={v} prev={props.prev} />
+
+      <section class="step">
+        <h2 class="step-title">4 · {t("结论")}</h2>
+        <Field label={t("品质等级")} hint={t("「我的分」记你有多喜欢，这里记客观判断")} group>
+          <Choice
+            label={t("品质等级")}
+            value={x.quality ?? undefined}
+            options={Object.entries(QUALITY_WORDS).map(([k, w]) => ({ value: k, label: p(w) }))}
+            onChange={(val) => patch({ quality: val ?? null })}
+          />
+        </Field>
+      </section>
+    </div>
   );
 }
 
@@ -774,26 +893,69 @@ function GuideWords(props: { w: Words; color: "red" | "white"; nose?: TastingDes
   );
 }
 
-function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: boolean; prev: Prev | null }) {
+/** Whether anything the questions ask is already written. */
+const filled = (x: Tasting) =>
+  !!(
+    x.appearance.clarity ||
+    x.appearance.intensity ||
+    x.appearance.hue ||
+    x.nose.condition ||
+    x.nose.intensity ||
+    x.descriptors.length ||
+    x.quality ||
+    (["sweetness", "acidity", "tannin", "alcohol", "body", "mousse", "flavour", "finish"] as const).some(
+      (k) => x.palate[k] !== undefined,
+    ) ||
+    x.palate.flavours?.length
+  );
+
+/** The tasting with every item the questions ask cleared, ready to be answered again. */
+const clearedForQuestions = (x: Tasting): Partial<Tasting> => ({
+  appearance: { ...x.appearance, clarity: undefined, intensity: undefined, hue: undefined },
+  nose: { ...x.nose, condition: undefined, intensity: undefined },
+  descriptors: [],
+  palate: {
+    ...x.palate,
+    sweetness: undefined,
+    acidity: undefined,
+    tannin: undefined,
+    alcohol: undefined,
+    body: undefined,
+    mousse: undefined,
+    flavour: undefined,
+    flavours: undefined,
+    finish: undefined,
+  },
+  quality: null,
+});
+
+function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Prev | null }) {
   const { x, v, patch } = props;
   const questions = beginnerQuestions(v.color);
-  const [step, setStep] = useState(props.fresh ? 0 : questions.length);
+  // The table first, as in 进阶; the questions are a way to fill it in.
+  const [step, setStep] = useState(questions.length);
   const [why, setWhy] = useState(false);
   const go = (n: number) => {
     setStep(n);
     setWhy(false);
     scrollTo({ top: 0 });
   };
+  // Going through the questions again writes the table afresh: what they ask is cleared first.
+  const again = async () => {
+    if (filled(x) && !(await ask(t("重新回答会清空表格里的内容，从第一题开始。"), { ok: t("重新回答") }))) return;
+    patch(clearedForQuestions(x));
+    go(0);
+  };
   if (step >= questions.length)
     return (
       <div class="steps">
-        <Note x={x} v={v} prev={props.prev} />
-        <LevelTwoSheet x={x} v={v} />
-        <div class="beginner-done">
-          <button type="button" class="link small" onClick={() => go(0)}>
-            {t("重新走一遍问题")}
+        <section class="step by-questions">
+          <button type="button" class="button primary" onClick={again}>
+            {filled(x) ? t("用问答重新填表") : t("一题一题帮我填")}
           </button>
-        </div>
+          <p class="hint">{t("不知道怎么填？用大白话一题一题问你，答完自动填进下面的表格")}</p>
+        </section>
+        <LevelTwoTable x={x} v={v} patch={patch} prev={props.prev} />
         <Conclusion x={x} patch={patch} />
       </div>
     );
@@ -810,6 +972,9 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
   const color = redLike(v, x);
   return (
     <div class="steps">
+      <button type="button" class="link small to-table" onClick={() => go(questions.length)}>
+        {t("回到表格")}
+      </button>
       <div class="progress" role="img" aria-label={t("第 {n} 题，共 {all} 题", { n: step + 1, all: questions.length })}>
         {questions.map((_, i) => (
           <span key={i} class={i < step ? "done" : i === step ? "now" : ""} />

@@ -1418,9 +1418,11 @@ h3 {
 .q-nav .button {
   flex: 1;
 }
-.beginner-done {
-  display: flex;
-  justify-content: flex-end;
+.by-questions {
+  gap: 6px;
+}
+.by-questions .hint {
+  margin: 0;
 }
 
 /* Wine page */
@@ -2524,31 +2526,6 @@ a.pro-score {
 .ranking .grow {
   flex: 1;
 }
-.sheet-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.sheet-rows {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-}
-.sheet-row {
-  display: grid;
-  grid-template-columns: 7.5em minmax(0, 1fr);
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 14px;
-}
-.sheet-row dt {
-  color: var(--ink-2);
-}
-.sheet-row dd {
-  margin: 0;
-}
-.sheet-row dd.muted {
-  color: var(--ink-2);
-  opacity: 0.6;
+.to-table {
+  align-self: flex-end;
 }

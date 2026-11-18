@@ -18,6 +18,7 @@ test("a beginner compares the second wine with the first", async ({ page }) => {
     await page.fill('input[placeholder="2019"]', "2020");
     await page.click(".choice >> text=红");
     await page.click("text=开始品鉴");
+    await page.click("text=一题一题帮我填");
     await expect(page.locator(".q-ask")).toHaveText("杯里的酒最像哪个颜色？");
     await page.click("text=下一题");
     await page.click(".answer >> text=清澈");

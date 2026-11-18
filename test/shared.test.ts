@@ -8,7 +8,17 @@ import { growthOf, suggestStandard } from "../src/shared/growth";
 import { aromasInNote } from "../src/shared/notewords";
 import { versus } from "../src/shared/versus";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
-import { beginnerQuestions, glassColor, huesFor, levelTwoSheet, tastingNote } from "../src/shared/guide";
+import {
+  LEVEL_WORDS,
+  L2_SWEETNESS,
+  beginnerQuestions,
+  glassColor,
+  huesFor,
+  l2SweetnessOf,
+  l2Three,
+  l2ThreeOf,
+  tastingNote,
+} from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
 import { type ProseTasting, type ProseWine, tastingFacts, wineFacts, wrap } from "../src/shared/prose";
 
@@ -62,36 +72,20 @@ describe("WSET word lists", () => {
   });
 });
 
-describe("the Level 2 sheet", () => {
-  it("writes 入门's answers on the grid, three steps per scale", () => {
-    const sheet = levelTwoSheet("zh-CN", "red", {
-      appearance: { clarity: "clear", intensity: 3, hue: undefined } as never,
-      nose: { condition: "clean", intensity: 4 } as never,
-      palate: { sweetness: 1, acidity: 3, tannin: 5, alcohol: 2, flavours: ["blackcurrant"] } as never,
-      descriptors: [{ id: "blackcurrant" }],
-      quality: null,
-    });
-    const rows = Object.fromEntries(sheet.flatMap((s) => s.rows).map((r) => [r.label.zh, r.value]));
-    expect(rows.澄清度).toBe("清澈");
-    expect(rows.状态).toBe("干净");
-    expect(rows.香气强度).toBe("浓郁");
-    expect(rows.香气特征).toBe("黑醋栗");
-    expect(rows.甜度).toBe("干");
-    expect(rows.单宁).toBe("高");
-    expect(rows.酒精).toBe("低");
-    expect(rows.风味特征).toBe("黑醋栗");
-    expect(rows.品质).toBeUndefined();
+describe("the Level 2 table", () => {
+  it("reads any answer as the Level 2 step it falls in", () => {
+    expect([1, 2, 3, 4, 5].map(l2ThreeOf)).toEqual([1, 1, 3, 5, 5]);
+    expect([1, 2, 3, 4, 5, 6].map(l2SweetnessOf)).toEqual([1, 2, 3, 3, 5, 5]);
+    expect(l2ThreeOf(undefined)).toBeUndefined();
+    for (const v of [1, 2, 3, 4, 5, 6]) expect(L2_SWEETNESS.map((s) => s.value)).toContain(l2SweetnessOf(v));
   });
 
-  it("leaves tannin off a white with none", () => {
-    const sheet = levelTwoSheet("en", "white", {
-      appearance: {} as never,
-      nose: {} as never,
-      palate: {} as never,
-      descriptors: [],
-      quality: null,
-    });
-    expect(sheet.flatMap((s) => s.rows).map((r) => r.label.en)).not.toContain("Tannin");
+  it("writes low, medium, high with the 进阶 words", () => {
+    expect(l2Three(LEVEL_WORDS).map((s) => [s.value, s.label.zh])).toEqual([
+      [1, "低"],
+      [3, "中"],
+      [5, "高"],
+    ]);
   });
 });
 

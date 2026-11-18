@@ -586,102 +586,35 @@ export function tastingNote(
   return lang === "en" && s ? s[0]!.toUpperCase() + s.slice(1) : s;
 }
 
-// ── 入门's answers on the WSET Level 2 grid ─────────────────────────────────────────────────
+// ── 入门's table: the WSET Level 2 grid ─────────────────────────────────────────────────────
 
-/** Level 2 uses three steps where 进阶 uses five: low – medium – high. */
-const three = (v: number | undefined, words: Tri[]) =>
-  v === undefined ? undefined : v <= 2 ? words[0] : v === 3 ? words[2] : words[4];
-const NOSE_WORDS: Tri[] = [
+/**
+ * Level 2 has three steps where 进阶 has five (low – medium – high), and four for sweetness. The
+ * table writes 1, 3 or 5 (sweetness 1, 2, 3 or 5) into the same fields 进阶 uses, and reads any
+ * value back as the step it falls in, so an answer from a question or from 进阶 shows chosen.
+ */
+export interface LevelTwoStep {
+  value: number;
+  label: Tri;
+}
+export const l2Three = (words: Tri[]): LevelTwoStep[] => [
+  { value: 1, label: words[0]! },
+  { value: 3, label: words[2]! },
+  { value: 5, label: words[4]! },
+];
+export const l2ThreeOf = (v: number | undefined) => (v === undefined ? undefined : v <= 2 ? 1 : v === 3 ? 3 : 5);
+export const L2_SWEETNESS: LevelTwoStep[] = [
+  { value: 1, label: T("干", "不甜", "dry") },
+  { value: 2, label: T("微甜", "微甜", "off-dry") },
+  { value: 3, label: T("中等甜", "中等甜", "medium") },
+  { value: 5, label: T("甜", "甜", "sweet") },
+];
+export const l2SweetnessOf = (v: number | undefined) => (v === undefined ? undefined : v <= 2 ? v : v <= 4 ? 3 : 5);
+/** Aroma and flavour intensity on Level 2: light, medium, pronounced. */
+export const INTENSITY_WORDS: Tri[] = [
   T("淡", "淡", "light"),
   T("", "", ""),
   T("中", "中", "medium"),
   T("", "", ""),
   T("浓郁", "濃郁", "pronounced"),
 ];
-const SWEET_L2: Tri[] = [
-  T("干", "不甜", "dry"),
-  T("微甜", "微甜", "off-dry"),
-  T("中等甜", "中等甜", "medium"),
-  T("甜", "甜", "sweet"),
-];
-const CLARITY_WORDS: Record<string, Tri> = { clear: T("清澈", "清澈", "clear"), hazy: T("浑浊", "混濁", "hazy") };
-const CONDITION_WORDS: Record<string, Tri> = {
-  clean: T("干净", "乾淨", "clean"),
-  unclean: T("不干净", "不乾淨", "unclean"),
-};
-
-export interface SheetRow {
-  label: Tri;
-  value: string | undefined;
-}
-export interface SheetSection {
-  name: Tri;
-  rows: SheetRow[];
-}
-
-/**
- * A tasting written up on the items of the WSET Level 2 grid, in its words: what 入门's questions
- * add up to. Empty items stay in, so the taster sees what the grid asks for.
- */
-export function levelTwoSheet(
-  lang: Lang,
-  color: WineColor,
-  x: {
-    appearance: Appearance;
-    nose: Nose;
-    palate: Palate;
-    descriptors: readonly { id: string }[];
-    quality: string | null;
-  },
-): SheetSection[] {
-  const w = (t: Tri | undefined) => (t ? pick(t, lang) : undefined);
-  const words = (ids: readonly string[]) => {
-    const names = ids
-      .map((id) => DESCRIPTOR_BY_ID.get(id))
-      .filter((d) => !!d)
-      .map((d) => pick(d!.name, lang));
-    return names.length ? names.join(lang === "en" ? ", " : "、") : undefined;
-  };
-  const { appearance: a, nose: n, palate: p } = x;
-  const sweet = p.sweetness;
-  return [
-    {
-      name: T("外观", "外觀", "Appearance"),
-      rows: [
-        { label: T("澄清度", "澄清度", "Clarity"), value: w(a.clarity && CLARITY_WORDS[a.clarity]) },
-        { label: T("颜色深浅", "顏色深淺", "Intensity"), value: w(a.intensity && DEPTH_WORDS[a.intensity - 1]) },
-        { label: T("颜色", "顏色", "Colour"), value: a.hue ? (w(HUE_WORDS[a.hue]) ?? a.hue) : undefined },
-      ],
-    },
-    {
-      name: T("香气", "香氣", "Nose"),
-      rows: [
-        { label: T("状态", "狀態", "Condition"), value: w(n.condition && CONDITION_WORDS[n.condition]) },
-        { label: T("香气强度", "香氣強度", "Intensity"), value: w(three(n.intensity, NOSE_WORDS)) },
-        { label: T("香气特征", "香氣特徵", "Aroma characteristics"), value: words(x.descriptors.map((d) => d.id)) },
-      ],
-    },
-    {
-      name: T("口感", "口感", "Palate"),
-      rows: [
-        {
-          label: T("甜度", "甜度", "Sweetness"),
-          value: w(sweet === undefined ? undefined : SWEET_L2[sweet <= 2 ? sweet - 1 : sweet <= 4 ? 2 : 3]),
-        },
-        { label: T("酸度", "酸度", "Acidity"), value: w(three(p.acidity, LEVEL_WORDS)) },
-        ...(color === "red" || p.tannin
-          ? [{ label: T("单宁", "單寧", "Tannin"), value: w(three(p.tannin, LEVEL_WORDS)) }]
-          : []),
-        { label: T("酒精", "酒精", "Alcohol"), value: w(three(p.alcohol, LEVEL_WORDS)) },
-        { label: T("酒体", "酒體", "Body"), value: w(three(p.body, BODY_WORDS)) },
-        { label: T("风味强度", "風味強度", "Flavour intensity"), value: w(three(p.flavour, NOSE_WORDS)) },
-        { label: T("风味特征", "風味特徵", "Flavour characteristics"), value: words(p.flavours ?? []) },
-        { label: T("余味", "餘韻", "Finish"), value: w(three(p.finish, FINISH_WORDS)) },
-      ],
-    },
-    {
-      name: T("结论", "結論", "Conclusion"),
-      rows: [{ label: T("品质", "品質", "Quality"), value: w(x.quality ? QUALITY_WORDS[x.quality] : undefined) }],
-    },
-  ];
-}
