@@ -551,3 +551,12 @@ describe("分享图 note", () => {
     expect(prompt).toContain("Never add an aroma");
   });
 });
+
+describe("分享图 photo", () => {
+  it("needs the photo bucket, and a sign-in", async () => {
+    const c = await signIn();
+    const r = await c.call("/api/photos", { image: "abc" });
+    expect([r.status, r.data.error]).toEqual([503, "photos_off"]);
+    expect((await new Client().call("/api/photos", { image: "abc" })).status).toBe(401);
+  });
+});

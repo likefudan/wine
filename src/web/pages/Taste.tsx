@@ -205,7 +205,14 @@ export function Taste() {
           {t("删除这条记录")}
         </button>
       </div>
-      {sharing && <TastingShareSheet v={vintage} x={x} onClose={() => setSharing(false)} />}
+      {sharing && (
+        <TastingShareSheet
+          v={vintage}
+          x={x}
+          onClose={() => setSharing(false)}
+          onPhoto={(photoId) => patch({ photoId })}
+        />
+      )}
     </div>
   );
 }

@@ -71,8 +71,17 @@ jobs:
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Called by CI, and main has moved on
+        id: moved
+        if: inputs.ci_green
+        run: |
+          head=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo "main has moved on to ${head:0:7}: its CI run releases it, not ${GITHUB_SHA:0:7}" >> "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Not released yet
-        if: inputs.tag == ''
+        if: inputs.tag == '' && steps.moved.outputs.skip != 'true'
         run: |
           already=$(git tag --points-at "$GITHUB_SHA" 'v*' | head -1)
           if [ -n "$already" ]; then
@@ -98,7 +107,7 @@ jobs:
           exit 1
       - name: Pick the version
         id: version
-        if: inputs.tag == ''
+        if: inputs.tag == '' && steps.moved.outputs.skip != 'true'
         run: |
           day=$(TZ=America/Los_Angeles date +%Y.%m.%d)
           tag="v$day"
@@ -109,12 +118,13 @@ jobs:
           done
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Tag and publish the release
-        if: inputs.tag == ''
+        if: inputs.tag == '' && steps.moved.outputs.skip != 'true'
         env:
           TAG: ${{ steps.version.outputs.tag }}
           NOTES: ${{ inputs.notes }}
         run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --notes "$NOTES" --generate-notes
       - name: Summary
+        if: steps.moved.outputs.skip != 'true'
         env:
           TAG: ${{ steps.existing.outputs.tag || steps.version.outputs.tag }}
         run: |
@@ -127,6 +137,7 @@ jobs:
 
   deploy:
     needs: release
+    if: needs.release.outputs.tag != ''
     permissions:
       contents: read
     uses: ./.github/workflows/deploy.yml
