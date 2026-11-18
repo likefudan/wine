@@ -15,7 +15,7 @@ import { HttpError, now, readJson } from "./http";
 export const AZURE_HOST = "https://happy-badminton-jay-main-1.openai.azure.com";
 /** Tried after the person's own choice, when it fails. */
 const FALLBACK: string[] = ["claude-sonnet-5-5", "claude-fable-5-1"];
-/** Per person per day (§2): reading labels is the only thing here that costs money. */
+/** Labels read per person per day (§2); 专业评价 has its own limits (reviews.ts). */
 export const DAILY_AI_LIMIT = 40;
 /** The phone shrinks the photo to 1600px (about 300 KB); this stops a stray full-size one. */
 const MAX_IMAGE_BYTES = 2_500_000;
@@ -184,7 +184,9 @@ labelRoutes.post("/label", async (c) => {
   const image = typeof body.image === "string" ? body.image.replace(/^data:image\/jpeg;base64,/, "") : "";
   if (!image || image.length > (MAX_IMAGE_BYTES * 4) / 3) throw new HttpError(400, "bad_image", "照片无效，请重拍");
   const since = new Date(Date.now() - 86400_000).toISOString();
-  const used = await c.env.DB.prepare("SELECT COUNT(*) AS n FROM ai_jobs WHERE user_id = ? AND created_at > ?")
+  const used = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM ai_jobs WHERE user_id = ? AND kind = 'label' AND created_at > ?",
+  )
     .bind(user.id, since)
     .first<{ n: number }>();
   if ((used?.n ?? 0) >= DAILY_AI_LIMIT) throw new HttpError(429, "ai_limit", "今天的识别次数用完了，请手动输入");
