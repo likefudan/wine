@@ -55,7 +55,7 @@ npm run test:e2e       # browser tests on a throwaway local site
 
 ## Deploying
 
-The same way as jaysbadminton: merging to `main` deploys the test site, pushing a `v*` tag (e.g. `v2026.11.18`) deploys production (`.github/workflows/ci.yml`). The deploy job finds or creates the D1 database, binds the R2 photo bucket when it exists, runs the migrations, deploys and pushes the Worker secrets.
+The same way as jaysbadminton: merging to `main` deploys the test site, releasing deploys production: run **Actions → Release → Run workflow** on `main` (`.github/workflows/release.yml`), which tags the latest green `main` as `vYYYY.MM.DD`, publishes a GitHub release and deploys it; give it an existing tag to redeploy or roll back to that version. Pushing a `v*` tag by hand does the same (`.github/workflows/ci.yml`). The deploy job finds or creates the D1 database, binds the R2 photo bucket when it exists, runs the migrations, deploys and pushes the Worker secrets.
 
 Repository secrets (Settings → Secrets and variables → Actions):
 
