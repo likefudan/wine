@@ -2,6 +2,7 @@
 // The notes themselves live in IndexedDB (store.ts), never here; /api is never cached.
 // v3: drops what v2 kept from every release before this one.
 const CACHE = "shell-v3";
+// v3 also fetches every script and style of a release up front, so a page whose code loads later opens offline.
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -67,23 +68,34 @@ self.addEventListener("fetch", (e) => {
 /**
  * Every release has new file names, and this cache would otherwise keep them all. After a page comes
  * from the network, keep only the files it uses: the ones it names, and the ones those scripts and
- * styles name (code loaded later, fonts).
+ * styles name (code loaded later, fonts). Scripts and styles not yet kept are fetched and kept now.
  */
-const ASSET = /\/assets\/[\w.-]+/g;
+/** "/assets/x.js", or "assets/x.css" as the code-splitting list writes it. */
+const ASSET = /assets\/[\w.-]+/g;
+const found = (text) => (text.match(ASSET) ?? []).map((p) => `/${p}`);
 /** Chunks a script loads by a name relative to itself ("./browser-x.js"). */
 const SIBLING = /\.\/([\w.-]+\.(?:js|css))/g;
 async function prune() {
   const cache = await caches.open(CACHE);
   const page = await cache.match("/");
   if (!page) return;
-  const keep = new Set((await page.text()).match(ASSET) ?? []);
-  for (const path of [...keep]) {
+  const keep = new Set(found(await page.text()));
+  // A worklist: chunks found in a script are read in turn, for the chunks they load.
+  const todo = [...keep];
+  const add = (p) => {
+    if (keep.has(p)) return;
+    keep.add(p);
+    todo.push(p);
+  };
+  while (todo.length) {
+    const path = todo.shift();
     if (!/\.(js|css)$/.test(path)) continue;
     const res = (await cache.match(path)) ?? (await fetch(path).catch(() => null));
     if (!res?.ok) return; // offline or mid-release: try again next time rather than drop too much
-    const text = await res.text();
-    for (const p of text.match(ASSET) ?? []) keep.add(p);
-    for (const m of text.matchAll(SIBLING)) keep.add(`/assets/${m[1]}`);
+    const text = await res.clone().text();
+    if (!(await cache.match(path))) await cache.put(path, res);
+    for (const p of found(text)) add(p);
+    for (const m of text.matchAll(SIBLING)) add(`/assets/${m[1]}`);
   }
   for (const req of await cache.keys()) {
     const path = new URL(req.url).pathname;

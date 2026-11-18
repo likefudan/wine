@@ -10,6 +10,7 @@ const NAMES = [
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
   "AZURE_FOUNDRY_API_KEY",
+  "AZURE_FOUNDRY_ENDPOINT",
   "GOOGLE_MAPS_API_KEY",
 ];
 const values = Object.fromEntries(NAMES.filter((n) => process.env[n]).map((n) => [n, process.env[n]]));

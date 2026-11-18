@@ -1,4 +1,4 @@
-import { useLocation, useRoute } from "preact-iso";
+import { lazy, useLocation, useRoute } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   BEGINNER_GROUPS,
@@ -29,6 +29,7 @@ import {
   l2SweetnessOf,
   l2Three,
   l2ThreeOf,
+  forLevelTwo,
   huesFor,
   swatch,
   tastingNote,
@@ -43,16 +44,18 @@ import {
   type VintageInfo,
   toDepth,
 } from "../../shared/model";
-import { BackIcon, BottleIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
+import { BackIcon, BottleIcon, Choice, Field, Glass, ScoreSlider, ShareIcon, WineName } from "../components";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe, useStore } from "../store";
-import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { TastingPlace } from "../TastingPlace";
 import { AddToCellarSheet, BoughtToCellar, TastingFromCellar } from "./Cellar";
 import { BlindResult, GuessCard, blindShown } from "../Blind";
 import { isBlindId } from "../../shared/blind";
+
+/** Drawn only when someone taps 生成分享图: its own file, loaded then. */
+const TastingShareSheet = lazy(() => import("../TastingCard").then((m) => m.TastingShareSheet));
 
 /**
  * 品鉴: one sheet, four depths over the same fields (docs/design.zh.md §3.3, §3.4). Switching depth
@@ -507,11 +510,12 @@ function ChosenAromas(props: { w: Words; strength?: boolean; hideEmpty?: boolean
 
 const levels = (words: Tri[]) => words.map((w, i) => ({ value: i + 1, label: p(w) }));
 
-function Hues(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
+function Hues(props: { x: Tasting; v: VintageInfo; patch: Patch; levelTwo?: boolean }) {
   const { x, v, patch } = props;
+  const hues = huesFor(v.color, x.appearance.hue);
   return (
     <div class="hues">
-      {huesFor(v.color, x.appearance.hue).map((h) => (
+      {(props.levelTwo ? forLevelTwo(hues, x.appearance.hue) : hues).map((h) => (
         <button
           key={h}
           type="button"
@@ -617,7 +621,7 @@ function LevelTwoTable(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: 
           />
         </Field>
         <span class="field-label">{t("颜色")}</span>
-        <Hues x={x} v={v} patch={patch} />
+        <Hues x={x} v={v} patch={patch} levelTwo />
       </section>
 
       <section class="step">
@@ -687,7 +691,10 @@ function LevelTwoTable(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: 
           <Choice
             label={t("品质等级")}
             value={x.quality ?? undefined}
-            options={Object.entries(QUALITY_WORDS).map(([k, w]) => ({ value: k, label: p(w) }))}
+            options={forLevelTwo(Object.keys(QUALITY_WORDS), x.quality).map((k) => ({
+              value: k,
+              label: p(QUALITY_WORDS[k]!),
+            }))}
             onChange={(val) => patch({ quality: val ?? null })}
           />
         </Field>
@@ -992,7 +999,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Prev 
         <p class="q-how">{p(q.how)}</p>
         {q.field === "appearance" && (
           <>
-            <Hues x={x} v={v} patch={patch} />
+            <Hues x={x} v={v} patch={patch} levelTwo />
             <Field label={t("颜色深浅")} group>
               <Choice
                 label={t("颜色深浅")}
