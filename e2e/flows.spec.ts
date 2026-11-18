@@ -258,3 +258,19 @@ test("a wine added from a tasting goes into it; the 记一杯 button always reco
     await page.goBack();
   }
 });
+
+test("the tab bar slides away while scrolling down the page and comes back when scrolling up", async ({ page }) => {
+  await signIn(page);
+  await page.click("text=只想快速记个分");
+  await page.evaluate(() => {
+    const pad = document.createElement("div");
+    pad.style.height = "3000px";
+    document.querySelector("main")?.append(pad);
+  });
+  const dock = page.locator(".dock");
+  await expect(dock).not.toHaveClass(/hidden/);
+  await page.mouse.wheel(0, 600);
+  await expect(dock).toHaveClass(/hidden/);
+  await page.mouse.wheel(0, -200);
+  await expect(dock).not.toHaveClass(/hidden/);
+});
