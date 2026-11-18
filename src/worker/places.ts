@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import {
   type NearbyPlaces,
   PLACE_KINDS,
@@ -7,7 +7,9 @@ import {
   type PlaceSuggestion,
 } from "../shared/model";
 import { requireApproved, requireUser } from "./auth";
+import { logCall, requireBudget } from "./costs";
 import type { Env } from "./env";
+import { HttpError } from "./http";
 
 /**
  * 酒庄地址联想: Google Places (New) looked up on the server, so the key never reaches the browser
@@ -26,7 +28,8 @@ interface Prediction {
   structuredFormat?: { mainText: { text: string }; secondaryText?: { text: string } };
 }
 
-async function autocomplete(key: string, body: object): Promise<Prediction[]> {
+async function autocomplete(key: string, body: object, meter: string[]): Promise<Prediction[]> {
+  meter.push("google-places-autocomplete");
   const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key },
@@ -50,14 +53,15 @@ export async function suggestPlaces(
   q: string,
   session: string,
   kind: PlaceKind = "winery",
+  meter: string[] = [],
 ): Promise<PlaceSuggestion[]> {
   const key = env.GOOGLE_MAPS_API_KEY;
   if (!key || q.trim().length < 2) return [];
   const base = { input: q.trim().slice(0, 120), sessionToken: SESSION_RE.test(session) ? session : undefined };
   try {
     const types = kind === "address" ? ["street_address", "premise", "subpremise"] : kind === "any" ? null : [kind];
-    let found = types ? await autocomplete(key, { ...base, includedPrimaryTypes: types }) : [];
-    if (!found.length) found = await autocomplete(key, base);
+    let found = types ? await autocomplete(key, { ...base, includedPrimaryTypes: types }, meter) : [];
+    if (!found.length) found = await autocomplete(key, base, meter);
     return found.slice(0, 5).map((p) => ({
       id: p.placeId,
       name: p.structuredFormat?.mainText.text ?? p.text.text,
@@ -70,11 +74,17 @@ export async function suggestPlaces(
 }
 
 /** Name, address, country and position of a picked suggestion; ends Google's billing session. */
-export async function placeDetails(env: Env, id: string, session: string): Promise<PlaceDetails | null> {
+export async function placeDetails(
+  env: Env,
+  id: string,
+  session: string,
+  meter: string[] = [],
+): Promise<PlaceDetails | null> {
   const key = env.GOOGLE_MAPS_API_KEY;
   if (!key || !ID_RE.test(id)) return null;
   const qs = SESSION_RE.test(session) ? `?sessionToken=${encodeURIComponent(session)}` : "";
   try {
+    meter.push("google-place-details");
     const res = await fetch(`https://places.googleapis.com/v1/places/${id}${qs}`, {
       headers: {
         "X-Goog-Api-Key": key,
@@ -123,7 +133,15 @@ export function distance(lat1: number, lng1: number, lat2: number, lng2: number)
   return Math.round(6_371_000 * 2 * Math.asin(Math.min(1, Math.sqrt(a))));
 }
 
-async function searchNearby(key: string, lat: number, lng: number, radius: number, types: string[] | null) {
+async function searchNearby(
+  key: string,
+  lat: number,
+  lng: number,
+  radius: number,
+  types: string[] | null,
+  meter: string[],
+) {
+  meter.push("google-places-nearby");
   const res = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
     method: "POST",
     headers: {
@@ -148,7 +166,14 @@ async function searchNearby(key: string, lat: number, lng: number, radius: numbe
 }
 
 /** The street address at a position (Geocoding API); null when it is not enabled for the key or finds nothing. */
-async function reverseGeocode(key: string, lat: number, lng: number, lang: string): Promise<string | null> {
+async function reverseGeocode(
+  key: string,
+  lat: number,
+  lng: number,
+  lang: string,
+  meter: string[],
+): Promise<string | null> {
+  meter.push("google-geocode");
   const qs = new URLSearchParams({ latlng: `${lat},${lng}`, key, language: lang });
   const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${qs}`, {
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -172,17 +197,18 @@ export async function nearbyPlaces(
   lng: number,
   kind: PlaceKind | null,
   lang = "en",
+  meter: string[] = [],
 ): Promise<NearbyPlaces> {
   const key = env.GOOGLE_MAPS_API_KEY;
   if (!key) return { address: null, places: [] };
   const types = kind === "winery" ? ["winery"] : kind === "restaurant" ? ["restaurant", "bar"] : null;
   const [address, found] = await Promise.all([
-    reverseGeocode(key, lat, lng, lang).catch(() => null),
+    reverseGeocode(key, lat, lng, lang, meter).catch(() => null),
     (async () => {
       try {
         // Wineries (restaurants) within a few hundred metres first; else anything close by.
-        const first = types ? await searchNearby(key, lat, lng, 1_000, types) : [];
-        return first.length ? first : await searchNearby(key, lat, lng, 300, null);
+        const first = types ? await searchNearby(key, lat, lng, 1_000, types, meter) : [];
+        return first.length ? first : await searchNearby(key, lat, lng, 300, null, meter);
       } catch (err) {
         console.error("places nearby failed:", err);
         return [];
@@ -209,8 +235,34 @@ export async function nearbyPlaces(
   return { address: address ?? near?.address ?? null, places };
 }
 
+/** Google calls a person may make in a day (each is billed; the 开销 page shows them as places). */
+export const DAILY_PLACES_LIMIT = 300;
+
+/** Signed in, approved and under today's allowance; the calls made are written down afterwards. */
+async function placesUser(c: Context<{ Bindings: Env }>) {
+  const user = await requireUser(c);
+  requireApproved(c.env, user);
+  const since = new Date(Date.now() - 86400_000).toISOString();
+  const used = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM ai_calls WHERE user_id = ? AND feature = 'places' AND created_at > ?",
+  )
+    .bind(user.id, since)
+    .first<{ n: number }>();
+  if ((used?.n ?? 0) >= DAILY_PLACES_LIMIT)
+    throw new HttpError(429, "places_limit", "今天查地点的次数用完了，可以直接输入文字");
+  await requireBudget(c.env, user);
+  return user;
+}
+
+const logPlaces = (env: Env, userId: string, meter: string[]) =>
+  Promise.all(
+    meter.map((model) =>
+      logCall(env, { userId, feature: "places", model, usage: { input: 0, output: 0, searches: 1 } }),
+    ),
+  );
+
 placesRoutes.get("/places/near", async (c) => {
-  requireApproved(c.env, await requireUser(c));
+  const user = await placesUser(c);
   const lat = Number(c.req.query("lat"));
   const lng = Number(c.req.query("lng"));
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
@@ -218,17 +270,26 @@ placesRoutes.get("/places/near", async (c) => {
   const t = c.req.query("t") ?? "";
   const kind = (PLACE_KINDS as readonly string[]).includes(t) ? (t as PlaceKind) : null;
   const lang = /^[a-z]{2}(-[A-Z]{2})?$/.test(c.req.query("l") ?? "") ? c.req.query("l")! : "en";
-  return c.json(await nearbyPlaces(c.env, lat, lng, kind, lang));
+  const meter: string[] = [];
+  const found = await nearbyPlaces(c.env, lat, lng, kind, lang, meter);
+  await logPlaces(c.env, user.id, meter);
+  return c.json(found);
 });
 
 placesRoutes.get("/places", async (c) => {
-  requireApproved(c.env, await requireUser(c));
+  const user = await placesUser(c);
   const t = c.req.query("t") ?? "";
   const kind = (PLACE_KINDS as readonly string[]).includes(t) ? (t as PlaceKind) : "winery";
-  return c.json({ places: await suggestPlaces(c.env, c.req.query("q") ?? "", c.req.query("s") ?? "", kind) });
+  const meter: string[] = [];
+  const places = await suggestPlaces(c.env, c.req.query("q") ?? "", c.req.query("s") ?? "", kind, meter);
+  await logPlaces(c.env, user.id, meter);
+  return c.json({ places });
 });
 
 placesRoutes.get("/places/:id", async (c) => {
-  requireApproved(c.env, await requireUser(c));
-  return c.json({ place: await placeDetails(c.env, c.req.param("id"), c.req.query("s") ?? "") });
+  const user = await placesUser(c);
+  const meter: string[] = [];
+  const place = await placeDetails(c.env, c.req.param("id"), c.req.query("s") ?? "", meter);
+  await logPlaces(c.env, user.id, meter);
+  return c.json({ place });
 });

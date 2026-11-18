@@ -385,6 +385,8 @@ export const LABEL_MODELS = [
   { id: "DeepSeek-V4.1-Flash-1017", name: "DeepSeek V4.1 Flash", api: "openai" },
 ] as const;
 export type LabelModel = (typeof LABEL_MODELS)[number]["id"];
+/** The dearest model: only owners may pick it for every label (others get the default). */
+export const OWNER_ONLY_MODELS: readonly string[] = ["claude-opus-5-5"];
 export const isLabelModel = (v: unknown): v is LabelModel => LABEL_MODELS.some((m) => m.id === v);
 
 /** 头像: their own photo, the Google picture, or none on purpose. */

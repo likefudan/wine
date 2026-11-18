@@ -4,10 +4,10 @@ import { COLORS, isLang, type Lang, ulid } from "../shared/model";
 import { placePath } from "../shared/place";
 import { PROSE_LANG, PROSE_MAX, type ProseTasting, type ProseWine, tastingFacts, wineFacts } from "../shared/prose";
 import { requireApproved, requireSameOrigin, requireUser } from "./auth";
-import { claudeUsage, logCall } from "./costs";
+import { claudeUsage, logCall, requireBudget } from "./costs";
 import type { Env } from "./env";
-import { HttpError, now, readJson } from "./http";
-import { AZURE_HOST, DAILY_AI_LIMIT, aiEnabled } from "./label";
+import { HttpError, readJson } from "./http";
+import { AZURE_HOST, aiEnabled, claimJob } from "./label";
 
 /**
  * 分享图: one tasting written up as a critic's note, from what the person recorded and nothing else.
@@ -149,30 +149,26 @@ proseRoutes.post("/prose", async (c) => {
   const wine = cleanWine(body.wine);
   if (!wine) throw new HttpError(400, "bad_wine", "缺少酒款信息");
   const lang: Lang = isLang(body.lang) ? body.lang : "zh-CN";
-  const since = new Date(Date.now() - 86400_000).toISOString();
-  const used = await c.env.DB.prepare("SELECT COUNT(*) AS n FROM ai_jobs WHERE user_id = ? AND created_at > ?")
-    .bind(user.id, since)
-    .first<{ n: number }>();
-  if ((used?.n ?? 0) >= DAILY_AI_LIMIT) throw new HttpError(429, "ai_limit", "今天的 AI 次数用完了，明天再试");
+  await requireBudget(c.env, user);
+  const jobId = ulid();
+  if (!(await claimJob(c.env, user.id, "prose", jobId)))
+    throw new HttpError(429, "ai_limit", "今天的 AI 次数用完了，明天再试");
 
   const places = placeNames(wine, placePath(wine));
   const prompt = prosePrompt(lang, wineFacts(wine), tastingFacts(cleanTasting(body.tasting)), places);
-  const jobId = ulid();
   try {
     const r = await write(c.env, prompt, user.id);
     await c.env.DB.prepare(
-      "INSERT INTO ai_jobs (id, user_id, kind, status, model, input_tokens, output_tokens, created_at) VALUES (?, ?, 'prose', 'done', ?, ?, ?, ?)",
+      "UPDATE ai_jobs SET status = 'done', model = ?, input_tokens = ?, output_tokens = ? WHERE id = ?",
     )
-      .bind(jobId, user.id, r.model, r.usage[0], r.usage[1], now())
+      .bind(r.model, r.usage[0], r.usage[1], jobId)
       .run();
     // A place the model dropped or mangled keeps its own name.
     const shown = places.map((p, i) => r.places[i] || p);
     return c.json({ note: r.note, places: shown });
   } catch (e) {
-    await c.env.DB.prepare(
-      "INSERT INTO ai_jobs (id, user_id, kind, status, error, created_at) VALUES (?, ?, 'prose', 'failed', ?, ?)",
-    )
-      .bind(jobId, user.id, String((e as Error)?.message ?? e).slice(0, 300), now())
+    await c.env.DB.prepare("UPDATE ai_jobs SET status = 'failed', error = ? WHERE id = ?")
+      .bind(String((e as Error)?.message ?? e).slice(0, 300), jobId)
       .run();
     throw new HttpError(502, "ai_failed", "没能写出品鉴文字，请稍后再试");
   }

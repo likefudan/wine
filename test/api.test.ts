@@ -2,7 +2,8 @@ import { env, exports } from "cloudflare:workers";
 import { describe, expect, it, vi } from "vitest";
 import { ulid } from "../src/shared/model";
 import { VINTAGE_SELECT, vintageInfo } from "../src/worker/data";
-import { modelsFor } from "../src/worker/label";
+import { requireBudget } from "../src/worker/costs";
+import { claimJob, modelsFor } from "../src/worker/label";
 import { prosePrompt } from "../src/worker/prose";
 import { suggestPlaces } from "../src/worker/places";
 import { Client, signIn, tasting, vintageOp } from "./helpers";
@@ -543,18 +544,55 @@ describe("label", () => {
     expect((await c.call("/api/sync")).data.me.labelModel).toBe("DeepSeek-V4.1-Flash-1017");
     await c.ops([{ op: "putMe", labelModel: "gpt-nope" as never }]);
     expect((await c.call("/api/sync")).data.me.labelModel).toBe("DeepSeek-V4.1-Flash-1017");
-    expect(modelsFor("DeepSeek-V4.1-Flash-1017")).toEqual([
-      "DeepSeek-V4.1-Flash-1017",
-      "claude-sonnet-5-5",
-      "claude-fable-5-1",
-    ]);
+    // One fallback, never a chain of three paid calls.
+    expect(modelsFor("DeepSeek-V4.1-Flash-1017")).toEqual(["DeepSeek-V4.1-Flash-1017", "claude-sonnet-5-5"]);
     expect(modelsFor(null)).toEqual(["claude-sonnet-5-5", "claude-fable-5-1"]);
+    // Opus only for owners; anyone else who picked it gets the default.
+    expect(modelsFor("claude-opus-5-5")).toEqual(["claude-sonnet-5-5", "claude-fable-5-1"]);
+    expect(modelsFor("claude-opus-5-5", true)).toEqual(["claude-opus-5-5", "claude-sonnet-5-5"]);
   });
 
   it("says so when reading labels is not set up", async () => {
     const c = await signIn();
     const r = await c.call("/api/label", { image: "abc" });
     expect(r.status).toBe(503);
+  });
+});
+
+describe("spending limits", () => {
+  it("lets only as many jobs in as the daily allowance, even when they arrive together", async () => {
+    const c = await signIn("limits@example.com");
+    const me = (await c.call("/api/sync")).data.me;
+    const tries = await Promise.all(Array.from({ length: 6 }, () => claimJob(env as never, me.id, "label", ulid(), 4)));
+    expect(tries.filter(Boolean)).toHaveLength(4);
+  });
+
+  it("stops paid features for everyone but owners once the daily budget is spent", async () => {
+    const owner = await signIn();
+    expect((await owner.call("/api/admin/budget", { budget: 1 })).data.budget).toBe(1);
+    await env.DB.prepare(
+      "INSERT INTO ai_calls (id, feature, model, cost_usd, created_at) VALUES (?, 'label', 'x', 2, ?)",
+    )
+      .bind(ulid(), new Date().toISOString())
+      .run();
+    await requireBudget(env as never, { email: "owner@example.com" });
+    await expect(requireBudget(env as never, { email: "someone@example.com" })).rejects.toThrow("额度用完");
+    const other = await signIn("guest-budget@example.com");
+    expect((await other.call("/api/admin/budget")).status).toBe(403);
+    expect((await other.call("/api/places?q=ridge")).data.error).toBe("budget_spent");
+    await owner.call("/api/admin/budget", { budget: 10 });
+  });
+
+  it("counts every Google call a place lookup makes", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ suggestions: [] }));
+    try {
+      const meter: string[] = [];
+      await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "ridge", "abcdefgh-1234", "winery", meter);
+      // Wineries first, then anything: two billed calls.
+      expect(meter).toEqual(["google-places-autocomplete", "google-places-autocomplete"]);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

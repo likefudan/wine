@@ -18,7 +18,7 @@ import {
 } from "../shared/reviews";
 import { type UserRow, isOwner, requireApproved, requireSameOrigin, requireUser } from "./auth";
 import { VINTAGE_SELECT, type VintageRow } from "./data";
-import { claudeUsage, logCall } from "./costs";
+import { claudeUsage, logCall, requireBudget } from "./costs";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 import { AZURE_HOST, aiEnabled } from "./label";
@@ -387,6 +387,7 @@ reviewRoutes.post("/reviews/:id/lookup", async (c) => {
   if (!before.available)
     throw new HttpError(503, "review_budget", "本月的专业评价查询额度用完了，可以先用自己的 AI 查");
   if (before.left <= 0) throw new HttpError(429, "review_limit", "今天的专业评价查询次数用完了，可以先用自己的 AI 查");
+  await requireBudget(c.env, user);
 
   // Claim the row: only one lookup per vintage at a time, even when two people tap together.
   const at = now();
