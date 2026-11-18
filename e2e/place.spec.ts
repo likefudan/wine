@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("picking California narrows the 子产区 list, and Oakville fills in Napa Valley", async ({ page }) => {
+test("the 产区 / 大区 / 子产区 lists show on tap, narrow by what is above, and Oakville fills in Napa Valley", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.fill('input[type="email"]', `place${Date.now()}@example.com`);
   await page.click("text=Dev login");
@@ -14,14 +16,22 @@ test("picking California narrows the 子产区 list, and Oakville fills in Napa 
   await page.fill('input[placeholder="2019"]', "2019");
   await page.click(".choice >> text=红");
 
-  await page.fill('input[list="region-list"]', "California");
-  await expect(page.locator("#appellation-list option[value='Oakville']")).toHaveCount(1);
-  await expect(page.locator("#appellation-list option[value='Pauillac']")).toHaveCount(0);
-  await expect(page.locator("#area-list option[value='Sonoma County']")).toHaveCount(1);
-
-  await page.fill('input[list="appellation-list"]', "Oakville");
-  await expect(page.locator('input[list="area-list"]')).toHaveValue("Napa Valley");
+  // Our own list, not <datalist> (which iPhone Safari shows only now and then).
+  await page.click('input[name="region"]');
+  await page.click(".suggestions >> text=California");
+  await expect(page.locator('input[name="region"]')).toHaveValue("California");
   await expect(page.locator('input[placeholder="USA"]')).toHaveValue("USA");
+
+  await page.click('input[name="area"]');
+  await expect(page.locator(".suggestions button", { hasText: "Sonoma County" })).toHaveCount(1);
+  await expect(page.locator(".suggestions button", { hasText: "Médoc" })).toHaveCount(0);
+
+  await page.click('input[name="appellation"]');
+  await expect(page.locator(".suggestions button", { hasText: "Pauillac" })).toHaveCount(0);
+  await page.fill('input[name="appellation"]', "oakv");
+  await page.click(".suggestions >> text=Oakville");
+  await expect(page.locator('input[name="appellation"]')).toHaveValue("Oakville");
+  await expect(page.locator('input[name="area"]')).toHaveValue("Napa Valley");
   await page.click("text=开始品鉴");
   await expect(page.locator(".q-ask")).toBeVisible();
   await page.goBack();
