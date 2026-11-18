@@ -522,8 +522,34 @@ describe("producer places", () => {
     }
   });
 
-  it("keeps the first place a producer was pinned to", async () => {
-    const c = await signIn();
+  it("offers others a typed-in wine only once it is vouched for", async () => {
+    const a = await signIn("typist@example.com");
+    const b = await signIn("reader@example.com");
+    const v = vintageOp({ producer: "Zzyzx Cellars", wine: "Made Up" });
+    await a.ops([v, { op: "putTasting", tasting: tasting(v.id) }]);
+    const names = async (c: Client) =>
+      ((await c.call("/api/catalog?q=zzyzx")).data.wines as { producer: string }[]).map((w) => w.producer);
+    expect(await names(a)).toEqual(["Zzyzx Cellars"]);
+    expect(await names(b)).toEqual([]);
+    const third = await signIn("third@example.com");
+    await third.ops([{ ...v }, { op: "putTasting", tasting: tasting(v.id) }]);
+    expect(await names(b)).toEqual(["Zzyzx Cellars"]);
+    // An owner's wine is offered at once.
+    const owner = await signIn();
+    await owner.ops([vintageOp({ producer: "Zzyzx Owner", wine: "Real" })]);
+    expect(await names(b)).toContain("Zzyzx Owner");
+  });
+
+  it("keeps only real LWIN numbers on a wine", async () => {
+    const c = await signIn("lwin-check@example.com");
+    const v = vintageOp({ producer: "Fake Lwin", wine: "Nope", lwin: 99999999 });
+    await c.ops([v]);
+    const w = await env.DB.prepare("SELECT lwin FROM wines WHERE name = 'Nope'").first<{ lwin: number | null }>();
+    expect(w?.lwin).toBeNull();
+  });
+
+  it("keeps the first place a producer was pinned to; an owner may correct it", async () => {
+    const c = await signIn("pinner@example.com");
     const place = { id: "ChIJridge12345", address: "17100 Montebello Rd, Cupertino, CA", lat: 37.3, lng: -122.1 };
     await c.ops([vintageOp({ place })]);
     await c.ops([vintageOp({ year: 2018, place: { ...place, id: "ChIJsomewhere1", address: "Elsewhere" } })]);
@@ -533,6 +559,10 @@ describe("producer places", () => {
     expect(
       vintageInfo((await env.DB.prepare(`${VINTAGE_SELECT} WHERE v.id = ?`).bind(row!.id).first())!).place?.address,
     ).toBe(place.address);
+    const owner = await signIn();
+    await owner.ops([vintageOp({ year: 2017, place: { ...place, id: "ChIJcorrected1", address: "Right" } })]);
+    const q = await env.DB.prepare("SELECT place_id FROM producers").first();
+    expect(q).toEqual({ place_id: "ChIJcorrected1" });
   });
 });
 

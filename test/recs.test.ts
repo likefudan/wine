@@ -237,6 +237,9 @@ describe("GET /api/recs", () => {
     await a.ops([mine, { op: "putTasting", tasting: tasting(mine.id) }]);
     const r = await b.ops([theirs, unrelated, { op: "putTasting", tasting: tasting(theirs.id) }]);
     const theirId = r.data.results[0]!.vintageId!;
+    // A wine someone typed in is offered to others once a second person has tasted it too.
+    const c = await signIn("c@example.com");
+    await c.ops([{ ...theirs }, { op: "putTasting", tasting: tasting(theirId) }]);
     await env.DB.prepare(
       "INSERT INTO pro_reviews (vintage_id, status, data, started_at, fetched_at) VALUES (?, 'done', ?, ?, ?)",
     )

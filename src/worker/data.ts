@@ -29,7 +29,7 @@ import {
   type Member,
   searchWords,
 } from "../shared/model";
-import { type UserRow, autoApprovePerDay, isOwner, meOf, requireSameOrigin, requireUser } from "./auth";
+import { type UserRow, autoApprovePerDay, isOwner, meOf, ownerEmails, requireSameOrigin, requireUser } from "./auth";
 import type { Env } from "./env";
 import { HttpError, now, readJson } from "./http";
 import { avatarUrl, nameOf } from "./profile";
@@ -343,7 +343,12 @@ async function isMember(db: DB, listId: string, userId: string) {
 }
 
 /** Finds the wine by its producer and name, or adds it to the shared catalogue. */
-export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "putVintage" }>): Promise<string> {
+export async function putVintage(
+  db: DB,
+  user: UserRow,
+  o: Extract<Op, { op: "putVintage" }>,
+  owner = false,
+): Promise<string> {
   const vid = id(o.id);
   const known = await db
     .prepare(
@@ -360,7 +365,13 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   const grapes = Array.isArray(o.grapes)
     ? o.grapes.flatMap((g) => (typeof g === "string" && g.trim() ? [g.trim().slice(0, 60)] : [])).slice(0, 8)
     : [];
-  const lwin = Number.isInteger(o.lwin) && o.lwin! > 0 ? o.lwin! : null;
+  // Only a number that is really in 公共酒款库: an LWIN wine is shown to everyone (trustedWine).
+  const lwin =
+    Number.isInteger(o.lwin) &&
+    o.lwin! > 0 &&
+    (await db.prepare("SELECT 1 FROM lwin WHERE lwin = ?").bind(o.lwin).first())
+      ? o.lwin!
+      : null;
   const pKey = nameKey(producer, true) || nameKey(producer);
   const wKey = nameKey(wine);
   if (!pKey || !wKey) fail("请填写酒庄和酒名");
@@ -379,11 +390,25 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
     .run();
   const p = (await db.prepare("SELECT id FROM producers WHERE name_key = ?").bind(pKey).first<{ id: string }>())!;
   const place = o.place;
-  if (place && typeof place.id === "string" && /^[A-Za-z0-9_-]{10,300}$/.test(place.id)) {
-    // The first person to pin a producer on the map decides where it is.
+  // The first approved person to pin a producer on the map decides where it is; an owner may correct it.
+  if (
+    place &&
+    typeof place.id === "string" &&
+    /^[A-Za-z0-9_-]{10,300}$/.test(place.id) &&
+    (owner || user.status === "active")
+  ) {
     await db
-      .prepare("UPDATE producers SET place_id = ?, address = ?, lat = ?, lng = ? WHERE id = ? AND place_id IS NULL")
-      .bind(place.id, clampText(place.address, 200), optNum(place.lat, -90, 90), optNum(place.lng, -180, 180), p.id)
+      .prepare(
+        `UPDATE producers SET place_id = ?, address = ?, lat = ?, lng = ? WHERE id = ? AND (place_id IS NULL OR ?)`,
+      )
+      .bind(
+        place.id,
+        clampText(place.address, 200),
+        optNum(place.lat, -90, 90),
+        optNum(place.lng, -180, 180),
+        p.id,
+        owner ? 1 : 0,
+      )
       .run();
   }
   await db
@@ -799,11 +824,11 @@ async function putMe(db: DB, user: UserRow, o: Extract<Op, { op: "putMe" }>) {
       .run();
 }
 
-export async function applyOp(db: DB, user: UserRow, o: Op): Promise<OpResult> {
+export async function applyOp(db: DB, user: UserRow, o: Op, owner = false): Promise<OpResult> {
   try {
     switch (o?.op) {
       case "putVintage":
-        return { ok: true, vintageId: await putVintage(db, user, o) };
+        return { ok: true, vintageId: await putVintage(db, user, o, owner) };
       case "putList":
         await putList(db, user, o.list);
         break;
@@ -859,24 +884,41 @@ dataRoutes.post("/ops", async (c) => {
   if (ops.length > MAX_OPS) throw new HttpError(400, "too_many", "一次最多上传 100 条");
   const results: OpResult[] = [];
   // In order: a note may name the wine added just before it.
-  for (const o of ops) results.push(await applyOp(c.env.DB, user, o));
+  const owner = isOwner(c.env, user.email);
+  for (const o of ops) results.push(await applyOp(c.env.DB, user, o, owner));
   return c.json({ results });
 });
 
+/**
+ * Wines a person may be offered from the shared catalogue (输入联想, 推荐): anyone can add a wine, so
+ * a newly typed one is shown to others only once it is vouched for: it is an LWIN/TTB wine, an owner
+ * added it, or two or more people have tasted it. Everyone always sees the wines they added.
+ * `w` is the wines alias; binds the person's id and the owners' emails, in that order.
+ */
+export function trustedWine(env: Env, w: string, userId: string): { sql: string; binds: string[] } {
+  return {
+    sql: `(${w}.lwin IS NOT NULL OR ${w}.created_by = ?
+      OR ${w}.created_by IN (SELECT id FROM users WHERE lower(email) IN (SELECT value FROM json_each(?)))
+      OR (SELECT COUNT(DISTINCT t.user_id) FROM vintages v JOIN tastings t ON t.vintage_id = v.id WHERE v.wine_id = ${w}.id) >= 2)`,
+    binds: [userId, JSON.stringify(ownerEmails(env))],
+  };
+}
+
 /** The shared catalogue, for 输入联想: wines whose producer or name contains what was typed. */
 dataRoutes.get("/catalog", async (c) => {
-  await requireUser(c);
+  const user = await requireUser(c);
   const q = nameKey(c.req.query("q") ?? "");
   if (q.length < 2) return c.json({ wines: [], lwin: [] });
   const words = q.split(" ").slice(0, 4);
   const where = words.map(() => "instr(p.name_key || ' ' || w.name_key, ?) > 0").join(" AND ");
+  const trusted = trustedWine(c.env, "w", user.id);
   const wines = await c.env.DB.prepare(
     `SELECT w.id, w.name, w.color, w.area, w.appellation, w.grapes, p.name AS producer, p.country, p.region,
        (SELECT json_group_array(json_object('id', v.id, 'year', v.year, 'abv', v.abv)) FROM vintages v WHERE v.wine_id = w.id) AS vintages
-     FROM wines w JOIN producers p ON p.id = w.producer_id WHERE ${where} AND w.id <> '${BLIND}'
+     FROM wines w JOIN producers p ON p.id = w.producer_id WHERE ${where} AND w.id <> '${BLIND}' AND ${trusted.sql}
      ORDER BY CASE WHEN p.name_key LIKE ? OR w.name_key LIKE ? THEN 0 ELSE 1 END, p.name, w.name LIMIT 20`,
   )
-    .bind(...words, `${q}%`, `${q}%`)
+    .bind(...words, ...trusted.binds, `${q}%`, `${q}%`)
     .all<Record<string, string | null>>();
   return c.json({
     lwin: await searchLwin(c.env.DB, c.req.query("q") ?? ""),

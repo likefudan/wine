@@ -5,6 +5,7 @@ import { appellationsIn, areaNamed, tidyPlace } from "../shared/place";
 import type { ProReview } from "../shared/reviews";
 import { type Candidate, criticAverage } from "../shared/taste";
 import { requireSameOrigin, requireUser } from "./auth";
+import { trustedWine } from "./data";
 import type { Env } from "./env";
 import { readJson } from "./http";
 
@@ -111,6 +112,8 @@ recsRoutes.post("/recs", async (c) => {
   inList("p.name", producers);
   const stretchApps = stretch?.places.filter((p) => !p.startsWith("region:")) ?? [];
   inList("w.appellation", stretchApps);
+  // Wines others typed in are suggested only once vouched for (data.ts trustedWine).
+  const trusted = trustedWine(c.env, "w", user.id);
   const catalog = conds.length
     ? (
         await db
@@ -122,13 +125,13 @@ recsRoutes.post("/recs", async (c) => {
                SELECT v.wine_id, v.year, pr.data, row_number() OVER (PARTITION BY v.wine_id ORDER BY v.year DESC) AS k
                FROM vintages v JOIN pro_reviews pr ON pr.vintage_id = v.id AND pr.status = 'done' AND pr.data IS NOT NULL
              ) r ON r.wine_id = w.id AND r.k = 1
-             WHERE (${conds.join(" OR ")})
+             WHERE (${conds.join(" OR ")}) AND ${trusted.sql}
                AND w.id NOT IN (
                  SELECT v.wine_id FROM tastings t JOIN vintages v ON v.id = t.vintage_id WHERE t.user_id = ?
                  UNION SELECT v.wine_id FROM cellar x JOIN vintages v ON v.id = x.vintage_id WHERE x.user_id = ?)
              ORDER BY r.data IS NULL, w.created_at DESC LIMIT ${CATALOG_LIMIT}`,
           )
-          .bind(...binds, user.id, user.id)
+          .bind(...binds, ...trusted.binds, user.id, user.id)
           .all<CatalogRow>()
       ).results
     : [];
