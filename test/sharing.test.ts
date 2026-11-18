@@ -175,6 +175,22 @@ describe("分享与共同评价", () => {
     expect((await late.call(`/api/lists/${list.id}/join`, { k: fresh })).status).toBe(200);
   });
 
+  it("a public home tasting shows visitors the home's name, not its address", async () => {
+    const owner = await signIn("home@example.com");
+    const { list } = await napaDay(owner);
+    const place = { name: "小王家", id: null, address: "123 Main St, Palo Alto, CA", lat: null, lng: null };
+    await owner.ops([{ op: "putList", list: { ...list, kind: "home", place } }]);
+    await owner.call(`/api/lists/${list.id}/share`, { visibility: "public" });
+    expect((await boardOf(owner, list.id)).data.list.place).toMatchObject(place);
+    expect((await boardOf(new Client(), list.id)).data.list.place).toEqual({
+      name: "小王家",
+      id: null,
+      address: null,
+      lat: null,
+      lng: null,
+    });
+  });
+
   it("a member who leaves or is removed keeps their notes in their own 酒库", async () => {
     const owner = await signIn("owner@example.com");
     const { list, wines, items } = await napaDay(owner);

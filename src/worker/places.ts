@@ -37,7 +37,7 @@ async function autocomplete(key: string, body: object): Promise<Prediction[]> {
 
 /**
  * Wineries (or restaurants) first; when none match (a producer Google files as a shop or a farm), any
- * place. `any` (a trip's town or region) asks once, for anything.
+ * place. `address` looks for street addresses first; `any` (a park, a town) asks once, for anything.
  */
 export async function suggestPlaces(
   env: Env,
@@ -49,7 +49,8 @@ export async function suggestPlaces(
   if (!key || q.trim().length < 2) return [];
   const base = { input: q.trim().slice(0, 120), sessionToken: SESSION_RE.test(session) ? session : undefined };
   try {
-    let found = kind === "any" ? [] : await autocomplete(key, { ...base, includedPrimaryTypes: [kind] });
+    const types = kind === "address" ? ["street_address", "premise", "subpremise"] : kind === "any" ? null : [kind];
+    let found = types ? await autocomplete(key, { ...base, includedPrimaryTypes: types }) : [];
     if (!found.length) found = await autocomplete(key, base);
     return found.slice(0, 5).map((p) => ({
       id: p.placeId,

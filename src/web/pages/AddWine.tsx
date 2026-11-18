@@ -223,7 +223,7 @@ export function AddWine() {
   const fromListPlace = (): Draft => {
     const l = lists.find((x) => x.id === listId);
     const p = l?.kind === "winery" ? l.place : null;
-    if (!p) return EMPTY;
+    if (!p?.name) return EMPTY;
     return {
       ...EMPTY,
       producer: p.name,

@@ -20,7 +20,7 @@ import {
   useStore,
 } from "../store";
 import { mapsUrl } from "../PlaceInput";
-import { KIND_NAMES, ListPlaceField, placeFor } from "./Home";
+import { KIND_NAMES, ListPlaceFields, placeFor } from "./Home";
 
 /** Opens my note for a wine in a list, starting one at my default depth the first time. */
 export function openTasting(route: (url: string) => void, vintageId: string, itemId: string | null) {
@@ -99,12 +99,11 @@ export function ListPage() {
           {list.place && (
             <a
               class="small place-link block-link"
-              href={mapsUrl(list.place.name, list.place.id)}
+              href={mapsUrl(list.place.address || list.place.name, list.place.id)}
               target="_blank"
               rel="noreferrer"
             >
-              📍 {list.place.name}
-              {list.place.address ? ` · ${list.place.address}` : ""}
+              📍 {[list.place.name, list.place.address].filter(Boolean).join(" · ")}
             </a>
           )}
         </div>
@@ -287,7 +286,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
       title: title.trim(),
       kind,
       startsOn: date || null,
-      place: placeFor(kind, place),
+      place: placeFor(place),
       note: note.trim() || null,
     });
     props.onClose();
@@ -295,7 +294,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
   return (
     <Sheet title={t("酒单设置")} onClose={props.onClose}>
       <form class="form" onSubmit={submit}>
-        <Field label={t("名称")}>
+        <Field label={t("酒单名称")}>
           <input value={title} maxLength={80} onInput={(e) => setTitle((e.target as HTMLInputElement).value)} />
         </Field>
         <Field label={t("类型")} group>
@@ -307,7 +306,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
             onChange={(v) => v && setKind(v)}
           />
         </Field>
-        <ListPlaceField kind={kind} value={place} onChange={setPlace} />
+        <ListPlaceFields kind={kind} value={place} onChange={setPlace} />
         <Field label={t("日期")}>
           <input type="date" value={date} onInput={(e) => setDate((e.target as HTMLInputElement).value)} />
         </Field>
