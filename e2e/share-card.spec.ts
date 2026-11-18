@@ -78,5 +78,6 @@ test("the share image can carry a drawn label or a photo taken later", async ({ 
   });
   await (await chooser).setFiles({ name: "label.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
   await expect.poll(shown).not.toBe(before);
-  await expect(page.locator(".share-card")).toContainText("照片存储还没有开通");
+  // It says why it was not kept (no photo storage here, or the account still waiting for approval).
+  await expect(page.locator(".share-card p.danger")).toBeVisible();
 });
