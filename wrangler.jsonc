@@ -1,0 +1,51 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wine",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+  // Files are served as they are; every other address reaches the Worker (index.ts), which answers a
+  // page with the app and anything else with a 404.
+  "assets": { "directory": "./dist/web", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "wine",
+      // Filled in by scripts/resolve-d1.mjs on deploy; this placeholder works for local dev and tests.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // OWNER_EMAILS, GOOGLE_CLIENT_ID/SECRET and AZURE_FOUNDRY_API_KEY are Worker secrets.
+  // PHOTOS (R2 bucket wine-photos) is added by scripts/resolve-d1.mjs when the bucket exists: until
+  // then labels are read but not kept.
+  "vars": {
+    "SITE_ORIGIN": "https://wine.llmat.dev",
+    "ENVIRONMENT": "production"
+  },
+  "routes": [{ "pattern": "wine.llmat.dev", "custom_domain": true }],
+  "observability": { "enabled": true },
+
+  // Test site: its own Worker, database and domain. Every merge to main lands here; production only
+  // changes when a v* release tag is pushed (.github/workflows/ci.yml).
+  "env": {
+    "staging": {
+      "name": "wine-staging",
+      "assets": { "directory": "./dist/web", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "wine-staging",
+          "database_id": "11111111-1111-1111-1111-111111111111",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "vars": {
+        "SITE_ORIGIN": "https://wine-staging.llmat.dev",
+        "ENVIRONMENT": "staging"
+      },
+      "routes": [{ "pattern": "wine-staging.llmat.dev", "custom_domain": true }],
+      "observability": { "enabled": true }
+    }
+  }
+}

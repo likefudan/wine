@@ -2,7 +2,10 @@
 
 A mobile-first web app for keeping a structured wine tasting journal: record each wine in seconds at the winery, search everything you have tasted later, and compare notes with the friends who were there.
 
-> **Status: design stage.** There is no code yet. The design is in [docs/design.zh.md](docs/design.zh.md) (Chinese).
+- **Site**: https://wine.llmat.dev (invited Google accounts only)
+- **Test site**: https://wine-staging.llmat.dev
+
+> **Status: phase 1** (record at the winery): Google sign-in, wine lists, finding a wine by name or label photo, quick notes and the three guided depths, a searchable personal library, offline notes, 简体 / 繁體 / English. Sharing, critic reviews, cellar and recommendations come in later phases ([docs/design.zh.md](docs/design.zh.md) §6).
 
 ## Why
 
@@ -30,11 +33,38 @@ One Cloudflare Worker serving both the pages and the API, following [likefudan/j
 | API | Hono |
 | Database | D1 (SQLite) with numbered SQL migrations |
 | Photos | R2 |
-| Background jobs | Cloudflare Queues |
 | Front end | Preact + Vite, no CSS framework, installable PWA |
 | Sign-in | Google (OAuth with PKCE) |
 | AI | Claude, called from the Worker only: label reading, review summaries, turning free text into aroma tags |
 | Tests | Vitest, Playwright |
+
+## Development
+
+Node 22.
+
+```sh
+npm ci
+printf 'DEV_LOGIN="1"\nENVIRONMENT="dev"\nOWNER_EMAILS="you@example.com"\nSITE_ORIGIN="http://localhost:8787"\n' > .dev.vars
+npm run db:migrate:local
+npm run dev            # http://localhost:8787, sign in with any email via "Dev login"
+npm run lint && npm run typecheck && npm test
+npm run test:e2e       # browser tests on a throwaway local site
+```
+
+`DEV_LOGIN` lets anyone sign in without Google; it only works when `ENVIRONMENT` is not `production` and is never set on the real sites.
+
+## Deploying
+
+The same way as jaysbadminton: merging to `main` deploys the test site, pushing a `v*` tag (e.g. `v2026.11.18`) deploys production (`.github/workflows/ci.yml`). The deploy job finds or creates the D1 database, binds the R2 photo bucket when it exists, runs the migrations, deploys and pushes the Worker secrets.
+
+Repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | What |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Deploys. The token needs Workers Scripts, D1, Workers R2 Storage (edit), Account Settings (read), and on the zone llmat.dev Workers Routes, DNS (edit) and Zone (read). |
+| `OWNER_EMAILS` | Google emails of the site owners, comma-separated: they can always sign in and invite others in 我的. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The same OAuth client as jaysbadminton. Its redirect URIs must include `https://wine.llmat.dev/api/auth/google/callback` and `https://wine-staging.llmat.dev/api/auth/google/callback`. |
+| `AZURE_FOUNDRY_API_KEY` | Reading wine labels (Claude on Azure, the same key as jaysbadminton). Label scanning is hidden behind a message while it is missing. |
 
 ## Documents
 
