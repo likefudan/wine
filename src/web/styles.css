@@ -1631,6 +1631,8 @@ html.standalone body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
 /* 用当前位置 (NearbyPicker) and 品酒地点 (TastingPlace) */
 .nearby {
   margin: -4px 0 4px;
