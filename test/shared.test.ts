@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { avaOf } from "../src/shared/ava";
 import { appellationsIn, areasIn, placePath, tidyPlace } from "../src/shared/place";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
+import { toCsv, toJson } from "../src/shared/export";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
@@ -225,5 +226,78 @@ describe("子产区 suggestions", () => {
     expect(appellationsIn(null).length).toBeGreaterThan(300);
     expect(areasIn("California")).toEqual(expect.arrayContaining(["Napa Valley", "Sonoma County", "Paso Robles"]));
     expect(areasIn("Bordeaux")).toEqual(["Graves", "Médoc", "Rive Droite"]);
+  });
+});
+
+describe("export", () => {
+  const v = {
+    id: "V1",
+    wineId: "W1",
+    producer: "Ridge",
+    wine: 'Monte Bello, "Estate"',
+    year: 2019,
+    color: "red" as const,
+    country: "USA",
+    region: "California",
+    area: null,
+    appellation: "Santa Cruz Mountains",
+    grapes: ["Cabernet Sauvignon"],
+    abv: 13.5,
+  };
+  const tasting = {
+    id: "T1",
+    vintageId: "V1",
+    listItemId: "I1",
+    tastedAt: "2026-11-18T20:00:00.000Z",
+    depth: "standard" as const,
+    appearance: { intensity: 3 as const, hue: "ruby" },
+    nose: { intensity: 4 as const },
+    palate: { tannin: 5 as const },
+    extra: {},
+    guesses: {},
+    descriptors: [{ id: "blackcurrant", intensity: 2 }],
+    quality: null,
+    score: 94,
+    buyAgain: true,
+    boughtQty: null,
+    priceUsd: 250,
+    note: "=1+1 line\nbreak",
+    photoId: null,
+    updatedAt: "2026-11-18T20:00:00.000Z",
+  };
+  const data = {
+    lists: [
+      {
+        id: "L1",
+        title: "Napa",
+        kind: "winery" as const,
+        startsOn: null,
+        place: null,
+        note: null,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    items: [{ id: "I1", listId: "L1", vintageId: "V1", position: 0, priceUsd: null, createdAt: "" }],
+    vintages: [v],
+    tastings: [tasting],
+  };
+
+  it("writes one row per note, quoted and defused, headers in the language", () => {
+    const csv = toCsv(data, "zh-CN");
+    expect(csv.startsWith("﻿日期,酒庄,酒名")).toBe(true);
+    const [, row] = csv.slice(1).split("\r\n");
+    expect(row).toContain('"Monte Bello, ""Estate"""');
+    expect(row).toContain("赤霞珠");
+    expect(row).toContain("Napa");
+    expect(row).toContain("黑醋栗");
+    expect(row).toContain('"\'=1+1 line\nbreak"');
+    expect(toCsv(data, "en")).toContain("Date,Producer,Wine");
+  });
+
+  it("keeps everything in JSON", () => {
+    const back = JSON.parse(toJson(data, "x"));
+    expect(back.tastings[0]).toEqual(tasting);
+    expect(back.vintages[0]).toEqual(v);
   });
 });
