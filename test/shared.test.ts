@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { avaOf } from "../src/shared/ava";
+import { placePath, tidyPlace } from "../src/shared/place";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, tastingNote } from "../src/shared/guide";
@@ -89,11 +90,76 @@ describe("helpers", () => {
 });
 
 describe("American appellations", () => {
-  it("knows the region people write beside an AVA", () => {
-    expect(avaOf("oakville")).toEqual({ name: "Oakville", region: "Napa Valley", states: ["CA"] });
-    expect(avaOf("Napa Valley")?.region).toBe("Napa Valley");
-    expect(avaOf("Eola-Amity Hills")?.region).toBe("Willamette Valley");
-    expect(avaOf("Los Carneros")?.region).toBe("");
+  it("knows the AVA each one sits in, and its state", () => {
+    expect(avaOf("oakville")).toEqual({ name: "Oakville", parent: "Napa Valley", state: "California", states: ["CA"] });
+    expect(avaOf("Napa Valley")?.parent).toBe("");
+    expect(avaOf("Eola-Amity Hills")?.parent).toBe("Willamette Valley");
+    expect(avaOf("Los Carneros")?.parent).toBe("");
+    expect(avaOf("Columbia Valley")?.state).toBe("");
     expect(avaOf("Bordeaux")).toBeNull();
+  });
+});
+
+describe("产区 levels", () => {
+  const tidy = (country: string | null, region: string | null, appellation: string | null) =>
+    tidyPlace({ country, region, appellation });
+
+  it("puts Napa Valley and Pauillac at the same level", () => {
+    expect(placePath({ region: "California", appellation: "Oakville" })).toEqual([
+      "California",
+      "Napa Valley",
+      "Oakville",
+    ]);
+    expect(placePath({ region: "Bordeaux", appellation: "Pauillac" })).toEqual(["Bordeaux", "Médoc", "Pauillac"]);
+    expect(placePath({ region: "Burgundy", appellation: "Gevrey-Chambertin" })).toEqual([
+      "Burgundy",
+      "Côte de Nuits",
+      "Gevrey-Chambertin",
+    ]);
+    expect(placePath({ region: "California", appellation: "Napa Valley" })).toEqual(["California", "Napa Valley"]);
+    expect(placePath({ region: "Bordeaux", appellation: "Bordeaux" })).toEqual(["Bordeaux"]);
+    expect(placePath({ region: null, appellation: null })).toEqual([]);
+  });
+
+  it("finds appellations spelt without accents, as LWIN does", () => {
+    expect(placePath({ region: "Bordeaux", appellation: "Saint-Emilion Grand Cru" })[1]).toBe("Rive Droite");
+    expect(placePath({ region: "Bordeaux", appellation: "Moulis en Medoc" })[1]).toBe("Médoc");
+    expect(placePath({ region: "Rhone", appellation: "Cote Rotie" })[1]).toBe("Northern Rhône");
+  });
+
+  it("moves an AVA typed as the 产区 down a level, and keeps what was typed", () => {
+    expect(tidy("", "Napa Valley", "Oakville")).toEqual({
+      country: "USA",
+      region: "California",
+      appellation: "Oakville",
+    });
+    expect(tidy(null, "Napa Valley", null)).toEqual({
+      country: "USA",
+      region: "California",
+      appellation: "Napa Valley",
+    });
+    expect(tidy("France", "Médoc", "Pauillac")).toEqual({
+      country: "France",
+      region: "Bordeaux",
+      appellation: "Pauillac",
+    });
+    // Sonoma Coast is not in Napa Valley: nothing is thrown away.
+    expect(tidy("USA", "Napa Valley", "Sonoma Coast")).toEqual({
+      country: "USA",
+      region: "Napa Valley",
+      appellation: "Sonoma Coast",
+    });
+  });
+
+  it("fills the big region and country from the appellation", () => {
+    expect(tidy(null, null, "Oakville")).toEqual({ country: "USA", region: "California", appellation: "Oakville" });
+    expect(tidy(null, null, "Pauillac")).toEqual({ country: "France", region: "Bordeaux", appellation: "Pauillac" });
+    expect(tidy("United States", "California", "Oakville").country).toBe("USA");
+    expect(tidy("Italy", "Tuscany", "Bolgheri")).toEqual({
+      country: "Italy",
+      region: "Tuscany",
+      appellation: "Bolgheri",
+    });
+    expect(tidy(null, null, null)).toEqual({ country: null, region: null, appellation: null });
   });
 });

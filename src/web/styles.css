@@ -606,6 +606,10 @@ h3 {
   gap: 10px;
   align-items: flex-end;
 }
+/* A row where one field has a hint under it: line the boxes up by their labels instead. */
+.field-row.top {
+  align-items: flex-start;
+}
 .check {
   display: flex;
   align-items: center;
@@ -974,7 +978,6 @@ h3 {
 .family-count {
   display: inline-block;
   min-width: 18px;
-  margin-left: 6px;
   padding: 0 5px;
   border-radius: 999px;
   background: var(--primary);
@@ -986,7 +989,7 @@ h3 {
 .aroma-tier {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 .tier-label {
   font-size: 12px;
@@ -994,35 +997,33 @@ h3 {
   color: var(--brass);
   letter-spacing: 0.04em;
 }
+/* One row per family: its name on the left, its words scrolling sideways on the right. */
 .aroma-family {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: 5.6em minmax(0, 1fr);
+  align-items: center;
+  column-gap: 6px;
 }
 .family-name {
-  align-self: flex-start;
-  min-height: 36px;
-  padding: 4px 2px;
-  border: 0;
-  background: none;
-  font-size: 14px;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-.aroma-tier .aroma-family {
-  display: inline-flex;
-}
-.aroma-tier {
-  flex-direction: row;
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  column-gap: 12px;
-  row-gap: 0;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--ink-2);
 }
-.aroma-tier .tier-label {
-  flex-basis: 100%;
+.family-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  /* Room for the strength dots that sit on a chip's top edge. */
+  padding: 8px 16px 4px 0;
+  margin-right: -16px;
 }
-.aroma-family:has([aria-expanded="true"]) {
-  flex-basis: 100%;
+.family-row::-webkit-scrollbar {
+  display: none;
 }
 .tasting-note {
   padding: 14px 16px;

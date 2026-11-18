@@ -3,6 +3,7 @@ import { useEffect } from "preact/hooks";
 import { COLOR_WORDS } from "../shared/guide";
 import { type VintageInfo, yearLabel } from "../shared/model";
 import { grapeName } from "../shared/grapes";
+import { placePath } from "../shared/place";
 import { currentLang, p, t, tk } from "./i18n";
 
 /** 杯中色: a glass seen from above, deep in the core and paler at the rim (docs/design.zh.md §5). */
@@ -28,7 +29,8 @@ export function WineName(props: { v: VintageInfo; sub?: boolean }) {
   const sub = [
     p(COLOR_WORDS[v.color]),
     v.grapes.length ? v.grapes.map((g) => grapeName(g, lang)).join(" / ") : null,
-    v.appellation || v.region,
+    // The two most precise levels: "Napa Valley › Oakville", "Médoc › Pauillac".
+    placePath(v).slice(-2).join(" › ") || null,
   ].filter(Boolean);
   return (
     <span class="wine-name">

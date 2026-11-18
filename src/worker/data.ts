@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { isDescriptorId } from "../shared/descriptors";
+import { tidyPlace } from "../shared/place";
 import {
   COLORS,
   DEPTHS,
@@ -266,12 +267,17 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   const pKey = nameKey(producer, true) || nameKey(producer);
   const wKey = nameKey(wine);
   if (!pKey || !wKey) fail("请填写酒庄和酒名");
+  const where = tidyPlace({
+    country: clampText(o.country, 60),
+    region: clampText(o.region, 80),
+    appellation: clampText(o.appellation, 80),
+  });
   const at = now();
   await db
     .prepare(
       "INSERT INTO producers (id, name, name_key, country, region, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (name_key) DO NOTHING",
     )
-    .bind(ulid(), producer, pKey, clampText(o.country, 60), clampText(o.region, 80), at)
+    .bind(ulid(), producer, pKey, clampText(where.country, 60), clampText(where.region, 80), at)
     .run();
   const p = (await db.prepare("SELECT id FROM producers WHERE name_key = ?").bind(pKey).first<{ id: string }>())!;
   const place = o.place;
@@ -288,7 +294,18 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (producer_id, name_key) DO UPDATE SET lwin = coalesce(wines.lwin, excluded.lwin)`,
     )
-    .bind(ulid(), p.id, wine, wKey, o.color, clampText(o.appellation, 80), JSON.stringify(grapes), user.id, at, lwin)
+    .bind(
+      ulid(),
+      p.id,
+      wine,
+      wKey,
+      o.color,
+      clampText(where.appellation, 80),
+      JSON.stringify(grapes),
+      user.id,
+      at,
+      lwin,
+    )
     .run();
   const w = (await db
     .prepare("SELECT id FROM wines WHERE producer_id = ? AND name_key = ?")

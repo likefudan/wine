@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import { tidyPlace } from "../shared/place";
 import {
   type Board,
   type Depth,
@@ -263,7 +264,7 @@ function remapVintage(from: string, to: string) {
 export function addVintage(v: Omit<VintageInfo, "id" | "wineId"> & { id?: string; wineId?: string }): VintageInfo {
   const existing = v.id ? state.vintages.find((x) => x.id === v.id) : undefined;
   if (existing) return existing;
-  const info: VintageInfo = { ...v, id: v.id ?? ulid(), wineId: v.wineId ?? "" };
+  const info: VintageInfo = { ...v, ...tidyPlace(v), id: v.id ?? ulid(), wineId: v.wineId ?? "" };
   set({ vintages: [...state.vintages, info] });
   enqueue({
     op: "putVintage",
