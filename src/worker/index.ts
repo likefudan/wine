@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { authRoutes } from "./auth";
 import { dataRoutes } from "./data";
 import type { Env } from "./env";
+import { SECURITY_HEADERS } from "./headers";
 import { HttpError } from "./http";
 import { costRoutes } from "./costs";
 import { aiEnabled, labelRoutes } from "./label";
@@ -14,6 +15,11 @@ import { reviewRoutes } from "./reviews";
 import { sharingRoutes } from "./sharing";
 
 const app = new Hono<{ Bindings: Env }>();
+
+app.use("*", async (c, next) => {
+  await next();
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!c.res.headers.has(k)) c.res.headers.set(k, v);
+});
 
 app.onError((err, c) => {
   if (err instanceof HttpError) return c.json({ error: err.code, message: err.message }, err.status);
@@ -58,7 +64,7 @@ app.get("*", async (c) => {
   if (path.startsWith("/assets/") || /\.[a-z0-9]+$/i.test(path)) return c.text("Not found", 404);
   const page = await c.env.ASSETS.fetch(new Request(new URL("/index.html", c.req.url)));
   return new Response(page.body, {
-    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" },
+    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache", ...SECURITY_HEADERS },
   });
 });
 
