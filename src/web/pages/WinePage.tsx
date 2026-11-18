@@ -22,6 +22,7 @@ export function WinePage() {
   );
   const items = useStore((s) => s.items);
   const lists = useStore((s) => s.lists);
+  const cellar = useStore((s) => s.cellar.filter((l) => l.vintageId === params.id && l.qty > 0));
   const [sharing, setSharing] = useState<string | null>(null);
   if (!v)
     return (
@@ -68,6 +69,19 @@ export function WinePage() {
           ))}
         </p>
       )}
+      {cellar.length > 0 && (
+        <p class="notice cellar-line">
+          {cellar.map((l, i) => (
+            <span key={l.id}>
+              {i > 0 && " · "}
+              <a href={`/cellar/${l.id}`}>
+                {t("酒窖里 {n} 瓶", { n: l.qty })}
+                {l.location ? ` · ${l.location}` : ""}
+              </a>
+            </span>
+          ))}
+        </p>
+      )}
       <ul class="cards">
         {sorted.map((x) => {
           const l = listOf(x.listItemId);
@@ -88,6 +102,7 @@ export function WinePage() {
                     {fmtDate(x.tastedAt)} · {t(DEPTH_INFO[x.depth].name)}
                     {l ? ` · ${l.title}` : ""}
                     {x.buyAgain ? ` · ${t("还会买")}` : ""}
+                    {x.cellarId ? ` · ${t("从酒窖开的")}` : ""}
                   </span>
                   {x.location && (x.location.name || x.location.address) && (
                     <span class="muted small">📍 {x.location.name || x.location.address}</span>

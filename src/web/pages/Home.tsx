@@ -1,4 +1,5 @@
 import { useLocation } from "preact-iso";
+import { CellarAlertCard } from "../CellarAlerts";
 import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import { LIST_KINDS, type ListKind, type ListPlace, type PlaceKind } from "../../shared/model";
@@ -166,6 +167,7 @@ export function Home() {
           {t("你的账号正在等站长审核。现在就能正常记录；拍酒标识别和酒庄地址联想要等审核通过后才能用。")}
         </p>
       )}
+      <CellarAlertCard />
       <FriendsSection />
       {sorted.length === 0 && (
         <div class="empty">

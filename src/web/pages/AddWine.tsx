@@ -32,7 +32,8 @@ import { shrink } from "../photo";
 
 /**
  * 确定一款酒 (docs/design.zh.md §3.1): type a few letters (my own wines first, then everyone's), or
- * photograph the label, or fill it in by hand. Then straight into the tasting.
+ * photograph the label, or fill it in by hand. Then straight into the tasting, or, from the 酒窖
+ * (`cellar`), on to how many bottles and where they go.
  */
 
 interface CatalogWine {
@@ -93,8 +94,10 @@ const matches = (v: VintageInfo, q: string) => {
   return q.split(" ").every((w) => hay.includes(w));
 };
 
-export function AddWine() {
+export function AddWine(props: { cellar?: boolean }) {
   const { route, query } = useLocation();
+  const cellar = !!props.cellar;
+  const inCellar = useStore((s) => s.cellar);
   const lists = useStore((s) => s.lists);
   const mine = useStore((s) => s.vintages);
   const listId = query.list ?? null;
@@ -136,6 +139,10 @@ export function AddWine() {
 
   const choose = (v: VintageInfo) => {
     const info = addVintage(v);
+    if (cellar) {
+      route(`/cellar/new?v=${info.id}`, true);
+      return;
+    }
     const item = listId ? addItem(listId, info.id) : null;
     const x = blankTasting(info.id, item?.id ?? null, getState().me?.depth ?? "quick");
     saveTasting({ ...x, photoId });
@@ -242,19 +249,21 @@ export function AddWine() {
         <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
           <BackIcon />
         </button>
-        <h1 class="page-head-title">{t("记一杯")}</h1>
+        <h1 class="page-head-title">{cellar ? t("放进酒窖") : t("记一杯")}</h1>
       </header>
 
       {/* From a 品鉴's page the wine goes into it; from the 记一杯 button it stands on its own. Never a choice. */}
-      <p class="add-to-list">
-        {fixedList ? (
-          <>
-            {t("属于")} <strong>{fixedList.title}</strong>
-          </>
-        ) : (
-          t("单独记一杯，不属于任何品鉴")
-        )}
-      </p>
+      {!cellar && (
+        <p class="add-to-list">
+          {fixedList ? (
+            <>
+              {t("属于")} <strong>{fixedList.title}</strong>
+            </>
+          ) : (
+            t("单独记一杯，不属于任何品鉴")
+          )}
+        </p>
+      )}
 
       {!form && (
         <>
@@ -282,13 +291,14 @@ export function AddWine() {
 
           {local.length > 0 && (
             <section>
-              <h2 class="section-title">{t("我喝过的")}</h2>
+              <h2 class="section-title">{cellar ? t("我的酒") : t("我喝过的")}</h2>
               <ul class="rows">
                 {local.map((v) => (
                   <li key={v.id}>
                     <button type="button" class="row" onClick={() => choose(v)}>
                       <Glass color={glassColor(v.color, undefined, v.year)} />
                       <WineName v={v} />
+                      <InCellar n={inCellar.filter((l) => l.vintageId === v.id).reduce((n, l) => n + l.qty, 0)} />
                     </button>
                   </li>
                 ))}
@@ -341,10 +351,22 @@ export function AddWine() {
         </>
       )}
 
-      {form && <WineForm draft={form} scanError={scanError} onCancel={() => setForm(null)} onSave={(v) => choose(v)} />}
+      {form && (
+        <WineForm
+          draft={form}
+          scanError={scanError}
+          submit={cellar ? t("下一步") : t("开始品鉴")}
+          onCancel={() => setForm(null)}
+          onSave={(v) => choose(v)}
+        />
+      )}
     </div>
   );
 }
+
+/** 酒窖里有 3 瓶: so a wine is not bought twice by mistake. */
+const InCellar = (props: { n: number }) =>
+  props.n > 0 ? <span class="row-side muted small">{t("酒窖里 {n} 瓶", { n: props.n })}</span> : null;
 
 function CatalogRow(props: { w: CatalogWine; onPick: (year: number, id?: string) => void }) {
   const { w } = props;
@@ -394,6 +416,7 @@ function CatalogRow(props: { w: CatalogWine; onPick: (year: number, id?: string)
 function WineForm(props: {
   draft: Draft;
   scanError: string | null;
+  submit: string;
   onCancel: () => void;
   onSave: (v: VintageInfo) => void;
 }) {
@@ -540,7 +563,7 @@ function WineForm(props: {
         <input inputMode="decimal" value={d.abv} maxLength={5} onInput={set("abv")} placeholder="14.5" />
       </Field>
       <button type="submit" class="button primary" disabled={!ok}>
-        {t("开始品鉴")}
+        {props.submit}
       </button>
       <button type="button" class="button" onClick={props.onCancel}>
         {t("返回搜索")}

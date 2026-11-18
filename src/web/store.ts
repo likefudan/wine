@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import { type CellarLot, DEFAULT_SIZE, type ProWindow } from "../shared/cellar";
 import { tidyPlace } from "../shared/place";
 import {
   type Board,
@@ -34,6 +35,10 @@ export interface State {
   items: ListItem[];
   vintages: VintageInfo[];
   tastings: Tasting[];
+  /** 酒窖: my bottles, drunk ones (qty 0) included. */
+  cellar: CellarLot[];
+  /** The critics' drinking windows for wines in the cellar (from the server, read-only). */
+  proWindows: ProWindow[];
   queue: Op[];
   syncedAt: string | null;
   /** The last change the server refused, to show once. */
@@ -50,6 +55,8 @@ const EMPTY: State = {
   items: [],
   vintages: [],
   tastings: [],
+  cellar: [],
+  proWindows: [],
   queue: [],
   syncedAt: null,
   rejected: null,
@@ -170,6 +177,8 @@ export function applySync(data: SyncData) {
     items: data.items,
     vintages: data.vintages,
     tastings: data.tastings,
+    // An older server sends no cellar: keep the phone's.
+    ...(data.cellar ? { cellar: data.cellar, proWindows: data.proWindows ?? [] } : {}),
     syncedAt: new Date().toISOString(),
   });
 }
@@ -330,7 +339,9 @@ const opKey = (o: Op): string | null =>
         ? `i:${o.item.id}`
         : o.op === "reorder"
           ? `r:${o.listId}`
-          : null;
+          : o.op === "putCellar"
+            ? `c:${o.lot.id}`
+            : null;
 
 /** The server kept another id for a wine I added: use it everywhere on the phone. */
 function remapVintage(from: string, to: string) {
@@ -342,6 +353,7 @@ function remapVintage(from: string, to: string) {
       : state.vintages.map((v) => (v.id === from ? { ...v, id: to } : v)),
     items: state.items.map((i) => (i.vintageId === from ? { ...i, vintageId: to } : i)),
     tastings: state.tastings.map((t) => (t.vintageId === from ? { ...t, vintageId: to } : t)),
+    cellar: state.cellar.map((l) => (l.vintageId === from ? { ...l, vintageId: to } : l)),
   });
 }
 
@@ -478,16 +490,88 @@ export function saveTasting(t: Tasting) {
   const next = { ...t, vintageId: real(t.vintageId), updatedAt: new Date().toISOString() };
   // A page that does not deal with the place (location undefined) keeps the one found meanwhile.
   if (next.location === undefined) next.location = old?.location;
+  if (next.cellarId === undefined) next.cellarId = old?.cellarId;
   const exists = !!old;
   set({ tastings: exists ? state.tastings.map((x) => (x.id === t.id ? next : x)) : [next, ...state.tastings] });
   enqueue({ op: "putTasting", tasting: next });
 }
 
-export function deleteTasting(id: string) {
+export function deleteTasting(id: string, putBack = false) {
+  if (putBack) putBackBottle(id);
   const itemId = state.tastings.find((t) => t.id === id)?.listItemId;
   const shared = isSharedList(state.items.find((i) => i.id === itemId)?.listId);
   set({ tastings: state.tastings.filter((t) => t.id !== id) });
   enqueue({ op: "deleteTasting", id }, shared);
+}
+
+// ── 酒窖 ──────────────────────────────────────────────────────────────────────────────────────
+
+export function blankLot(vintageId: string, over: Partial<CellarLot> = {}): CellarLot {
+  const at = new Date().toISOString();
+  return {
+    id: ulid(),
+    vintageId,
+    qty: 1,
+    sizeMl: DEFAULT_SIZE,
+    location: null,
+    boughtOn: at.slice(0, 10),
+    price: null,
+    currency: null,
+    source: null,
+    drinkFrom: null,
+    drinkTo: null,
+    note: null,
+    createdAt: at,
+    updatedAt: at,
+    ...over,
+  };
+}
+
+export function saveLot(lot: CellarLot) {
+  const next = { ...lot, vintageId: real(lot.vintageId), updatedAt: new Date().toISOString() };
+  const exists = state.cellar.some((x) => x.id === lot.id);
+  set({ cellar: exists ? state.cellar.map((x) => (x.id === lot.id ? next : x)) : [next, ...state.cellar] });
+  enqueue({ op: "putCellar", lot: next });
+}
+
+export function deleteLot(id: string) {
+  set({
+    cellar: state.cellar.filter((l) => l.id !== id),
+    tastings: state.tastings.map((t) => (t.cellarId === id ? { ...t, cellarId: null } : t)),
+  });
+  enqueue({ op: "deleteCellar", id });
+}
+
+/**
+ * 开一瓶: one bottle fewer in the lot and, unless `note` is false, a new tasting of it that points
+ * back at the lot (喝掉一瓶 = 记一杯). Returns the tasting, if one was started.
+ */
+export function openBottle(lotId: string, note = true): Tasting | null {
+  const lot = state.cellar.find((l) => l.id === lotId);
+  if (!lot || lot.qty < 1) return null;
+  saveLot({ ...lot, qty: lot.qty - 1 });
+  if (!note) return null;
+  const x = { ...blankTasting(lot.vintageId, null, state.me?.depth ?? "quick"), cellarId: lot.id };
+  saveTasting(x);
+  return x;
+}
+
+/** 这瓶是从酒窖拿的: a tasting started elsewhere takes its bottle out of a lot. */
+export function takeFromLot(tastingId: string, lotId: string) {
+  const x = state.tastings.find((t) => t.id === tastingId);
+  const lot = state.cellar.find((l) => l.id === lotId);
+  if (!x || !lot || lot.qty < 1 || x.cellarId) return;
+  saveLot({ ...lot, qty: lot.qty - 1 });
+  saveTasting({ ...x, cellarId: lot.id });
+}
+
+/** Undoes takeFromLot / openBottle: the bottle goes back. */
+export function putBackBottle(tastingId: string) {
+  const x = state.tastings.find((t) => t.id === tastingId);
+  const lot = x?.cellarId ? state.cellar.find((l) => l.id === x.cellarId) : undefined;
+  if (!x || !lot) return;
+  saveTasting({ ...x, cellarId: null });
+  saveLot({ ...lot, qty: lot.qty + 1 });
 }
 
 /** Sets (or, with null, removes) where a glass was tasted. */

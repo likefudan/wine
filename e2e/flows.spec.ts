@@ -199,20 +199,23 @@ test("choosing an aroma lights it up in place without moving the words around it
   const [nose, palate] = [page.locator(".aroma-picker").nth(0), page.locator(".aroma-picker").nth(1)];
   const raspberry = nose.locator(".aroma-family .chip >> text=覆盆子");
   const plum = nose.locator(".aroma-family .chip >> text=红李子");
-  // Page coordinates, not viewport ones: the tap may scroll the chip into view.
-  const where = () => plum.evaluate((e) => [e.getBoundingClientRect().left, e.getBoundingClientRect().top + scrollY]);
+  // Layout position, not on-screen: a tap may scroll the page or the family's row to bring a chip into view.
+  const where = () => plum.evaluate((e) => [(e as HTMLElement).offsetLeft, e.getBoundingClientRect().top + scrollY]);
   const before = await where();
   await raspberry.click();
   await expect(raspberry).toHaveAttribute("aria-pressed", "true");
   expect(await where()).toEqual(before);
   await expect(nose.locator(".family-name", { hasText: "红色水果" }).locator(".family-count")).toHaveText("1");
-  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["覆盆子"]);
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^覆盆子/]);
   await plum.click();
-  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["覆盆子", "红李子"]);
-  // Tapping it again in place takes it out.
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^覆盆子/, /^红李子/]);
+  // 进阶 taps cycle the strength in place; the third tap takes it out.
+  await raspberry.click();
+  await expect(raspberry.locator(".dots")).toHaveText("•••");
+  expect(await where()).toEqual(before);
   await raspberry.click();
   await expect(raspberry).toHaveAttribute("aria-pressed", "false");
-  await expect(nose.locator(".aroma-chosen .chip")).toHaveText(["红李子"]);
+  await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^红李子/]);
 
   // The palate's flavours use the same words, and can start from what the nose found.
   await page.click("text=和闻到的一样");

@@ -1,12 +1,14 @@
 // Translations for every page text, keyed by the Simplified Chinese in the code (test/i18n.test.ts
 // checks none is missing). zh-TW uses Taiwan phrasing (登入, 網路, 品飲), not a character swap.
 
+import { CELLAR_MESSAGES } from "./messages-cellar";
 import { COST_MESSAGES } from "./messages-costs";
 import { FRIEND_MESSAGES } from "./messages-friends";
 import { PROFILE_MESSAGES } from "./messages-profile";
 import { REVIEW_MESSAGES } from "./messages-reviews";
 
 export const MESSAGES: Record<string, { tw: string; en: string }> = {
+  ...CELLAR_MESSAGES,
   ...COST_MESSAGES,
   ...FRIEND_MESSAGES,
   ...PROFILE_MESSAGES,
@@ -346,6 +348,12 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Which of balance, length, intensity and complexity it does well",
   },
   适饮程度: { tw: "適飲程度", en: "Readiness for drinking" },
+  "想建立体系：完整的 WSET 品鉴表，加缺陷和侍酒条件": {
+    tw: "想建立體系：完整的 WSET 品飲表，加缺陷和侍酒條件",
+    en: "Building a system: the full WSET tasting grid, plus faults and serving",
+  },
+  "3–5 分钟": { tw: "3–5 分鐘", en: "3–5 min" },
+  "喝过不少，要完整的品鉴表": { tw: "喝過不少，要完整的品飲表", en: "I've tasted a fair bit and want the full grid" },
   "找香气，例如 雪松": { tw: "找香氣，例如 雪松", en: "Find an aroma, e.g. cedar" },
   你描述的是: { tw: "你描述的是", en: "What you described" },
   香气: { tw: "香氣", en: "Aromas" },
@@ -359,10 +367,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   说不上来: { tw: "說不上來", en: "Not sure" },
   下一题: { tw: "下一題", en: "Next" },
   盲品猜酒: { tw: "盲飲猜酒", en: "Blind guess" },
-  "先猜再看答案。猜过的会统计命中率。": {
-    tw: "先猜再看答案。猜過的會統計命中率。",
-    en: "Guess before you look. Your hit rate is tracked.",
-  },
   品种: { tw: "品種", en: "Grape" },
   "把杯子斜放在白纸前，看杯沿的颜色": {
     tw: "把杯子斜放在白紙前，看杯緣的顏色",
@@ -430,8 +434,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "剛開始認真喝，想學怎麼品",
     en: "Just getting into it, want to learn how to taste",
   },
-  "喝过不少，想有个体系": { tw: "喝過不少，想有個系統", en: "I've had plenty, want a system" },
-  "老手，要完整的品鉴表": { tw: "老手，要完整的品飲表", en: "Experienced, give me the full sheet" },
   只想快速记个分: { tw: "只想快速記個分數", en: "Just a quick score" },
   快记: { tw: "快記", en: "Quick" },
   入门: { tw: "入門", en: "Beginner" },
@@ -446,13 +448,8 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "喝過一些、想建立系統：按 WSET 四步走",
     en: "Building a method: the four WSET steps",
   },
-  "老手：全部字段、缺陷、侍酒条件、盲品猜酒": {
-    tw: "老手：全部欄位、缺陷、侍酒條件、盲飲猜酒",
-    en: "Every field, faults, serving and blind guessing",
-  },
   "10 秒": { tw: "10 秒", en: "10 sec" },
   "约 1 分钟": { tw: "約 1 分鐘", en: "about 1 min" },
-  "2–3 分钟": { tw: "2–3 分鐘", en: "2–3 min" },
   不限: { tw: "不限", en: "no limit" },
   找不到这款酒: { tw: "找不到這款酒", en: "Wine not found" },
   回到酒库: { tw: "回到酒庫", en: "Back to library" },
