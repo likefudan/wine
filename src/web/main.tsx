@@ -10,6 +10,7 @@ import { AnswersPage, BlindStart } from "./Blind";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
 import { useHideOnScroll } from "./hideOnScroll";
+import { useScrollReset } from "./scroll";
 import { ConfirmHost } from "./confirm";
 import { FriendsPage } from "./Friends";
 import { RecsPage } from "./pages/Recs";
@@ -68,6 +69,7 @@ function Shell() {
   useEffect(() => {
     if (boot.state === "in") flushPending();
   }, [path]);
+  useScrollReset(path);
 
   useEffect(() => {
     const on = () => setOnline(navigator.onLine);
@@ -152,7 +154,11 @@ function Shell() {
   if (!me.depth) return <Welcome />;
 
   const tab =
-    path === "/" || path.startsWith("/lists") || path.startsWith("/friends") || path.startsWith("/answers")
+    path === "/" ||
+    path.startsWith("/lists") ||
+    path.startsWith("/friends") ||
+    path.startsWith("/answers") ||
+    path.startsWith("/recs")
       ? "lists"
       : path.startsWith("/library") || path.startsWith("/wine") || path.startsWith("/cellar")
         ? "library"
