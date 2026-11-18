@@ -15,7 +15,7 @@ import { Library } from "./pages/Library";
 import { JoinPage } from "./pages/JoinPage";
 import { ListPage } from "./pages/ListPage";
 import { Login } from "./pages/Login";
-import { Avatar, MePage } from "./pages/Me";
+import { Avatar, MePage, refreshPending, usePending } from "./pages/Me";
 import { Taste } from "./pages/Taste";
 import { Welcome } from "./pages/Welcome";
 import { WinePage } from "./pages/WinePage";
@@ -108,6 +108,7 @@ function Shell() {
       }
       setBoot({ state: "in" });
       void flush();
+      if (getState().me?.owner) void refreshPending();
     })();
   }, []);
 
@@ -139,8 +140,9 @@ function Shell() {
           ? "me"
           : "";
   const fullScreen = path.startsWith("/taste") || path.startsWith("/add");
-  // The three tabs share one header with the brand; pages deeper in have their own back button.
-  const tabRoot = path === "/" || path === "/library" || path === "/me";
+  // Every page but the two full-screen ones (tasting, adding a wine) has the brand on top; pages
+  // deeper in add their own back row under it.
+  const waiting = usePending();
   return (
     <div class="app">
       {(!online || queue > 0) && (
@@ -161,7 +163,7 @@ function Shell() {
           </button>
         </div>
       )}
-      {tabRoot && (
+      {!fullScreen && (
         <header class="app-head">
           <a href="/" class="app-brand" aria-label={t("品酒日记")}>
             <Logo size={30} class="head-logo" />
@@ -199,6 +201,11 @@ function Shell() {
             </a>
             <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
               <Avatar tab />
+              {waiting > 0 && (
+                <span class="dot">
+                  <span class="visually-hidden">{t("{n} 人待审核", { n: waiting })}</span>
+                </span>
+              )}
               <span>{t("我的")}</span>
             </a>
           </nav>

@@ -38,6 +38,27 @@ export function Avatar(props: { tab?: boolean }) {
 
 type MeTab = "tasting" | "general" | "members";
 
+/** How many newcomers wait for approval (owners only): a dot on 我的 and on its 成员 tab. */
+let pending = 0;
+const pendingListeners = new Set<(n: number) => void>();
+const setPending = (n: number) => {
+  pending = n;
+  for (const f of pendingListeners) f(n);
+};
+/** Asks the server again; called when an owner opens the app or 我的. */
+export const refreshPending = () =>
+  api<{ members: Member[] }>("/api/members")
+    .then((r) => setPending(r.members.filter((m) => m.status === "pending").length))
+    .catch(() => {});
+export function usePending(): number {
+  const [n, setN] = useState(pending);
+  useEffect(() => {
+    pendingListeners.add(setN);
+    return () => void pendingListeners.delete(setN);
+  }, []);
+  return n;
+}
+
 export function MePage() {
   const me = useStore((s) => s.me)!;
   const queue = useStore((s) => s.queue.length);
@@ -46,6 +67,10 @@ export function MePage() {
   const [theme, setT] = useState<Theme>(savedTheme());
   const [syncing, setSyncing] = useState(false);
   const { query, route } = useLocation();
+  const waiting = usePending();
+  useEffect(() => {
+    if (me.owner) void refreshPending();
+  }, [me.owner]);
   const logout = async () => {
     if (getState().queue.length && !(await ask(t("还有记录没备份到云端，退出后会丢失。确定退出？")))) return;
     try {
@@ -85,6 +110,7 @@ export function MePage() {
             onClick={() => pick(x.id)}
           >
             {x.label}
+            {x.id === "members" && waiting > 0 && <span class="badge">{waiting}</span>}
           </button>
         ))}
       </div>
@@ -188,6 +214,7 @@ function Members() {
     api<{ members: Member[]; autoApprovePerDay: number }>("/api/members")
       .then((r) => {
         setList(r.members);
+        setPending(r.members.filter((m) => m.status === "pending").length);
         setPerDay(String(r.autoApprovePerDay));
       })
       .catch(() => setList([]));

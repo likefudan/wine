@@ -370,9 +370,11 @@ h3 {
   gap: 2px;
 }
 .list-title {
-  font-family: var(--serif);
-  font-size: 21px;
-  font-weight: 600;
+  /* A title people type mixes Chinese and Latin: one sans face keeps both the same size and weight. */
+  font-family: var(--sans);
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 .glass-row {
@@ -544,6 +546,32 @@ h3 {
   color: var(--primary);
   font-weight: 700;
   background: color-mix(in srgb, var(--primary) 13%, transparent);
+}
+.tabbar a {
+  position: relative;
+}
+.tabbar .dot {
+  position: absolute;
+  top: 6px;
+  left: calc(50% + 8px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.badge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  vertical-align: 1px;
 }
 .tabbar .tab-avatar {
   width: 24px;
