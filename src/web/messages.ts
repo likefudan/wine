@@ -569,4 +569,52 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "長按圖片儲存，傳到 LINE 或微信",
     en: "Press and hold to save, then send it to friends",
   },
+  // 品酒地点 (定位)
+  修改: { tw: "修改", en: "Edit" },
+  "{n} 米": { tw: "{n} 公尺", en: "{n} m" },
+  "{n} 公里": { tw: "{n} 公里", en: "{n} km" },
+  "正在定位…": { tw: "正在定位…", en: "Finding your location…" },
+  用当前位置: { tw: "用目前位置", en: "Use my location" },
+  "没能拿到位置。请在手机的设置里允许本网站（或 Safari）使用定位，再试一次。": {
+    tw: "沒能取得位置。請在手機的設定裡允許本網站（或 Safari）使用定位，再試一次。",
+    en: "Couldn't get your location. Allow this site (or Safari) to use Location Services in your phone's settings, then try again.",
+  },
+  "没有网络，暂时找不到附近的地点": {
+    tw: "沒有網路，暫時找不到附近的地點",
+    en: "Offline: can't look up places nearby yet",
+  },
+  "附近地点查询失败，请稍后再试": {
+    tw: "附近地點查詢失敗，請稍後再試",
+    en: "Couldn't look up places nearby. Try again later.",
+  },
+  只用这里的地址: { tw: "只用這裡的地址", en: "Just this address" },
+  "附近没找到地点，可以手动输入": {
+    tw: "附近沒找到地點，可以手動輸入",
+    en: "Nothing found nearby; type it in instead",
+  },
+  已记下位置: { tw: "已記下位置", en: "Location saved" },
+  "已记下位置，联网后补上地址": {
+    tw: "已記下位置，連上網路後補上地址",
+    en: "Location saved; the address follows once online",
+  },
+  去掉地点: { tw: "移除地點", en: "Remove place" },
+  "记下这杯在哪儿喝的？会用手机定位，只有你自己看得到。": {
+    tw: "記下這杯在哪裡喝的？會用手機定位，只有你自己看得到。",
+    en: "Note where you're tasting this? Uses your phone's location; only you can see it.",
+  },
+  记下品酒地点: { tw: "記下品飲地點", en: "Save tasting location" },
+  "没能拿到位置，可以手动输入": {
+    tw: "沒能取得位置，可以手動輸入",
+    en: "Couldn't get your location; type it in instead",
+  },
+  品酒地点: { tw: "品飲地點", en: "Where you tasted" },
+  "例如：Opus One、我家": { tw: "例如：Opus One、我家", en: "e.g. Opus One, home" },
+  "品酒地点只有你自己看得到，不会出现在分享的酒单里。": {
+    tw: "品飲地點只有你自己看得到，不會出現在分享的酒單裡。",
+    en: "Only you can see where you tasted; it never shows on shared lists.",
+  },
+  "记一杯时用手机定位记下在哪儿喝的，只有你自己看得到。": {
+    tw: "記一杯時用手機定位記下在哪裡喝的，只有你自己看得到。",
+    en: "When you log a glass, your phone's location notes where you were. Only you can see it.",
+  },
 };

@@ -84,6 +84,9 @@ export function WinePage() {
                     {l ? ` · ${l.title}` : ""}
                     {x.buyAgain ? ` · ${t("还会买")}` : ""}
                   </span>
+                  {x.location && (x.location.name || x.location.address) && (
+                    <span class="muted small">📍 {x.location.name || x.location.address}</span>
+                  )}
                 </div>
                 {note ? (
                   <p class="small">{note}</p>

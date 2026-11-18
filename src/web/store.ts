@@ -7,10 +7,12 @@ import {
   type Lang,
   type ListItem,
   type Me,
+  type NearbyPlaces,
   type Op,
   type OpResult,
   type SyncData,
   type Tasting,
+  type TastingLocation,
   type VintageInfo,
   type Visibility,
   type WineList,
@@ -214,6 +216,7 @@ export function flush(): Promise<void> {
       if (!state.queue.length && !leaving) {
         const data = await api<SyncData>("/api/sync");
         applySync(data);
+        void fillLocations();
       }
     } catch {
       // offline or the server is down: try again later
@@ -265,7 +268,10 @@ export function flushPending() {
   if (state.queue.length) void flush();
 }
 
-addEventListener("online", () => void flush());
+addEventListener("online", () => {
+  void flush();
+  void fillLocations();
+});
 addEventListener("visibilitychange", () => {
   leaving = document.visibilityState === "hidden";
   // Coming back fetches friends' changes too; going away sends mine before the phone sleeps.
@@ -468,8 +474,11 @@ export function blankTasting(vintageId: string, listItemId: string | null, depth
 const real = (vintageId: string) => state.aliases[vintageId] ?? vintageId;
 
 export function saveTasting(t: Tasting) {
+  const old = state.tastings.find((x) => x.id === t.id);
   const next = { ...t, vintageId: real(t.vintageId), updatedAt: new Date().toISOString() };
-  const exists = state.tastings.some((x) => x.id === t.id);
+  // A page that does not deal with the place (location undefined) keeps the one found meanwhile.
+  if (next.location === undefined) next.location = old?.location;
+  const exists = !!old;
   set({ tastings: exists ? state.tastings.map((x) => (x.id === t.id ? next : x)) : [next, ...state.tastings] });
   enqueue({ op: "putTasting", tasting: next });
 }
@@ -481,7 +490,47 @@ export function deleteTasting(id: string) {
   enqueue({ op: "deleteTasting", id }, shared);
 }
 
-export function updateMe(change: { locale?: Lang; depth?: Depth; labelModel?: LabelModel }) {
+/** Sets (or, with null, removes) where a glass was tasted. */
+export function setTastingLocation(id: string, location: TastingLocation | null) {
+  const x = state.tastings.find((t) => t.id === id);
+  if (x) saveTasting({ ...x, location });
+}
+
+let filling = false;
+/**
+ * Positions saved without a network get their name and address from Google once there is one.
+ * The nearest place counts as where I was when it is within the phone's accuracy (at most 150 m).
+ */
+export async function fillLocations() {
+  if (filling || !state.me?.approved || navigator.onLine === false) return;
+  filling = true;
+  try {
+    const todo = state.tastings.filter((x) => x.location && !x.location.geocoded && x.location.lat !== null);
+    for (const x of todo.slice(0, 10)) {
+      const loc = x.location!;
+      const lang = state.me?.locale ?? "en";
+      const r = await api<NearbyPlaces>(`/api/places/near?lat=${loc.lat}&lng=${loc.lng}&l=${lang}`);
+      const reach = Math.min(150, Math.max(60, loc.accuracy ?? 0));
+      const here = r.places.find((p) => p.distance !== null && p.distance <= reach && p.name);
+      // Typed in the meantime, or removed: leave it.
+      const now = state.tastings.find((t) => t.id === x.id)?.location;
+      if (!now || now.geocoded || now.lat !== loc.lat) continue;
+      setTastingLocation(x.id, {
+        ...now,
+        name: now.name ?? here?.name ?? null,
+        address: now.address ?? here?.address ?? r.address,
+        placeId: now.placeId ?? here?.id ?? null,
+        geocoded: true,
+      });
+    }
+  } catch {
+    // offline or Google is down: next time
+  } finally {
+    filling = false;
+  }
+}
+
+export function updateMe(change: { locale?: Lang; depth?: Depth; labelModel?: LabelModel; locationOn?: boolean }) {
   if (!state.me) return;
   set({ me: { ...state.me, ...change } });
   enqueue({ op: "putMe", ...change });

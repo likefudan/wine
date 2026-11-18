@@ -135,6 +135,18 @@ export function MePage() {
               onChange={(m) => m && updateMe({ labelModel: m })}
             />
           </Field>
+          <Field label={t("记下品酒地点")} hint={t("记一杯时用手机定位记下在哪儿喝的，只有你自己看得到。")} group>
+            <Choice
+              label={t("记下品酒地点")}
+              value={me.locationOn === false ? "off" : me.locationOn ? "on" : undefined}
+              clearable={false}
+              options={[
+                { value: "on" as const, label: t("开") },
+                { value: "off" as const, label: t("关") },
+              ]}
+              onChange={(v) => v && updateMe({ locationOn: v === "on" })}
+            />
+          </Field>
         </section>
       )}
       {tab === "general" && (
