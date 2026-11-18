@@ -46,6 +46,7 @@ import { currentLang, p, t, tk } from "../i18n";
 import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe, useStore } from "../store";
 import { ShareIcon, TastingShareSheet } from "../TastingCard";
 import { TastingPlace } from "../TastingPlace";
+import { BoughtToCellar, TastingFromCellar } from "./Cellar";
 
 /**
  * 品鉴: one sheet, four depths over the same fields (docs/design.zh.md §3.3, §3.4). Switching depth
@@ -55,7 +56,8 @@ import { TastingPlace } from "../TastingPlace";
 
 type Patch = (change: Partial<Tasting>) => void;
 /** The place is set by TastingPlace straight in the store: this page's copy of it may be stale. */
-const saveTasting = (x: Tasting) => saveAll({ ...x, location: undefined });
+// The place and the 酒窖 bottle are set elsewhere (TastingPlace, TastingFromCellar): never overwritten from here.
+const saveTasting = (x: Tasting) => saveAll({ ...x, location: undefined, cellarId: undefined });
 const redLike = (v: VintageInfo, x: Tasting): "red" | "white" =>
   v.color === "red" || huesFor(v.color, x.appearance.hue)[0] === "purple" ? "red" : "white";
 
@@ -189,6 +191,7 @@ export function Taste() {
         </div>
       )}
       <TastingPlace id={x.id} fresh={query.new === "1"} />
+      {saved && <TastingFromCellar x={saved} fresh={query.new === "1"} />}
       {depth === "quick" && <Quick x={x} v={vintage} patch={patch} />}
       {depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} prev={prev} />}
       {depth === "standard" && <Systematic x={x} v={vintage} patch={patch} prev={prev} />}
@@ -201,10 +204,15 @@ export function Taste() {
           class="link danger small"
           onClick={async () => {
             if (!(await ask(t("删除这条品鉴记录？"), { ok: t("删除") }))) return;
+            // A bottle opened from the 酒窖 by mistake goes back on the shelf.
+            const putBack =
+              !!saved?.cellarId &&
+              getState().cellar.some((l) => l.id === saved.cellarId) &&
+              (await ask(t("这瓶是从酒窖开的，要放回酒窖吗？"), { ok: t("放回酒窖") }));
             if (timer.current) clearTimeout(timer.current);
             timer.current = null;
             latest.current = undefined;
-            deleteTasting(x.id);
+            deleteTasting(x.id, putBack);
             route(backOf(x), true);
           }}
         >
@@ -287,6 +295,7 @@ function Conclusion(props: { x: Tasting; patch: Patch; standard?: boolean }) {
               />
             </Field>
           </div>
+          <BoughtToCellar x={x} />
         </>
       )}
       <NoteField x={x} patch={patch} rows={props.standard ? 5 : 2} />

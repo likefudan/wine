@@ -249,7 +249,7 @@ function ExportData() {
   const save = async (ext: "csv" | "json") => {
     setError(null);
     const s = getState();
-    const data = { lists: s.lists, items: s.items, vintages: s.vintages, tastings: s.tastings };
+    const data = { lists: s.lists, items: s.items, vintages: s.vintages, tastings: s.tastings, cellar: s.cellar };
     const text = ext === "csv" ? toCsv(data, currentLang()) : toJson(data);
     const type = ext === "csv" ? "text/csv" : "application/json";
     const name = exportName(ext);

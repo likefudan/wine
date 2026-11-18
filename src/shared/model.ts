@@ -4,6 +4,8 @@
  * depth writes into the same fields (docs/design.zh.md §3.3, §3.4).
  */
 
+import type { CellarLot, ProWindow } from "./cellar";
+
 export const COLORS = ["red", "white", "rose", "sparkling", "dessert"] as const;
 export type WineColor = (typeof COLORS)[number];
 
@@ -132,6 +134,11 @@ export interface Tasting {
    * undefined (an older app, or a page that did not touch it) keeps what the server has; null removes it.
    */
   location?: TastingLocation | null;
+  /**
+   * The 酒窖 lot this bottle came out of (开一瓶). undefined (an older app) keeps what the server has;
+   * null: not from my cellar.
+   */
+  cellarId?: string | null;
   updatedAt: string;
 }
 
@@ -402,6 +409,10 @@ export interface SyncData {
   items: ListItem[];
   vintages: VintageInfo[];
   tastings: Tasting[];
+  /** 酒窖 (src/shared/cellar.ts). Missing from an older server. */
+  cellar?: CellarLot[];
+  /** The critics' drinking window for wines in my cellar, from the pro-review lookups. */
+  proWindows?: ProWindow[];
 }
 
 /** One change made on the phone, sent in order and safe to send twice (POST /api/ops). */
@@ -429,6 +440,8 @@ export type Op =
   | { op: "reorder"; listId: string; ids: string[] }
   | { op: "putTasting"; tasting: Tasting }
   | { op: "deleteTasting"; id: string }
+  | { op: "putCellar"; lot: CellarLot }
+  | { op: "deleteCellar"; id: string }
   | { op: "putMe"; locale?: Lang; depth?: Depth; labelModel?: LabelModel; locationOn?: boolean };
 
 export interface OpResult {
