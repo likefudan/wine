@@ -51,6 +51,19 @@ export interface State {
   aliases: Record<string, string>;
   /** Uploading failed while online (server down, not just no signal); cleared by the next success. */
   stuck: boolean;
+  /**
+   * Changes the server refused (an op answered ok:false). They stay on the phone, and their records
+   * stay in the page over the server's copy, until I retry them or let them go (我的 → 通用).
+   */
+  failed: FailedOp[];
+  /** Whose notes these are: kept when the session ends, so unsent ones wait for the same person. */
+  ownerId: string | null;
+}
+
+export interface FailedOp {
+  op: Op;
+  error: string;
+  at: string;
 }
 
 const EMPTY: State = {
@@ -67,6 +80,8 @@ const EMPTY: State = {
   rejected: null,
   aliases: {},
   stuck: false,
+  failed: [],
+  ownerId: null,
 };
 let state: State = EMPTY;
 const listeners = new Set<() => void>();
@@ -144,6 +159,74 @@ export function clearLocal() {
   set({ ...EMPTY });
 }
 
+/** Changes made on this phone that the server does not have yet (waiting, or refused). */
+export const unsentCount = (s: State = state) => s.queue.length + s.failed.length;
+
+/**
+ * The session ended (it expired, or the server said 401). Unsent notes are never thrown away for
+ * that: only who is signed in is forgotten, and the notes wait for the same person to sign in again.
+ */
+export function sessionEnded() {
+  if (unsentCount()) set({ me: null, ownerId: state.ownerId ?? state.me?.id ?? null });
+  else clearLocal();
+}
+
+async function kvGet<T>(key: string): Promise<T | undefined> {
+  const db = await idb();
+  if (!db) return undefined;
+  return new Promise((resolve) => {
+    try {
+      const req = db.transaction("kv").objectStore("kv").get(key);
+      req.onsuccess = () => resolve(req.result as T | undefined);
+      req.onerror = () => resolve(undefined);
+    } catch {
+      resolve(undefined);
+    }
+  });
+}
+async function kvPut(key: string, value: unknown): Promise<void> {
+  const db = await idb();
+  if (!db) return;
+  await new Promise<void>((resolve) => {
+    try {
+      const tx = db.transaction("kv", "readwrite");
+      if (value === undefined) tx.objectStore("kv").delete(key);
+      else tx.objectStore("kv").put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+type Stash = { queue: Op[]; failed: FailedOp[] };
+
+/**
+ * Someone signs in on this phone. If the notes here are another person's, their unsent changes are
+ * put aside for them (never uploaded as mine) and the phone starts empty; if I had changes put aside
+ * earlier, they come back to be sent.
+ */
+export async function signedInAs(me: Me) {
+  const owner = state.ownerId ?? state.me?.id ?? null;
+  if (owner && owner !== me.id) {
+    if (unsentCount()) {
+      const old = (await kvGet<Stash>(`stash:${owner}`)) ?? { queue: [], failed: [] };
+      await kvPut(`stash:${owner}`, {
+        queue: [...old.queue, ...state.queue],
+        failed: [...old.failed, ...state.failed],
+      } satisfies Stash);
+    }
+    clearLocal();
+  }
+  const mine = await kvGet<Stash>(`stash:${me.id}`);
+  if (mine) {
+    await kvPut(`stash:${me.id}`, undefined);
+    set({ queue: [...mine.queue, ...state.queue], failed: [...mine.failed, ...state.failed] });
+  }
+  set({ ownerId: me.id });
+}
+
 // ── Talking to the server ────────────────────────────────────────────────────────────────────
 
 export class ApiError extends Error {
@@ -168,25 +251,108 @@ export async function api<T>(
     credentials: "same-origin",
     signal: init?.signal,
   });
+  noteServerTime(res);
   const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
   if (!res.ok) throw new ApiError(res.status, data.error ?? "error", data.message ?? `HTTP ${res.status}`);
   return data as T;
 }
+
+/**
+ * How far this phone's clock is from the server's (ms). Edits are stamped with server time, so a
+ * phone whose clock is off cannot win (or lose) against another phone's later edit.
+ */
+let skew = 0;
+function noteServerTime(res: Response) {
+  const d = Date.parse(res.headers.get("Date") ?? "");
+  // The Date header has whole seconds: only a real difference is worth correcting.
+  if (!Number.isNaN(d) && Math.abs(d - Date.now()) > 5_000) skew = d - Date.now();
+  else if (!Number.isNaN(d)) skew = 0;
+}
+/** Now, by the server's clock as far as this phone knows it. */
+export const stamp = () => new Date(Date.now() + skew).toISOString();
 
 /** Puts the server's copy in place, keeping whatever is still waiting to go up. */
 export function applySync(data: SyncData) {
   if (state.queue.length) return;
   set({
     me: data.me,
-    lists: data.lists,
-    items: data.items,
-    vintages: data.vintages,
-    tastings: data.tastings,
-    // An older server sends no cellar: keep the phone's.
-    ...(data.cellar ? { cellar: data.cellar, proWindows: data.proWindows ?? [] } : {}),
+    ownerId: data.me.id,
+    ...keepFailed({
+      lists: data.lists,
+      items: data.items,
+      vintages: data.vintages,
+      tastings: data.tastings,
+      // An older server sends no cellar: keep the phone's.
+      cellar: data.cellar ?? state.cellar,
+    }),
+    ...(data.cellar ? { proWindows: data.proWindows ?? [] } : {}),
     ...(data.proScores ? { proScores: data.proScores } : {}),
     syncedAt: new Date().toISOString(),
   });
+}
+
+type Records = Pick<State, "lists" | "items" | "vintages" | "tastings" | "cellar">;
+const upsert = <T extends { id: string }>(list: T[], x: T | undefined): T[] =>
+  !x ? list : list.some((y) => y.id === x.id) ? list.map((y) => (y.id === x.id ? x : y)) : [x, ...list];
+
+/** The server's copy, with what the refused changes say laid over it: they must not vanish. */
+function keepFailed(r: Records): Records {
+  for (const { op: o } of state.failed) {
+    switch (o.op) {
+      case "putVintage":
+        r.vintages = upsert(
+          r.vintages,
+          state.vintages.find((v) => v.id === o.id),
+        );
+        break;
+      case "putTasting":
+        r.tastings = upsert(r.tastings, o.tasting);
+        break;
+      case "putCellar":
+        r.cellar = upsert(r.cellar, o.lot);
+        break;
+      case "putList":
+        r.lists = upsert(r.lists, o.list);
+        break;
+      case "putItem":
+        r.items = upsert(r.items, o.item);
+        break;
+      default:
+        break;
+    }
+  }
+  // The server only sends wines something of mine on it points at: a refused note's wine is mine still.
+  const need = [
+    ...state.failed.flatMap(({ op: o }) =>
+      o.op === "putTasting"
+        ? [o.tasting.vintageId]
+        : o.op === "putCellar"
+          ? [o.lot.vintageId]
+          : o.op === "putItem"
+            ? [o.item.vintageId]
+            : [],
+    ),
+  ];
+  for (const id of need)
+    if (!r.vintages.some((v) => v.id === id))
+      r.vintages = upsert(
+        r.vintages,
+        state.vintages.find((v) => v.id === id),
+      );
+  return r;
+}
+
+/** 重试: the refused changes go up again, before anything else waiting. */
+export function retryFailed() {
+  if (!state.failed.length) return;
+  set({ queue: [...state.failed.map((f) => f.op), ...state.queue], failed: [], rejected: null });
+  void flush();
+}
+
+/** 放弃: let the refused changes go; the server's copy takes their place at the next sync. */
+export function dropFailed() {
+  set({ failed: [], rejected: null });
+  void flush();
 }
 
 let flushing: Promise<void> | null = null;
@@ -211,7 +377,7 @@ export function flush(): Promise<void> {
         try {
           ({ results } = await api<{ results: OpResult[] }>("/api/ops", { body, keepalive }));
         } catch (e) {
-          if (e instanceof ApiError && e.status === 401) set({ me: null });
+          if (e instanceof ApiError && e.status === 401) sessionEnded();
           else if ((navigator as { onLine?: boolean }).onLine !== false) {
             set({ stuck: true }, false);
             scheduleFlush(RETRY_MS);
@@ -221,14 +387,27 @@ export function flush(): Promise<void> {
           inFlight = 0;
         }
         let rejected: string | null = null;
+        const failed: FailedOp[] = [];
+        const at = new Date().toISOString();
         batch.forEach((o, i) => {
           const r = results[i];
           if (o.op === "putVintage" && r?.vintageId && r.vintageId !== o.id) remapVintage(o.id, r.vintageId);
-          if (r && !r.ok) rejected = r.error ?? "error";
+          if (r && !r.ok) {
+            rejected = r.error ?? "error";
+            failed.push({ op: o, error: rejected, at });
+          }
         });
-        set({ queue: state.queue.slice(batch.length), stuck: false, ...(rejected ? { rejected } : {}) });
+        // A newer copy of a refused record went up fine: the refused one is no longer needed.
+        const done = new Set(batch.flatMap((o, i) => (results[i]?.ok && opKey(o) ? [opKey(o)] : [])));
+        const still = state.failed.filter((f) => !done.has(opKey(f.op) ?? ""));
+        set({
+          queue: state.queue.slice(batch.length),
+          stuck: false,
+          ...(rejected || still.length !== state.failed.length ? { failed: [...still, ...failed] } : {}),
+          ...(rejected ? { rejected } : {}),
+        });
       }
-      if (!state.queue.length && !leaving) {
+      if (!state.queue.length && !leaving && state.me) {
         const data = await api<SyncData>("/api/sync");
         applySync(data);
         void fillLocations();
@@ -390,7 +569,7 @@ export function addVintage(v: Omit<VintageInfo, "id" | "wineId"> & { id?: string
 }
 
 export function saveList(list: WineList) {
-  const l = { ...list, updatedAt: new Date().toISOString() };
+  const l = { ...list, updatedAt: stamp() };
   const exists = state.lists.some((x) => x.id === l.id);
   set({ lists: exists ? state.lists.map((x) => (x.id === l.id ? l : x)) : [l, ...state.lists] });
   enqueue({ op: "putList", list: l });
@@ -402,7 +581,7 @@ export function newList(
   startsOn: string | null,
   place: WineList["place"] = null,
 ): WineList {
-  const at = new Date().toISOString();
+  const at = stamp();
   const l: WineList = {
     id: ulid(),
     title,
@@ -466,7 +645,7 @@ export function moveItem(listId: string, id: string, by: -1 | 1) {
 }
 
 export function blankTasting(vintageId: string, listItemId: string | null, depth: Depth): Tasting {
-  const at = new Date().toISOString();
+  const at = stamp();
   return {
     id: ulid(),
     vintageId,
@@ -495,7 +674,7 @@ const real = (vintageId: string) => state.aliases[vintageId] ?? vintageId;
 
 export function saveTasting(t: Tasting) {
   const old = state.tastings.find((x) => x.id === t.id);
-  const next = { ...t, vintageId: real(t.vintageId), updatedAt: new Date().toISOString() };
+  const next = { ...t, vintageId: real(t.vintageId), updatedAt: stamp() };
   // A page that does not deal with the place (location undefined) keeps the one found meanwhile.
   if (next.location === undefined) next.location = old?.location;
   if (next.cellarId === undefined) next.cellarId = old?.cellarId;
@@ -562,7 +741,7 @@ export function answerItem(itemId: string, vintageId: string | null, reveal: boo
 // ── 酒窖 ──────────────────────────────────────────────────────────────────────────────────────
 
 export function blankLot(vintageId: string, over: Partial<CellarLot> = {}): CellarLot {
-  const at = new Date().toISOString();
+  const at = stamp();
   return {
     id: ulid(),
     vintageId,
@@ -583,7 +762,7 @@ export function blankLot(vintageId: string, over: Partial<CellarLot> = {}): Cell
 }
 
 export function saveLot(lot: CellarLot) {
-  const next = { ...lot, vintageId: real(lot.vintageId), updatedAt: new Date().toISOString() };
+  const next = { ...lot, vintageId: real(lot.vintageId), updatedAt: stamp() };
   const exists = state.cellar.some((x) => x.id === lot.id);
   set({ cellar: exists ? state.cellar.map((x) => (x.id === lot.id ? next : x)) : [next, ...state.cellar] });
   enqueue({ op: "putCellar", lot: next });

@@ -8,6 +8,7 @@ import { FRIEND_MESSAGES } from "./messages-friends";
 import { PROFILE_MESSAGES } from "./messages-profile";
 import { RECS_MESSAGES } from "./messages-recs";
 import { REVIEW_MESSAGES } from "./messages-reviews";
+import { SYNC_MESSAGES } from "./messages-sync";
 
 export const MESSAGES: Record<string, { tw: string; en: string }> = {
   ...CELLAR_MESSAGES,
@@ -17,6 +18,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   ...PROFILE_MESSAGES,
   ...RECS_MESSAGES,
   ...REVIEW_MESSAGES,
+  ...SYNC_MESSAGES,
   我的分: { tw: "我的分數", en: "My score" },
   拖动打分: { tw: "拖動評分", en: "Slide to score" },
   清除: { tw: "清除", en: "Clear" },

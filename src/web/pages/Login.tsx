@@ -3,7 +3,7 @@ import type { Me } from "../../shared/model";
 import { LangSwitch } from "../LangSwitch";
 import { Logo } from "../Logo";
 import { t, tk } from "../i18n";
-import { api } from "../store";
+import { api, getState, unsentCount } from "../store";
 
 export const inWeChat = () => /MicroMessenger/i.test(navigator.userAgent);
 export const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -48,6 +48,13 @@ export function Login(props: { session: { google: boolean; dev: boolean; me: Me 
         </div>
         <p class="lead">{t("在酒庄 30 秒记下一款酒，回家后变成可搜索的个人酒库。不懂品酒术语也能上手。")}</p>
       </div>
+      {unsentCount(getState()) > 0 && (
+        <p class="notice" role="status">
+          {t("这部手机上还有 {n} 条记录没上传。登录过期了，重新登录后会自动上传。", {
+            n: unsentCount(getState()),
+          })}
+        </p>
+      )}
       {error && ERRORS[error] && (
         <p class="notice" role="alert">
           {t(ERRORS[error]!)}

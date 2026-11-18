@@ -70,6 +70,16 @@ const optNum = (v: unknown, min: number, max: number): number | null =>
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const iso = (v: unknown): string =>
   typeof v === "string" && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : now();
+/** How far ahead of the server a phone's edit time may be (its clock running fast). */
+const CLOCK_SLACK_MS = 2 * 60_000;
+/**
+ * When an edit was made, for "the later edit wins": the phone's time (stamped by the server's clock
+ * as the phone knows it), but never in the future, where it would beat every later edit.
+ */
+const editedAt = (v: unknown): string => {
+  const at = iso(v);
+  return Date.parse(at) > Date.now() + CLOCK_SLACK_MS ? now() : at;
+};
 
 // ── Reading ──────────────────────────────────────────────────────────────────────────────────
 
@@ -592,7 +602,7 @@ async function putTasting(db: DB, user: UserRow, t: Tasting) {
     .bind(tid)
     .first<{ user_id: string; updated_at: string }>();
   if (existing && existing.user_id !== user.id) fail("只能修改自己的品鉴");
-  const updatedAt = iso(t.updatedAt);
+  const updatedAt = editedAt(t.updatedAt);
   // A later edit from another phone already arrived: keep it.
   if (existing && existing.updated_at > updatedAt) return;
   let vintageId = await resolveVintage(db, id(t.vintageId));
@@ -725,7 +735,7 @@ async function putCellar(db: DB, user: UserRow, l: CellarLot) {
     .bind(cid)
     .first<{ user_id: string; updated_at: string }>();
   if (existing && existing.user_id !== user.id) fail("只能修改自己的酒窖");
-  const updatedAt = iso(l.updatedAt);
+  const updatedAt = editedAt(l.updatedAt);
   // A later change from another phone already arrived (开了一瓶 there): keep it.
   if (existing && existing.updated_at > updatedAt) return;
   const vintageId = await resolveVintage(db, id(l.vintageId));

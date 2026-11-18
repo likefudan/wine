@@ -21,7 +21,7 @@ const keys = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/ce
 export const googleEnabled = (env: Env) => !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 export const devLoginEnabled = (env: Env) => env.DEV_LOGIN === "1" && env.ENVIRONMENT !== "production";
 
-const cookieOptions = (c: Ctx) => ({
+const cookieOptions = <E extends { Bindings: Env }>(c: Ctx<E>) => ({
   path: "/",
   httpOnly: true,
   secure: new URL(c.req.url).protocol === "https:",
@@ -80,14 +80,30 @@ export function requireSameOrigin<E extends { Bindings: Env }>(c: Ctx<E>) {
     throw new HttpError(403, "csrf", "请求来源无效，请刷新页面重试");
 }
 
+/** A session used with less than this left is extended to SESSION_DAYS again (滚动续期). */
+const RENEW_BELOW_DAYS = 20;
+
 export async function currentUser<E extends { Bindings: Env }>(c: Ctx<E>): Promise<UserRow | null> {
   const raw = getCookie(c, SESSION_COOKIE);
   if (!raw) return null;
-  return c.env.DB.prepare(
-    "SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ? AND u.status != 'disabled'",
+  const hash = await sha256(raw);
+  const row = await c.env.DB.prepare(
+    "SELECT u.*, s.expires_at AS session_expires FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ? AND u.status != 'disabled'",
   )
-    .bind(await sha256(raw), now())
-    .first<UserRow>();
+    .bind(hash, now())
+    .first<UserRow & { session_expires: string }>();
+  if (!row) return null;
+  const { session_expires, ...user } = row;
+  // Someone who keeps using the site stays signed in: the Home Screen app has its own cookies,
+  // and signing in again every month is both a chore and a risk to notes not uploaded yet.
+  if (Date.parse(session_expires) - Date.now() < RENEW_BELOW_DAYS * 86400_000) {
+    const expires = new Date(Date.now() + SESSION_DAYS * 86400_000);
+    await c.env.DB.prepare("UPDATE sessions SET expires_at = ? WHERE id_hash = ?")
+      .bind(expires.toISOString(), hash)
+      .run();
+    setCookie(c, SESSION_COOKIE, raw, { ...cookieOptions(c), expires });
+  }
+  return user as UserRow;
 }
 
 export async function requireUser<E extends { Bindings: Env }>(c: Ctx<E>): Promise<UserRow> {

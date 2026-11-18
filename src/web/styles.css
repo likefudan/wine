@@ -742,9 +742,9 @@ h3 {
   font-size: 15px;
 }
 
+/* In the flow, not sticky: a sticky bar sat over each page's own sticky header (完成, 返回). */
 .sync-bar {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 20;
   display: flex;
   justify-content: center;
