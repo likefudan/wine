@@ -4,7 +4,8 @@ TTB's search exports at most 1,000 rows at a time, so this searches by date rang
 halves any range that holds more. It waits between requests. Run on GitHub Actions
 (Actions -> Export TTB); the CSV goes to the private R2 bucket, not the repository.
 
-  python3 scripts/ttb_export.py 2005-01-01 2026-11-17 ttb.csv [--probe]
+  python3 scripts/ttb_export.py 2005-01-01 "" ttb.csv     # "" = up to today
+  python3 scripts/ttb_export.py 2026-10-01 2026-10-03 x.csv --probe   # one search, printed
 """
 
 import csv
@@ -150,7 +151,9 @@ def walk(a, b, out, seen):
         print(f"  warning: one day holds {n} > 1000 records; some are missing", file=sys.stderr)
 
 
-start, end, path = dt.date.fromisoformat(args[0]), dt.date.fromisoformat(args[1]), args[2]
+start = dt.date.fromisoformat(args[0])
+end = dt.date.fromisoformat(args[1]) if args[1] else dt.date.today()
+path = args[2]
 with open(path, "w", newline="") as f:
     seen = set()
     if probe:
@@ -159,5 +162,13 @@ with open(path, "w", newline="") as f:
             rows = download(r)
             print(len(rows) - 1, "rows; first:", rows[:3], file=sys.stderr)
     else:
-        walk(start, end, csv.writer(f), seen)
-print(len(seen) - 1 if seen else 0, "records", file=sys.stderr)
+        out = csv.writer(f)
+        a = start
+        while a <= end:  # month by month, so progress shows and each walk stays small
+            b = min((a.replace(day=1) + dt.timedelta(days=32)).replace(day=1) - dt.timedelta(days=1), end)
+            walk(a, b, out, seen)
+            f.flush()
+            a = b + dt.timedelta(days=1)
+print(max(len(seen) - 1, 0), "records", file=sys.stderr)
+if not probe and len(seen) < 2:
+    raise SystemExit("nothing exported")

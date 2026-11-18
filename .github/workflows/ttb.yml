@@ -1,0 +1,40 @@
+name: Export TTB
+
+# Exports American wine label approvals from TTB's public COLA registry (README「American wine labels」)
+# into the test site's private photo bucket at ttb/ttb.csv. The registry exports 1,000 rows at a time,
+# so scripts/ttb_export.py walks the dates in small ranges, pausing between requests; a full run takes
+# an hour or two. Actions → Export TTB → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "从哪天起（YYYY-MM-DD）"
+        default: "2005-01-01"
+      to:
+        description: "到哪天（YYYY-MM-DD，留空是今天）"
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency: ttb-export
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: pip install -q requests beautifulsoup4 certifi
+      - name: Export
+        run: python3 scripts/ttb_export.py "${{ inputs.from }}" "${{ inputs.to || '' }}" ttb.csv
+      - run: npx wrangler r2 object put wine-photos-staging/ttb/ttb.csv --file ttb.csv --remote
+      - run: echo "### TTB: $(($(wc -l < ttb.csv) - 1)) label approvals saved to ttb/ttb.csv" >> "$GITHUB_STEP_SUMMARY"
