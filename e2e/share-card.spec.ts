@@ -7,7 +7,7 @@ test("a tasting makes a share image whose text can be edited", async ({ page }) 
   await page.fill('input[type="email"]', `share${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=只想快速记个分");
-  await page.click("text=新建酒单");
+  await page.click("text=新建品鉴");
   await page.fill('.sheet input[placeholder="Opus One"]', "Opus One");
   await page.fill('.sheet input[placeholder^="例如"]', "Napa");
   await page.click("text=建好了");
@@ -30,5 +30,5 @@ test("a tasting makes a share image whose text can be edited", async ({ page }) 
   await expect.poll(() => img.getAttribute("src")).not.toBe(before);
   await page.click(".share-card-opts >> text=深色");
   await page.click(".share-card-opts >> text=9:16");
-  await expect.poll(async () => (await img.evaluate((e: HTMLImageElement) => e.naturalHeight))).toBe(1920);
+  await expect.poll(async () => await img.evaluate((e: HTMLImageElement) => e.naturalHeight)).toBe(1920);
 });

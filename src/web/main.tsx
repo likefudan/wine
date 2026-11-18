@@ -148,6 +148,8 @@ function Shell() {
           : "";
   const fullScreen = path.startsWith("/taste") || path.startsWith("/add");
   const waiting = usePending();
+  // 记一杯 while looking at a list adds to that list.
+  const inList = /^\/lists\/([^/?]+)/.exec(path)?.[1];
   return (
     <div class="app">
       <PullRefresh enabled={!fullScreen} />
@@ -196,7 +198,7 @@ function Shell() {
           <nav class="tabbar glass-pane" aria-label={t("主菜单")}>
             <a href="/" class={tab === "lists" ? "on" : ""} aria-current={tab === "lists" ? "page" : undefined}>
               <ListIcon />
-              <span>{t("酒单")}</span>
+              <span>{t("品鉴")}</span>
             </a>
             <a
               href="/library"
@@ -216,7 +218,7 @@ function Shell() {
               <span>{t("我的")}</span>
             </a>
           </nav>
-          <a href="/add" class="dock-add" aria-label={t("记一杯")}>
+          <a href={inList ? `/add?list=${inList}` : "/add"} class="dock-add" aria-label={t("记一杯")}>
             <GlassIcon />
           </a>
         </div>

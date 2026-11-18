@@ -29,6 +29,8 @@ import {
   swatch,
   tastingNote,
 } from "../../shared/guide";
+import { COMPARABLE, compareLine, isComparable, nudge, previousTasting, scaleValue } from "../../shared/compare";
+import { aromasInNote } from "../../shared/notewords";
 import { DEPTHS, type Depth, type Tasting, type TastingDescriptor, type VintageInfo } from "../../shared/model";
 import { BackIcon, Choice, Field, Glass, ScoreSlider, WineName } from "../components";
 import { ask } from "../confirm";
@@ -57,6 +59,16 @@ export function Taste() {
   const saved = useStore((s) => s.tastings.find((x) => x.id === params.id));
   const vintage = useStore((s) => (saved ? s.vintages.find((v) => v.id === saved.vintageId) : undefined));
   const defaultDepth = useStore((s) => s.me?.depth ?? "quick");
+  /** The tasting (酒单) this note belongs to, named at the top so it is clear which series it is in. */
+  const list = useStore((s) => {
+    const item = saved?.listItemId ? s.items.find((i) => i.id === saved.listItemId) : undefined;
+    return item ? s.lists.find((l) => l.id === item.listId) : undefined;
+  });
+  const prevTasting = useStore((s) => (saved ? previousTasting(saved, s.items, s.tastings) : null));
+  const prevVintage = useStore((s) =>
+    prevTasting ? s.vintages.find((v) => v.id === prevTasting.vintageId) : undefined,
+  );
+  const prev: Prev | null = prevTasting ? { t: prevTasting, v: prevVintage } : null;
   const [x, setX] = useState<Tasting | undefined>(saved);
   const [switches, setSwitches] = useState(0);
   const [offer, setOffer] = useState<Depth | null>(null);
@@ -85,7 +97,7 @@ export function Taste() {
     return (
       <div class="page">
         <p class="empty">{t("找不到这条记录")}</p>
-        <a href="/">{t("回到酒单")}</a>
+        <a href="/">{t("回到品鉴")}</a>
       </div>
     );
 
@@ -120,6 +132,11 @@ export function Taste() {
   return (
     <div class="page taste">
       <header class="page-head sticky">
+        {list && (
+          <p class="belongs">
+            {t("属于")} <strong>{list.title}</strong>
+          </p>
+        )}
         <button type="button" class="icon-button" aria-label={t("返回")} onClick={done}>
           <BackIcon />
         </button>
@@ -165,9 +182,9 @@ export function Taste() {
       )}
       <TastingPlace id={x.id} fresh={query.new === "1"} />
       {x.depth === "quick" && <Quick x={x} v={vintage} patch={patch} />}
-      {x.depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} />}
+      {x.depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} prev={prev} />}
       {(x.depth === "standard" || x.depth === "expert") && (
-        <Systematic x={x} v={vintage} patch={patch} expert={x.depth === "expert"} />
+        <Systematic x={x} v={vintage} patch={patch} expert={x.depth === "expert"} prev={prev} />
       )}
       <div class="taste-foot">
         <button type="button" class="button block" onClick={() => setSharing(true)}>
@@ -259,16 +276,47 @@ function Conclusion(props: { x: Tasting; patch: Patch; expert?: boolean; standar
           </div>
         </>
       )}
-      <Field label={t("一句话")}>
-        <textarea
-          rows={props.expert ? 5 : 2}
-          maxLength={4000}
-          value={x.note ?? ""}
-          placeholder={t("可以用键盘上的话筒说")}
-          onInput={(e) => patch({ note: (e.target as HTMLTextAreaElement).value || null })}
-        />
-      </Field>
+      <NoteField x={x} patch={patch} rows={props.expert ? 5 : 2} />
     </section>
+  );
+}
+
+/**
+ * 一句话, and under it the vocabulary words the note mentions that aren't tags yet (自由文字转香气标签,
+ * src/shared/notewords.ts): one tap adds them, so「很多黑樱桃和雪茄盒」becomes two tags.
+ */
+function NoteField(props: { x: Tasting; patch: Patch; rows: number }) {
+  const { x, patch } = props;
+  const have = new Set(x.descriptors.map((d) => d.id));
+  const found = aromasInNote(x.note, currentLang()).filter((id) => !have.has(id));
+  const add = (ids: string[]) => patch({ descriptors: [...x.descriptors, ...ids.map((id) => ({ id, intensity: 2 }))] });
+  return (
+    <Field label={t("一句话")}>
+      <textarea
+        rows={props.rows}
+        maxLength={4000}
+        value={x.note ?? ""}
+        placeholder={t("可以用键盘上的话筒说")}
+        onInput={(e) => patch({ note: (e.target as HTMLTextAreaElement).value || null })}
+      />
+      {found.length > 0 && (
+        <div class="note-words">
+          <span class="small muted">{t("笔记里提到的香气，点一下加为标签：")}</span>
+          <div class="chips">
+            {found.map((id) => (
+              <button key={id} type="button" class="chip suggest" onClick={() => add([id])}>
+                + {p(DESCRIPTOR_BY_ID.get(id)!.name)}
+              </button>
+            ))}
+            {found.length > 1 && (
+              <button type="button" class="link small" onClick={() => add(found)}>
+                {t("全部加上")}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </Field>
   );
 }
 
@@ -407,8 +455,48 @@ function Hues(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
   );
 }
 
-function Note(props: { x: Tasting; v: VintageInfo }) {
+/** 和上一款比: one step less, the same, or one step more than the last wine, on this question's scale. */
+function CompareAnswers(props: {
+  prev: Prev;
+  field: keyof typeof COMPARABLE;
+  current: number | undefined;
+  onPick: (value: number) => void;
+}) {
+  const { prev, field } = props;
+  const base = scaleValue(prev.t, field)!;
+  const words = COMPARABLE[field];
+  const opts: { dir: -1 | 0 | 1; label: string }[] = [
+    { dir: -1, label: p(words.less) },
+    { dir: 0, label: t("差不多") },
+    { dir: 1, label: p(words.more) },
+  ];
+  const name = !prev.v
+    ? t("上一款")
+    : prev.v.wine.toLowerCase().includes(prev.v.producer.toLowerCase())
+      ? prev.v.wine
+      : `${prev.v.producer} ${prev.v.wine}`;
+  return (
+    <div class="compare-prev">
+      <p class="small muted">{t("说不准的话，和上一款（{wine}）比：", { wine: name })}</p>
+      <div class="chips">
+        {opts.map((o) => (
+          <button
+            key={o.dir}
+            type="button"
+            class={props.current !== undefined && props.current === nudge(field, base, o.dir) ? "chip on" : "chip"}
+            onClick={() => props.onPick(nudge(field, base, o.dir))}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Note(props: { x: Tasting; v: VintageInfo; prev?: Prev | null }) {
   const { x, v } = props;
+  const vs = props.prev ? compareLine(currentLang(), x, props.prev.t) : "";
   const text = tastingNote(
     currentLang(),
     v.color,
@@ -417,11 +505,16 @@ function Note(props: { x: Tasting; v: VintageInfo }) {
     x.palate,
     x.descriptors.map((d) => d.id),
   );
-  if (!text) return null;
+  if (!text && !vs) return null;
   return (
     <div class="tasting-note">
-      <span class="tier-label">{t("你描述的是")}</span>
-      <p>{text}</p>
+      {text && (
+        <>
+          <span class="tier-label">{t("你描述的是")}</span>
+          <p>{text}</p>
+        </>
+      )}
+      {vs && <p class="small compare-line">{vs}</p>}
     </div>
   );
 }
@@ -484,15 +577,7 @@ function Quick(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
         )}
       </section>
       <section class="step">
-        <Field label={t("一句话")}>
-          <textarea
-            rows={2}
-            maxLength={4000}
-            value={x.note ?? ""}
-            placeholder={t("可以用键盘上的话筒说")}
-            onInput={(e) => patch({ note: (e.target as HTMLTextAreaElement).value || null })}
-          />
-        </Field>
+        <NoteField x={x} patch={patch} rows={2} />
         <Field label={t("还会买吗？")} group>
           <Choice
             label={t("还会买吗？")}
@@ -528,7 +613,13 @@ function chosenOption(q: GuideQuestion, x: Tasting) {
   return best.value;
 }
 
-function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: boolean }) {
+/** My note on the wine before this one in the same list (和上一款比), and that wine. */
+interface Prev {
+  t: Tasting;
+  v: VintageInfo | undefined;
+}
+
+function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: boolean; prev: Prev | null }) {
   const { x, v, patch } = props;
   const questions = beginnerQuestions(v.color);
   const [step, setStep] = useState(props.fresh ? 0 : questions.length);
@@ -545,7 +636,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
   if (step >= questions.length)
     return (
       <div class="steps">
-        <Note x={x} v={v} />
+        <Note x={x} v={v} prev={props.prev} />
         <div class="beginner-done">
           <button type="button" class="link small" onClick={() => go(0)}>
             {t("重新走一遍问题")}
@@ -663,6 +754,14 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
             ))}
           </div>
         )}
+        {props.prev && isComparable(q.field) && scaleValue(props.prev.t, q.field) !== undefined && (
+          <CompareAnswers
+            prev={props.prev}
+            field={q.field}
+            current={scaleValue(x, q.field)}
+            onPick={(value) => setAnswer(value)}
+          />
+        )}
         <button type="button" class="why-toggle" aria-expanded={why} onClick={() => setWhy(!why)}>
           {t("为什么问这个？")}
         </button>
@@ -688,7 +787,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; fresh: bool
 
 // ── 进阶 / 专业 ──────────────────────────────────────────────────────────────────────────────
 
-function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: boolean }) {
+function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: boolean; prev: Prev | null }) {
   const { x, v, patch, expert } = props;
   const a = x.appearance,
     n = x.nose,
@@ -974,7 +1073,7 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; expert: b
         {expert && <FinishTimer value={pl.finishSeconds} onChange={(s) => setP({ finishSeconds: s })} />}
       </section>
 
-      <Note x={x} v={v} />
+      <Note x={x} v={v} prev={props.prev} />
 
       <section class="step">
         <h2 class="step-title">4 · {t("结论")}</h2>

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { avaOf } from "../src/shared/ava";
 import { appellationsIn, areasIn, placePath, tidyPlace } from "../src/shared/place";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
+import { toCsv, toJson } from "../src/shared/export";
+import { compareLine, nudge, previousTasting } from "../src/shared/compare";
+import { growthOf, suggestStandard } from "../src/shared/growth";
+import { aromasInNote } from "../src/shared/notewords";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
@@ -226,6 +230,228 @@ describe("子产区 suggestions", () => {
     expect(appellationsIn(null).length).toBeGreaterThan(300);
     expect(areasIn("California")).toEqual(expect.arrayContaining(["Napa Valley", "Sonoma County", "Paso Robles"]));
     expect(areasIn("Bordeaux")).toEqual(["Graves", "Médoc", "Rive Droite"]);
+  });
+});
+
+describe("export", () => {
+  const v = {
+    id: "V1",
+    wineId: "W1",
+    producer: "Ridge",
+    wine: 'Monte Bello, "Estate"',
+    year: 2019,
+    color: "red" as const,
+    country: "USA",
+    region: "California",
+    area: null,
+    appellation: "Santa Cruz Mountains",
+    grapes: ["Cabernet Sauvignon"],
+    abv: 13.5,
+  };
+  const tasting = {
+    id: "T1",
+    vintageId: "V1",
+    listItemId: "I1",
+    tastedAt: "2026-11-18T20:00:00.000Z",
+    depth: "standard" as const,
+    appearance: { intensity: 3 as const, hue: "ruby" },
+    nose: { intensity: 4 as const },
+    palate: { tannin: 5 as const },
+    extra: {},
+    guesses: {},
+    descriptors: [{ id: "blackcurrant", intensity: 2 }],
+    quality: null,
+    score: 94,
+    buyAgain: true,
+    boughtQty: null,
+    priceUsd: 250,
+    note: "=1+1 line\nbreak",
+    photoId: null,
+    updatedAt: "2026-11-18T20:00:00.000Z",
+  };
+  const data = {
+    lists: [
+      {
+        id: "L1",
+        title: "Napa",
+        kind: "winery" as const,
+        startsOn: null,
+        place: null,
+        note: null,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    items: [{ id: "I1", listId: "L1", vintageId: "V1", position: 0, priceUsd: null, createdAt: "" }],
+    vintages: [v],
+    tastings: [tasting],
+  };
+
+  it("writes one row per note, quoted and defused, headers in the language", () => {
+    const csv = toCsv(data, "zh-CN");
+    expect(csv.startsWith("﻿日期,酒庄,酒名")).toBe(true);
+    const [, row] = csv.slice(1).split("\r\n");
+    expect(row).toContain('"Monte Bello, ""Estate"""');
+    expect(row).toContain("赤霞珠");
+    expect(row).toContain("Napa");
+    expect(row).toContain("黑醋栗");
+    expect(row).toContain('"\'=1+1 line\nbreak"');
+    expect(toCsv(data, "en")).toContain("Date,Producer,Wine");
+  });
+
+  it("keeps everything in JSON", () => {
+    const back = JSON.parse(toJson(data, "x"));
+    expect(back.tastings[0]).toEqual(tasting);
+    expect(back.vintages[0]).toEqual(v);
+  });
+});
+
+describe("aromas in a note", () => {
+  it("finds the vocabulary's words in any language, longest first", () => {
+    expect(aromasInNote("很多黑樱桃和雪茄盒，单宁有点紧", "zh-CN")).toEqual(["black-cherry", "cigar-box"]);
+    expect(aromasInNote("黑醋栗、杏仁", "zh-CN")).toEqual(["blackcurrant", "almond"]);
+    expect(aromasInNote("Lots of cassis, cedar and a smoky finish", "en")).toEqual(["blackcurrant", "cedar", "smoke"]);
+    expect(aromasInNote("Pineapple; not much oak", "en")).toEqual(["pineapple"]);
+    expect(aromasInNote("applesauce", "en")).toEqual([]);
+  });
+  it("skips words after a negation", () => {
+    expect(aromasInNote("没有玫瑰，有一点黑莓", "zh-CN")).toEqual(["blackberry"]);
+    expect(aromasInNote("no vanilla, some cherries", "en")).toEqual(["red-cherry"]);
+  });
+  it("reads 奶油 as each language means it", () => {
+    expect(aromasInNote("奶油", "zh-CN")).toEqual(["cream"]);
+    expect(aromasInNote("奶油", "zh-TW")).toEqual(["butter"]);
+  });
+});
+
+describe("compare with the last wine", () => {
+  const base = {
+    vintageId: "V",
+    tastedAt: "",
+    depth: "beginner" as const,
+    appearance: {},
+    extra: {},
+    guesses: {},
+    descriptors: [],
+    quality: null,
+    buyAgain: null,
+    boughtQty: null,
+    priceUsd: null,
+    note: null,
+    photoId: null,
+    updatedAt: "2026-11-18T00:00:00Z",
+  };
+  const items = [
+    { id: "I1", listId: "L", vintageId: "V1", position: 0, priceUsd: null, createdAt: "" },
+    { id: "I2", listId: "L", vintageId: "V2", position: 1, priceUsd: null, createdAt: "" },
+    { id: "I3", listId: "L", vintageId: "V3", position: 2, priceUsd: null, createdAt: "" },
+    { id: "J1", listId: "M", vintageId: "V4", position: 0, priceUsd: null, createdAt: "" },
+  ];
+  const t1 = {
+    ...base,
+    id: "T1",
+    listItemId: "I1",
+    nose: {},
+    palate: { tannin: 3 as const, acidity: 4 as const },
+    score: 90,
+  };
+  const t3 = {
+    ...base,
+    id: "T3",
+    listItemId: "I3",
+    nose: {},
+    palate: { tannin: 5 as const, acidity: 4 as const },
+    score: 93,
+  };
+
+  it("finds the nearest earlier wine I have a note on, in the same list", () => {
+    expect(previousTasting(t3, items, [t1, t3])?.id).toBe("T1");
+    expect(previousTasting(t1, items, [t1, t3])).toBeNull();
+    expect(previousTasting({ id: "X", listItemId: null }, items, [t1])).toBeNull();
+  });
+
+  it("says how they differ and keeps nudges on the scale", () => {
+    expect(compareLine("zh-CN", t3, t1)).toBe("和上一款比：酸度差不多，单宁更高，我的分高 3 分");
+    expect(compareLine("en", t3, t1)).toBe(
+      "Compared with the last wine: acidity about the same, tannin higher, 3 points higher on my score",
+    );
+    expect(nudge("palate.tannin", 5, 1)).toBe(5);
+    expect(nudge("palate.sweetness", 5, 1)).toBe(6);
+    expect(nudge("palate.body", 1, -1)).toBe(1);
+  });
+});
+
+describe("growth", () => {
+  const note = (id: string, at: string, wine: string, ids: string[], score: number | null, depth = "beginner") => ({
+    id,
+    vintageId: wine,
+    listItemId: null,
+    tastedAt: at,
+    depth: depth as "beginner",
+    appearance: {},
+    nose: {},
+    palate: {},
+    extra: {},
+    guesses: {},
+    descriptors: ids.map((d) => ({ id: d, intensity: 2 })),
+    quality: null,
+    score,
+    buyAgain: null,
+    boughtQty: null,
+    priceUsd: null,
+    note: null,
+    photoId: null,
+    updatedAt: at,
+  });
+  const wine = (id: string, wineId: string, grapes: string[], country: string, region: string) => ({
+    id,
+    wineId,
+    producer: "P",
+    wine: id,
+    year: 2020,
+    color: "red" as const,
+    country,
+    region,
+    appellation: null,
+    grapes,
+    abv: null,
+  });
+  const vintages = [
+    wine("V1", "W1", ["Cabernet Sauvignon"], "USA", "California"),
+    wine("V2", "W1", ["Cabernet Sauvignon"], "USA", "California"),
+    wine("V3", "W3", ["Pinot Noir"], "France", "Burgundy"),
+  ];
+  const tastings = [
+    note("A", "2026-10-03T10:00:00Z", "V1", ["blackcurrant"], 88),
+    note("B", "2026-11-02T10:00:00Z", "V2", ["blackcurrant", "cedar", "vanilla"], 92),
+    note("C", "2026-11-05T10:00:00Z", "V3", ["red-cherry"], null, "standard"),
+    note("empty", "2026-11-06T10:00:00Z", "V3", [], null),
+  ];
+
+  it("counts words, grapes and places, and how each month went", () => {
+    const g = growthOf(tastings, vintages);
+    expect(g.wines).toBe(3);
+    expect(g.words[0]).toEqual({ id: "blackcurrant", n: 2 });
+    expect(g.words).toHaveLength(4);
+    expect(g.grapes).toEqual([
+      { name: "Cabernet Sauvignon", n: 1 },
+      { name: "Pinot Noir", n: 1 },
+    ]);
+    expect(g.regions).toBe(2);
+    expect(g.months.map((m) => m.month)).toEqual(["2026-10", "2026-11"]);
+    expect(g.months[1]).toMatchObject({
+      wines: 2,
+      wordsPerWine: 2,
+      avgScore: 92,
+      newWords: ["cedar", "vanilla", "red-cherry"],
+    });
+  });
+
+  it("suggests 进阶 after about ten beginner notes", () => {
+    const many = Array.from({ length: 10 }, (_, i) => note(`N${i}`, "2026-11-01T00:00:00Z", "V1", [], 90));
+    expect(suggestStandard(growthOf(many, vintages), "beginner")).toBe(true);
+    expect(suggestStandard(growthOf(many, vintages), "standard")).toBe(false);
+    expect(suggestStandard(growthOf(many.slice(1), vintages), "beginner")).toBe(false);
   });
 });
 

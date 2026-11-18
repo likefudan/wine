@@ -81,7 +81,7 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
     if (
       v === "public" &&
       !(await ask(
-        t("公开后，拿到链接的人不用登录就能看到酒单里的酒和成员的名字；揭晓后还能看到大家的评分和笔记。确定公开？"),
+        t("公开后，拿到链接的人不用登录就能看到品鉴里的酒和成员的名字；揭晓后还能看到大家的评分和笔记。确定公开？"),
         { danger: false },
       ))
     )
@@ -95,7 +95,7 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
       : t("盲评中：每款酒交了自己的评价后，才能看到别人的分");
 
   return (
-    <Sheet title={t("分享酒单")} onClose={props.onClose}>
+    <Sheet title={t("分享品鉴")} onClose={props.onClose}>
       <div class="form share">
         {b.list.joinOpen ? (
           <>
@@ -135,7 +135,7 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
               setCard(await drawListCard(b).catch(() => null));
             }}
           >
-            {t("酒单卡片")}
+            {t("品鉴卡片")}
           </button>
         </div>
         <p class="muted small">{blindLine}</p>
@@ -221,7 +221,7 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
                   type="button"
                   class="link danger small"
                   onClick={async () => {
-                    if (!(await ask(t("把 {name} 移出酒单？TA 的笔记会留在 TA 自己的酒库里。", { name: m.name }))))
+                    if (!(await ask(t("把 {name} 移出这次品鉴？TA 的笔记会留在 TA 自己的酒库里。", { name: m.name }))))
                       return;
                     try {
                       props.onChange(await removeMember(b.list.id, m.id));
@@ -244,7 +244,7 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
 
 function CardSheet(props: { src: string; title: string; onClose: () => void }) {
   return (
-    <Sheet title={t("酒单卡片")} onClose={props.onClose}>
+    <Sheet title={t("品鉴卡片")} onClose={props.onClose}>
       <div class="form">
         <img class="list-card-img" src={props.src} alt={props.title} />
         <p class="muted small center">{t("长按图片保存，发到微信")}</p>
@@ -459,7 +459,7 @@ export async function drawListCard(b: Board): Promise<string> {
       if (modules.get(r, c)) ctx.fillRect(100 + c * cell, qy + r * cell, Math.ceil(cell), Math.ceil(cell));
   ctx.fillStyle = "#fff7f2";
   ctx.font = `600 40px ${sans}`;
-  ctx.fillText(b.key && b.list.joinOpen ? t("扫码加入酒单") : t("扫码查看酒单"), 420, qy + 110);
+  ctx.fillText(b.key && b.list.joinOpen ? t("扫码加入品鉴") : t("扫码查看品鉴"), 420, qy + 110);
   ctx.fillStyle = "rgba(255,247,242,0.6)";
   ctx.font = `400 28px ${sans}`;
   ctx.fillText(location.host, 420, qy + 160);

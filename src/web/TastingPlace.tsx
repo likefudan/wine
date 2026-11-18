@@ -177,7 +177,7 @@ function LocationSheet(props: {
           onInput={(address) => setDraft({ ...draft, address, placeId: null })}
           onPlace={(p) => setDraft({ ...draft, address: p.address || null, placeId: p.id, lat: p.lat, lng: p.lng })}
         />
-        <p class="small muted">{t("品酒地点只有你自己看得到，不会出现在分享的酒单里。")}</p>
+        <p class="small muted">{t("品酒地点只有你自己看得到，不会出现在分享的品鉴里。")}</p>
         <button type="submit" class="button primary">
           {t("保存")}
         </button>
