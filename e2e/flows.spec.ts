@@ -196,7 +196,6 @@ test("choosing an aroma lights it up in place without moving the words around it
   await page.click("text=开始品鉴");
   await page.click(".depth-tabs >> text=进阶");
 
-  await page.click(".family-name >> text=红色水果");
   const raspberry = page.locator(".aroma-family .chip >> text=覆盆子");
   const plum = page.locator(".aroma-family .chip >> text=红李子");
   // Page coordinates, not viewport ones: the tap may scroll the chip into view.

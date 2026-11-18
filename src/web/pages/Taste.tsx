@@ -259,7 +259,7 @@ function Conclusion(props: { x: Tasting; patch: Patch; expert?: boolean; standar
 }
 
 /** Chips for aroma words; tap to add, tap again to remove (专业: tap cycles the strength). */
-function AromaChips(props: { ids: string[]; x: Tasting; patch: Patch; strength?: boolean }) {
+function AromaChips(props: { ids: string[]; x: Tasting; patch: Patch; strength?: boolean; row?: boolean }) {
   const { x, patch } = props;
   const toggle = (id: string) => {
     const has = x.descriptors.find((d) => d.id === id);
@@ -269,7 +269,7 @@ function AromaChips(props: { ids: string[]; x: Tasting; patch: Patch; strength?:
     patch({ descriptors: x.descriptors.filter((d) => d.id !== id) });
   };
   return (
-    <div class="chips">
+    <div class={props.row ? "chips family-row" : "chips"}>
       {props.ids.map((id) => {
         const d = DESCRIPTOR_BY_ID.get(id)!;
         const on = x.descriptors.find((s) => s.id === id);
@@ -305,11 +305,9 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
       ...(d.hint ? [d.hint.zh, d.hint.tw, d.hint.en.toLowerCase()] : []),
     ].some((s) => s.includes(ql));
   const chosen = props.x.descriptors.map((d) => d.id);
-  // Families start closed: the whole vocabulary at once is a wall of words.
-  const [open, setOpen] = useState<string[]>([]);
-  // A chosen word stays where it is and only lights up. Moving it to a list above made everything
-  // under the finger jump on every tap; the summary of what is chosen sits below the families, so
-  // when it grows it only pushes down what comes after.
+  // Every family is open, one row each, its words scrolling sideways. Nothing needs a tap to open, so
+  // nothing on the page moves: a chosen word stays where it is and only lights up, and the summary
+  // of what is chosen sits below the families, where growing only pushes down what comes after.
   return (
     <div class="aroma-picker">
       <input
@@ -328,22 +326,20 @@ function AromaPicker(props: { x: Tasting; v: VintageInfo; patch: Patch; strength
             const all = wordsOf([f.id], color);
             const words = all.filter(hit);
             if (!words.length) return null;
-            const shown = !!ql || open.includes(f.id);
             const picked = all.filter((d) => chosen.includes(d.id)).length;
             return (
               <div key={f.id} class="aroma-family">
-                <button
-                  type="button"
-                  class="family-name"
-                  aria-expanded={shown}
-                  onClick={() => setOpen(shown ? open.filter((o) => o !== f.id) : [...open, f.id])}
-                >
-                  {shown ? "▾" : "▸"} {p(f.name)}
+                <span class="family-name">
+                  {p(f.name)}
                   {picked > 0 && <span class="family-count">{picked}</span>}
-                </button>
-                {shown && (
-                  <AromaChips ids={words.map((d) => d.id)} x={props.x} patch={props.patch} strength={props.strength} />
-                )}
+                </span>
+                <AromaChips
+                  ids={words.map((d) => d.id)}
+                  x={props.x}
+                  patch={props.patch}
+                  strength={props.strength}
+                  row
+                />
               </div>
             );
           })}
