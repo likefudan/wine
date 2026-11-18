@@ -29,7 +29,6 @@ import {
   l2SweetnessOf,
   l2Three,
   l2ThreeOf,
-  forLevelTwo,
   huesFor,
   swatch,
   tastingNote,
@@ -510,12 +509,11 @@ function ChosenAromas(props: { w: Words; strength?: boolean; hideEmpty?: boolean
 
 const levels = (words: Tri[]) => words.map((w, i) => ({ value: i + 1, label: p(w) }));
 
-function Hues(props: { x: Tasting; v: VintageInfo; patch: Patch; levelTwo?: boolean }) {
+function Hues(props: { x: Tasting; v: VintageInfo; patch: Patch }) {
   const { x, v, patch } = props;
-  const hues = huesFor(v.color, x.appearance.hue);
   return (
     <div class="hues">
-      {(props.levelTwo ? forLevelTwo(hues, x.appearance.hue) : hues).map((h) => (
+      {huesFor(v.color, x.appearance.hue).map((h) => (
         <button
           key={h}
           type="button"
@@ -621,7 +619,7 @@ function LevelTwoTable(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: 
           />
         </Field>
         <span class="field-label">{t("颜色")}</span>
-        <Hues x={x} v={v} patch={patch} levelTwo />
+        <Hues x={x} v={v} patch={patch} />
       </section>
 
       <section class="step">
@@ -691,10 +689,7 @@ function LevelTwoTable(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: 
           <Choice
             label={t("品质等级")}
             value={x.quality ?? undefined}
-            options={forLevelTwo(Object.keys(QUALITY_WORDS), x.quality).map((k) => ({
-              value: k,
-              label: p(QUALITY_WORDS[k]!),
-            }))}
+            options={Object.entries(QUALITY_WORDS).map(([k, w]) => ({ value: k, label: p(w) }))}
             onChange={(val) => patch({ quality: val ?? null })}
           />
         </Field>
@@ -999,7 +994,7 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Prev 
         <p class="q-how">{p(q.how)}</p>
         {q.field === "appearance" && (
           <>
-            <Hues x={x} v={v} patch={patch} levelTwo />
+            <Hues x={x} v={v} patch={patch} />
             <Field label={t("颜色深浅")} group>
               <Choice
                 label={t("颜色深浅")}

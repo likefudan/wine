@@ -154,11 +154,6 @@ export function glassColor(color: WineColor, appearance?: Appearance, year?: num
 /** The hues offered for this wine, in the order they get older. */
 export const huesFor = (color: WineColor, hue?: string) => HUES[hueFamily(color, hue)];
 
-/** Level 3 only: Level 2 has no lemon-green, brown, or faulty. Shown on Level 2 only once chosen. */
-export const L3_ONLY = new Set(["lemon-green", "brown", "faulty"]);
-export const forLevelTwo = (keys: readonly string[], chosen?: string | null) =>
-  keys.filter((k) => !L3_ONLY.has(k) || k === chosen);
-
 export const swatch = (hue: string, depth: 1 | 2 | 3 = 2) => GLASS[hue]?.[depth - 1] ?? "#888";
 
 // ── 入门 questions ───────────────────────────────────────────────────────────────────────────
@@ -484,6 +479,7 @@ const QUALITY_Q: GuideQuestion = {
     "That's the quality level. My score is how much you liked it; this is your objective judgement.",
   ),
   options: [
+    { label: T("有毛病", "有毛病", "Faulty"), value: "faulty" },
     { label: T("差", "差", "Poor"), value: "poor" },
     { label: T("还行", "還行", "Acceptable"), value: "acceptable" },
     { label: T("好", "好", "Good"), value: "good" },

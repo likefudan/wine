@@ -13,7 +13,6 @@ import {
   L2_SWEETNESS,
   QUALITY_WORDS,
   beginnerQuestions,
-  forLevelTwo,
   glassColor,
   huesFor,
   l2SweetnessOf,
@@ -82,20 +81,20 @@ describe("the Level 2 table", () => {
     for (const v of [1, 2, 3, 4, 5, 6]) expect(L2_SWEETNESS.map((s) => s.value)).toContain(l2SweetnessOf(v));
   });
 
+  it("offers the colours and quality words on the Level 2 sheet (Issue 2.1, 2026)", () => {
+    expect(huesFor("white")).toEqual(["lemon-green", "lemon", "gold", "amber", "brown"]);
+    expect(huesFor("red")).toEqual(["purple", "ruby", "garnet", "tawny", "brown"]);
+    expect(Object.keys(QUALITY_WORDS)).toEqual(["faulty", "poor", "acceptable", "good", "very-good", "outstanding"]);
+    const quality = beginnerQuestions("red").find((q) => q.field === "quality")!;
+    expect(quality.options.map((o) => o.value)).toEqual(Object.keys(QUALITY_WORDS));
+  });
+
   it("writes low, medium, high with the 进阶 words", () => {
     expect(l2Three(LEVEL_WORDS).map((s) => [s.value, s.label.zh])).toEqual([
       [1, "低"],
       [3, "中"],
       [5, "高"],
     ]);
-  });
-
-  it("offers only Level 2 colours and quality words, keeping one already chosen", () => {
-    expect(forLevelTwo(huesFor("white"))).toEqual(["lemon", "gold", "amber"]);
-    expect(forLevelTwo(huesFor("red"))).toEqual(["purple", "ruby", "garnet", "tawny"]);
-    expect(forLevelTwo(huesFor("white"), "lemon-green")).toContain("lemon-green");
-    expect(forLevelTwo(Object.keys(QUALITY_WORDS))).not.toContain("faulty");
-    expect(forLevelTwo(Object.keys(QUALITY_WORDS), "faulty")[0]).toBe("faulty");
   });
 });
 
