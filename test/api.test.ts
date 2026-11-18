@@ -88,6 +88,36 @@ describe("wines", () => {
     expect(n!.n).toBe(1);
   });
 
+  it("stores 产区 at the same level for every country", async () => {
+    const c = await signIn();
+    await c.ops([
+      vintageOp({ producer: "Opus One", wine: "Opus One", country: "United States", region: "Napa Valley" }),
+      vintageOp({
+        producer: "Chateau Latour",
+        wine: "Grand Vin",
+        country: "France",
+        region: "Bordeaux",
+        appellation: "Pauillac",
+      }),
+      vintageOp({
+        producer: "Shafer",
+        wine: "Hillside Select",
+        country: "",
+        region: "Napa Valley",
+        appellation: "Stags Leap District",
+      }),
+    ]);
+    const rows = await env.DB.prepare(
+      "SELECT p.name, p.country, p.region, w.appellation FROM wines w JOIN producers p ON p.id = w.producer_id",
+    ).all<{ name: string; country: string; region: string; appellation: string }>();
+    const where = Object.fromEntries(rows.results.map((r) => [r.name, [r.country, r.region, r.appellation]]));
+    expect(where).toEqual({
+      "Opus One": ["USA", "California", "Napa Valley"],
+      "Chateau Latour": ["France", "Bordeaux", "Pauillac"],
+      Shafer: ["USA", "California", "Stags Leap District"],
+    });
+  });
+
   it("finds wines in the shared catalogue by any part of the name", async () => {
     const c = await signIn();
     await c.ops([
