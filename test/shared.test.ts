@@ -3,6 +3,7 @@ import { avaOf } from "../src/shared/ava";
 import { appellationsIn, areasIn, placePath, tidyPlace } from "../src/shared/place";
 import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
 import { toCsv, toJson } from "../src/shared/export";
+import { aromasInNote } from "../src/shared/notewords";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
 import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
@@ -299,5 +300,23 @@ describe("export", () => {
     const back = JSON.parse(toJson(data, "x"));
     expect(back.tastings[0]).toEqual(tasting);
     expect(back.vintages[0]).toEqual(v);
+  });
+});
+
+describe("aromas in a note", () => {
+  it("finds the vocabulary's words in any language, longest first", () => {
+    expect(aromasInNote("很多黑樱桃和雪茄盒，单宁有点紧", "zh-CN")).toEqual(["black-cherry", "cigar-box"]);
+    expect(aromasInNote("黑醋栗、杏仁", "zh-CN")).toEqual(["blackcurrant", "almond"]);
+    expect(aromasInNote("Lots of cassis, cedar and a smoky finish", "en")).toEqual(["blackcurrant", "cedar", "smoke"]);
+    expect(aromasInNote("Pineapple; not much oak", "en")).toEqual(["pineapple"]);
+    expect(aromasInNote("applesauce", "en")).toEqual([]);
+  });
+  it("skips words after a negation", () => {
+    expect(aromasInNote("没有玫瑰，有一点黑莓", "zh-CN")).toEqual(["blackberry"]);
+    expect(aromasInNote("no vanilla, some cherries", "en")).toEqual(["red-cherry"]);
+  });
+  it("reads 奶油 as each language means it", () => {
+    expect(aromasInNote("奶油", "zh-CN")).toEqual(["cream"]);
+    expect(aromasInNote("奶油", "zh-TW")).toEqual(["butter"]);
   });
 });

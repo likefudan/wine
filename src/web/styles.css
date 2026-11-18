@@ -1720,3 +1720,14 @@ html.standalone body {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* 一句话 → 香气标签 */
+.note-words {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.chip.suggest {
+  border-style: dashed;
+  border-color: var(--brass);
+}
