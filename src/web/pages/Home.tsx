@@ -2,6 +2,7 @@ import { useLocation } from "preact-iso";
 import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import { LIST_KINDS, type ListKind, type ListPlace, type PlaceKind } from "../../shared/model";
+import { NearbyPicker } from "../NearbyPicker";
 import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
 import { fmtDate, t, tk } from "../i18n";
@@ -44,6 +45,18 @@ export function ListPlaceFields(props: {
   const put = (p: ListPlace) => props.onChange(p.name.trim() || p.address?.trim() ? p : null);
   return (
     <>
+      <NearbyPicker
+        kind={f.suggest ? f.kind : "any"}
+        onPick={(p) => {
+          // 只用这里的地址 (or a home): the name stays as typed.
+          if (!p.name || !f.suggest) {
+            put({ ...v, address: p.address, id: null, lat: p.lat, lng: p.lng });
+            return;
+          }
+          put({ name: p.name, id: p.id, address: p.address, lat: p.lat, lng: p.lng });
+          props.onPicked?.(p.name);
+        }}
+      />
       <PlaceInput
         label={t(f.label)}
         kind={f.kind}

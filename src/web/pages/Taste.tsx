@@ -35,7 +35,8 @@ import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { GrapePicker } from "../GrapePicker";
 import { currentLang, p, t, tk } from "../i18n";
-import { deleteTasting, flushPending, getState, saveTasting, updateMe, useStore } from "../store";
+import { deleteTasting, flushPending, getState, saveTasting as saveAll, updateMe, useStore } from "../store";
+import { TastingPlace } from "../TastingPlace";
 
 /**
  * 品鉴: one sheet, four depths over the same fields (docs/design.zh.md §3.3, §3.4). Switching depth
@@ -44,6 +45,8 @@ import { deleteTasting, flushPending, getState, saveTasting, updateMe, useStore 
  */
 
 type Patch = (change: Partial<Tasting>) => void;
+/** The place is set by TastingPlace straight in the store: this page's copy of it may be stale. */
+const saveTasting = (x: Tasting) => saveAll({ ...x, location: undefined });
 const redLike = (v: VintageInfo, x: Tasting): "red" | "white" =>
   v.color === "red" || huesFor(v.color, x.appearance.hue)[0] === "purple" ? "red" : "white";
 
@@ -168,6 +171,7 @@ export function Taste() {
           </button>
         </div>
       )}
+      <TastingPlace id={x.id} fresh={query.new === "1"} />
       {x.depth === "quick" && <Quick x={x} v={vintage} patch={patch} />}
       {x.depth === "beginner" && <Beginner x={x} v={vintage} patch={patch} fresh={query.new === "1"} />}
       {(x.depth === "standard" || x.depth === "expert") && (
