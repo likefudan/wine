@@ -123,9 +123,16 @@ export function CellarPage() {
     <div class="page">
       <div class="section-head">
         <h1 class="section-head-title">{t("酒窖")}</h1>
-        <a href="/cellar/add" class="button small primary">
-          ＋ {t("放进酒窖")}
-        </a>
+        <span class="section-head-actions">
+          {full.length > 0 && (
+            <a href="/recs" class="button small">
+              {t("今晚开哪瓶")}
+            </a>
+          )}
+          <a href="/cellar/add" class="button small primary">
+            ＋ {t("放进酒窖")}
+          </a>
+        </span>
       </div>
       {full.length === 0 ? (
         <div class="empty">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { type CellarLot, DEFAULT_SIZE, type ProWindow } from "../shared/cellar";
+import type { ProScore } from "../shared/taste";
 import { tidyPlace } from "../shared/place";
 import {
   type Board,
@@ -39,6 +40,8 @@ export interface State {
   cellar: CellarLot[];
   /** The critics' drinking windows for wines in the cellar (from the server, read-only). */
   proWindows: ProWindow[];
+  /** The critics' scores on my wines (from the server, read-only): 推荐's 我与评论家. */
+  proScores: ProScore[];
   queue: Op[];
   syncedAt: string | null;
   /** The last change the server refused, to show once. */
@@ -57,6 +60,7 @@ const EMPTY: State = {
   tastings: [],
   cellar: [],
   proWindows: [],
+  proScores: [],
   queue: [],
   syncedAt: null,
   rejected: null,
@@ -179,6 +183,7 @@ export function applySync(data: SyncData) {
     tastings: data.tastings,
     // An older server sends no cellar: keep the phone's.
     ...(data.cellar ? { cellar: data.cellar, proWindows: data.proWindows ?? [] } : {}),
+    ...(data.proScores ? { proScores: data.proScores } : {}),
     syncedAt: new Date().toISOString(),
   });
 }

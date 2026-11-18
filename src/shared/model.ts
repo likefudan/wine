@@ -5,6 +5,7 @@
  */
 
 import type { CellarLot, ProWindow } from "./cellar";
+import type { ProScore } from "./taste";
 
 export const COLORS = ["red", "white", "rose", "sparkling", "dessert"] as const;
 export type WineColor = (typeof COLORS)[number];
@@ -413,6 +414,8 @@ export interface SyncData {
   cellar?: CellarLot[];
   /** The critics' drinking window for wines in my cellar, from the pro-review lookups. */
   proWindows?: ProWindow[];
+  /** The critics' scores on wines I have tasted or keep (推荐: 我与评论家). Missing from an older server. */
+  proScores?: ProScore[];
 }
 
 /** One change made on the phone, sent in order and safe to send twice (POST /api/ops). */
