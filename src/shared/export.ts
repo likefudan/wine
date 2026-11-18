@@ -40,7 +40,7 @@ const COLUMNS: [Tri, (r: Row) => string | number | null | undefined][] = [
   [T("子产区", "子產區", "Appellation"), (r) => r.v?.appellation],
   [T("品种", "品種", "Grapes"), (r) => r.v?.grapes.map((g) => grapeName(g, r.lang)).join(" / ")],
   [T("酒精度", "酒精濃度", "ABV"), (r) => r.v?.abv],
-  [T("酒单", "酒單", "List"), (r) => r.list?.title],
+  [T("品鉴", "品飲", "Tasting"), (r) => r.list?.title],
   [T("深度", "深度", "Depth"), (r) => pick(DEPTH_NAMES[r.t.depth] ?? DEPTH_NAMES.quick!, r.lang)],
   [T("我的分", "我的分數", "My score"), (r) => r.t.score],
   [
