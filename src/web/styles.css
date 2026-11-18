@@ -668,8 +668,20 @@ h3 {
 .chip.on.s1 {
   opacity: 0.75;
 }
+/* Strength dots sit on the chip's corner, so a tap never changes its width and the row never re-wraps. */
+.chip {
+  position: relative;
+}
 .chip .dots {
-  margin-left: 4px;
+  position: absolute;
+  top: -7px;
+  right: 4px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--primary-ink);
+  font-size: 11px;
+  line-height: 14px;
   letter-spacing: -1px;
 }
 .chips {
@@ -953,8 +965,23 @@ h3 {
   gap: 10px;
 }
 .aroma-chosen {
-  padding-bottom: 8px;
-  border-bottom: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.family-count {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
 }
 .aroma-tier {
   display: flex;
