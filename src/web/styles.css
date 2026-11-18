@@ -539,6 +539,19 @@ h3 {
   align-items: center;
   gap: 10px;
   pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* Scrolling on down the page slides the bar out below the screen; scrolling back brings it up. */
+.dock.hidden {
+  transform: translate(-50%, calc(100% + max(12px, env(safe-area-inset-bottom)) + 16px));
+}
+.dock.hidden > * {
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    transition-duration: 0.12s;
+  }
 }
 .dock > * {
   pointer-events: auto;

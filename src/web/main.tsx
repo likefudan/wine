@@ -9,6 +9,7 @@ import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
 import { CellarIcon, GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
+import { useHideOnScroll } from "./hideOnScroll";
 import { ConfirmHost } from "./confirm";
 import { FriendsPage } from "./Friends";
 import { RecsPage } from "./pages/Recs";
@@ -60,6 +61,7 @@ function Shell() {
   const [online, setOnline] = useState(navigator.onLine);
   useLang();
   const { path, route } = useLocation();
+  const dockHidden = useHideOnScroll(path);
   // Leaving a screen sends what was changed on it.
   useEffect(() => {
     if (boot.state === "in") flushPending();
@@ -210,7 +212,7 @@ function Shell() {
         </Router>
       </main>
       {!fullScreen && (
-        <div class="dock">
+        <div class={dockHidden ? "dock hidden" : "dock"}>
           <nav class="tabbar glass-pane" aria-label={t("主菜单")}>
             <a href="/" class={tab === "lists" ? "on" : ""} aria-current={tab === "lists" ? "page" : undefined}>
               <ListIcon />
