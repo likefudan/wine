@@ -160,8 +160,13 @@ export const swatch = (hue: string, depth: 1 | 2 | 3 = 2) => GLASS[hue]?.[depth 
 
 export type GuideField =
   | "appearance"
+  | "appearance.clarity"
+  | "nose.condition"
   | "nose.intensity"
   | "aromas"
+  | "flavours"
+  | "palate.flavour"
+  | "quality"
   | "palate.sweetness"
   | "palate.acidity"
   | "palate.tannin"
@@ -390,14 +395,105 @@ const FINISH_Q: GuideQuestion = {
   ],
 };
 
-/** The questions for a colour of wine, in tasting order. */
+const CLARITY_Q: GuideQuestion = {
+  field: "appearance.clarity",
+  ask: T("酒是清澈透亮的，还是有点浑？", "酒是清澈透亮的，還是有點渾？", "Is the wine clear, or a bit cloudy?"),
+  how: T("对着光看一眼。", "對著光看一眼。", "Hold it up to the light."),
+  why: T(
+    "这叫「澄清度」。大多数酒都是清澈的；浑浊可能是没过滤，也可能是酒出了问题。",
+    "這叫「澄清度」。大多數酒都是清澈的；混濁可能是沒過濾，也可能是酒出了問題。",
+    "That's clarity. Most wines are clear; haze can mean it wasn't filtered, or that something is wrong.",
+  ),
+  options: [
+    { label: T("清澈", "清澈", "Clear"), value: "clear" },
+    { label: T("有点浑", "有點渾", "Cloudy"), value: "hazy" },
+  ],
+};
+
+const CONDITION_Q: GuideQuestion = {
+  field: "nose.condition",
+  ask: T("闻起来干净吗？", "聞起來乾淨嗎？", "Does it smell clean?"),
+  how: T(
+    "留意有没有湿纸板、发霉的地下室或醋的味道。",
+    "留意有沒有濕紙板、發霉的地下室或醋的味道。",
+    "Check for wet cardboard, a musty cellar or vinegar.",
+  ),
+  why: T(
+    "这叫「状态」。有这些怪味，多半是酒坏了（比如木塞污染），不是你的鼻子有问题。",
+    "這叫「狀態」。有這些怪味，多半是酒壞了（例如軟木塞污染），不是你的鼻子有問題。",
+    "That's condition. Those smells usually mean a faulty wine (cork taint, say), not your nose.",
+  ),
+  options: [
+    { label: T("干净，没有怪味", "乾淨，沒有怪味", "Clean, nothing odd"), value: "clean" },
+    { label: T("有怪味", "有怪味", "Something's off"), value: "unclean" },
+  ],
+};
+
+const FLAVOUR_INT_Q: GuideQuestion = {
+  field: "palate.flavour",
+  ask: T("嘴里的味道浓不浓？", "嘴裡的味道濃不濃？", "How strong are the flavours in your mouth?"),
+  how: T(
+    "喝一小口，在嘴里转一圈再咽。",
+    "喝一小口，在嘴裡轉一圈再嚥。",
+    "Take a small sip, move it round your mouth, then swallow.",
+  ),
+  why: T(
+    "这叫「风味强度」，和闻到的香气强度常常一致。",
+    "這叫「風味強度」，和聞到的香氣強度常常一致。",
+    "That's flavour intensity. It often matches how strong the smell was.",
+  ),
+  options: [
+    { label: T("淡", "淡", "Light"), value: 2 },
+    { label: T("适中", "適中", "Medium"), value: 3 },
+    { label: T("很浓", "很濃", "Pronounced"), value: 5 },
+  ],
+};
+
+const FLAVOURS_Q: GuideQuestion = {
+  field: "flavours",
+  ask: T("嘴里尝到了什么味道？", "嘴裡嚐到了什麼味道？", "What do you taste?"),
+  how: T(
+    "常常和闻到的一样，也可能多出或少了几样。",
+    "常常和聞到的一樣，也可能多出或少了幾樣。",
+    "Often the same as what you smelled, sometimes more or fewer.",
+  ),
+  why: T(
+    "这叫「风味特征」，用的是和香气一样的词。",
+    "這叫「風味特徵」，用的是和香氣一樣的詞。",
+    "These are the flavour characteristics, described with the same words as the aromas.",
+  ),
+  options: [],
+};
+
+const QUALITY_Q: GuideQuestion = {
+  field: "quality",
+  ask: T("整体来说，这款酒做得怎么样？", "整體來說，這款酒做得怎麼樣？", "Overall, how well made is this wine?"),
+  how: T(
+    "想四件事：各部分平衡吗？余味长吗？味道够浓吗？层次多吗？不是问你喜不喜欢。",
+    "想四件事：各部分平衡嗎？餘韻長嗎？味道夠濃嗎？層次多嗎？不是問你喜不喜歡。",
+    "Think of four things: is it balanced, is the finish long, are the flavours intense, is it complex? Not whether you like it.",
+  ),
+  why: T(
+    "这叫「品质等级」。「我的分」记你有多喜欢，这里记客观判断。",
+    "這叫「品質等級」。「我的分數」記你有多喜歡，這裡記客觀判斷。",
+    "That's the quality level. My score is how much you liked it; this is your objective judgement.",
+  ),
+  options: [
+    { label: T("有毛病", "有毛病", "Faulty"), value: "faulty" },
+    { label: T("差", "差", "Poor"), value: "poor" },
+    { label: T("还行", "還行", "Acceptable"), value: "acceptable" },
+    { label: T("好", "好", "Good"), value: "good" },
+    { label: T("很好", "很好", "Very good"), value: "very-good" },
+    { label: T("惊艳", "驚艷", "Outstanding"), value: "outstanding" },
+  ],
+};
+
+/** The questions for a colour of wine, in the order of the WSET Level 2 tasting grid. */
 export function beginnerQuestions(color: WineColor): GuideQuestion[] {
-  const qs = [APPEARANCE_Q, NOSE_Q, AROMA_Q, SWEET_Q, ACID_Q];
+  const qs = [APPEARANCE_Q, CLARITY_Q, CONDITION_Q, NOSE_Q, AROMA_Q, SWEET_Q, ACID_Q];
   if (color === "red") qs.push(TANNIN_Q);
   if (color === "sparkling") qs.push(MOUSSE_Q);
-  qs.push(BODY_Q);
-  if (color === "red" || color === "dessert") qs.push(ALCOHOL_Q);
-  qs.push(FINISH_Q);
+  qs.push(ALCOHOL_Q, BODY_Q, FLAVOUR_INT_Q, FLAVOURS_Q, FINISH_Q, QUALITY_Q);
   return qs;
 }
 
@@ -489,3 +585,36 @@ export function tastingNote(
   const s = join(parts, lang);
   return lang === "en" && s ? s[0]!.toUpperCase() + s.slice(1) : s;
 }
+
+// ── 入门's table: the WSET Level 2 grid ─────────────────────────────────────────────────────
+
+/**
+ * Level 2 has three steps where 进阶 has five (low – medium – high), and four for sweetness. The
+ * table writes 1, 3 or 5 (sweetness 1, 2, 3 or 5) into the same fields 进阶 uses, and reads any
+ * value back as the step it falls in, so an answer from a question or from 进阶 shows chosen.
+ */
+export interface LevelTwoStep {
+  value: number;
+  label: Tri;
+}
+export const l2Three = (words: Tri[]): LevelTwoStep[] => [
+  { value: 1, label: words[0]! },
+  { value: 3, label: words[2]! },
+  { value: 5, label: words[4]! },
+];
+export const l2ThreeOf = (v: number | undefined) => (v === undefined ? undefined : v <= 2 ? 1 : v === 3 ? 3 : 5);
+export const L2_SWEETNESS: LevelTwoStep[] = [
+  { value: 1, label: T("干", "不甜", "dry") },
+  { value: 2, label: T("微甜", "微甜", "off-dry") },
+  { value: 3, label: T("中等甜", "中等甜", "medium") },
+  { value: 5, label: T("甜", "甜", "sweet") },
+];
+export const l2SweetnessOf = (v: number | undefined) => (v === undefined ? undefined : v <= 2 ? v : v <= 4 ? 3 : 5);
+/** Aroma and flavour intensity on Level 2: light, medium, pronounced. */
+export const INTENSITY_WORDS: Tri[] = [
+  T("淡", "淡", "light"),
+  T("", "", ""),
+  T("中", "中", "medium"),
+  T("", "", ""),
+  T("浓郁", "濃郁", "pronounced"),
+];

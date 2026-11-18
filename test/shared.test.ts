@@ -1,14 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { avaOf } from "../src/shared/ava";
 import { appellationsIn, areasIn, placePath, tidyPlace } from "../src/shared/place";
-import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES } from "../src/shared/descriptors";
+import { BEGINNER_GROUPS, DESCRIPTORS, FAMILIES, wordsOf } from "../src/shared/descriptors";
 import { toCsv, toJson } from "../src/shared/export";
 import { compareLine, nudge, previousTasting } from "../src/shared/compare";
 import { growthOf, suggestStandard } from "../src/shared/growth";
 import { aromasInNote } from "../src/shared/notewords";
 import { versus } from "../src/shared/versus";
 import { GRAPES, canonicalGrape, commonGrapes, grapeName } from "../src/shared/grapes";
-import { beginnerQuestions, glassColor, huesFor, tastingNote } from "../src/shared/guide";
+import {
+  LEVEL_WORDS,
+  L2_SWEETNESS,
+  beginnerQuestions,
+  glassColor,
+  huesFor,
+  l2SweetnessOf,
+  l2Three,
+  l2ThreeOf,
+  tastingNote,
+} from "../src/shared/guide";
 import { COLORS, ID_RE, nameKey, ulid } from "../src/shared/model";
 import { type ProseTasting, type ProseWine, tastingFacts, wineFacts, wrap } from "../src/shared/prose";
 
@@ -25,6 +35,57 @@ describe("vocabulary", () => {
     for (const g of BEGINNER_GROUPS)
       for (const f of [...(g.families ?? []), ...(g.branches ?? []).flatMap((b) => b.families)])
         expect(families.has(f)).toBe(true);
+  });
+});
+
+describe("WSET word lists", () => {
+  it("files every word under known families, and offers each group words at both levels", () => {
+    const families = new Set(FAMILIES.map((f) => f.id));
+    for (const d of DESCRIPTORS) for (const f of d.also ?? []) expect(families.has(f)).toBe(true);
+    for (const g of BEGINNER_GROUPS) {
+      const sets = g.branches ? g.branches.map((b) => b.families) : [g.families ?? []];
+      for (const fs of sets) {
+        expect(wordsOf(fs, "red", "L2").length + wordsOf(fs, "white", "L2").length).toBeGreaterThan(0);
+      }
+    }
+    for (const f of FAMILIES.filter((f) => f.id !== "ripeness"))
+      expect(wordsOf([f.id], "red", "L3").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the level lists apart: pear drop is L3 only, candy L2 only", () => {
+    const l2 = wordsOf(
+      FAMILIES.map((f) => f.id),
+      "white",
+      "L2",
+    ).map((d) => d.id);
+    const l3 = wordsOf(
+      FAMILIES.map((f) => f.id),
+      "white",
+      "L3",
+    ).map((d) => d.id);
+    expect(l3).toContain("pear-drop");
+    expect(l2).not.toContain("pear-drop");
+    expect(l2).toContain("candy");
+    expect(l3).not.toContain("candy");
+    expect(l2).not.toContain("graphite");
+    expect(l3).not.toContain("graphite");
+  });
+});
+
+describe("the Level 2 table", () => {
+  it("reads any answer as the Level 2 step it falls in", () => {
+    expect([1, 2, 3, 4, 5].map(l2ThreeOf)).toEqual([1, 1, 3, 5, 5]);
+    expect([1, 2, 3, 4, 5, 6].map(l2SweetnessOf)).toEqual([1, 2, 3, 3, 5, 5]);
+    expect(l2ThreeOf(undefined)).toBeUndefined();
+    for (const v of [1, 2, 3, 4, 5, 6]) expect(L2_SWEETNESS.map((s) => s.value)).toContain(l2SweetnessOf(v));
+  });
+
+  it("writes low, medium, high with the 进阶 words", () => {
+    expect(l2Three(LEVEL_WORDS).map((s) => [s.value, s.label.zh])).toEqual([
+      [1, "低"],
+      [3, "中"],
+      [5, "高"],
+    ]);
   });
 });
 

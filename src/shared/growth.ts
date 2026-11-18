@@ -1,3 +1,4 @@
+import { isBlindId } from "./blind";
 import { type Depth, type Tasting, type VintageInfo, toDepth } from "./model";
 
 /**
@@ -60,7 +61,10 @@ interface MonthSum {
 
 export function growthOf(tastings: readonly Tasting[], vintages: readonly VintageInfo[]): Growth {
   const byId = new Map(vintages.map((v) => [v.id, v]));
-  const notes = tastings.filter(isFilled).sort((a, b) => a.tastedAt.localeCompare(b.tastedAt));
+  // 盲品 glasses wait for 对答案 before they count.
+  const notes = tastings
+    .filter((t) => isFilled(t) && !isBlindId(t.vintageId))
+    .sort((a, b) => a.tastedAt.localeCompare(b.tastedAt));
   const words = new Map<string, number>();
   const grapes = new Map<string, number>();
   const countries = new Map<string, number>();

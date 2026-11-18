@@ -1,3 +1,4 @@
+import { isBlindId } from "../shared/blind";
 import type { ComponentChildren } from "preact";
 import { useEffect } from "preact/hooks";
 import { COLOR_WORDS } from "../shared/guide";
@@ -24,6 +25,18 @@ export function Glass(props: { color: string; size?: number; label?: string }) {
 /** Producer, wine and vintage, the way every row shows a wine. */
 export function WineName(props: { v: VintageInfo; sub?: boolean }) {
   const { v } = props;
+  // 盲品: the glass's own name (blindVintage), until the answer is in.
+  if (isBlindId(v.id))
+    return (
+      <span class="wine-name">
+        <span class="wine-producer blind-label">{v.wine}</span>
+        {props.sub !== false && (
+          <span class="wine-sub">
+            {t("盲品")} · {p(COLOR_WORDS[v.color])}
+          </span>
+        )}
+      </span>
+    );
   const sameName = v.wine.trim().toLowerCase() === v.producer.trim().toLowerCase();
   const lang = currentLang();
   const sub = [
@@ -178,6 +191,19 @@ export const CameraIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
     <circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+  </svg>
+);
+/** 盲品: an eye struck through. */
+export const BlindIcon = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+    <path
+      d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M4 20 20 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
   </svg>
 );
 export const ListIcon = () => (

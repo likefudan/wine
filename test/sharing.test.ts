@@ -76,7 +76,7 @@ describe("分享与共同评价", () => {
     const peek = await boardOf(stranger, list.id, key);
     expect(peek.status).toBe(200);
     expect(peek.data).toMatchObject({ signedIn: false, member: false, canJoin: true, key: null });
-    expect(peek.data.items.map((i) => i.vintage.producer)).toEqual([
+    expect(peek.data.items.map((i) => i.vintage?.producer)).toEqual([
       "Opus One",
       "Caymus Vineyards",
       "Rombauer Vineyards",

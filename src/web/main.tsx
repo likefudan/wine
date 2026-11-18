@@ -6,10 +6,13 @@ import { LocationProvider, Route, Router, useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
+import { AnswersPage, BlindStart } from "./Blind";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
+import { useHideOnScroll } from "./hideOnScroll";
 import { ConfirmHost } from "./confirm";
 import { FriendsPage } from "./Friends";
+import { RecsPage } from "./pages/Recs";
 import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
@@ -58,6 +61,7 @@ function Shell() {
   const [online, setOnline] = useState(navigator.onLine);
   useLang();
   const { path, route } = useLocation();
+  const dockHidden = useHideOnScroll(path);
   // Leaving a screen sends what was changed on it.
   useEffect(() => {
     if (boot.state === "in") flushPending();
@@ -143,14 +147,15 @@ function Shell() {
   if (!me.depth) return <Welcome />;
 
   const tab =
-    path === "/" || path.startsWith("/lists") || path.startsWith("/friends")
+    path === "/" || path.startsWith("/lists") || path.startsWith("/friends") || path.startsWith("/answers")
       ? "lists"
       : path.startsWith("/library") || path.startsWith("/wine") || path.startsWith("/cellar")
         ? "library"
         : path.startsWith("/me")
           ? "me"
           : "";
-  const fullScreen = path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add");
+  const fullScreen =
+    path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add") || path.startsWith("/blind");
   const waiting = usePending();
   const due = useCellarAlerts().length;
   return (
@@ -189,6 +194,8 @@ function Shell() {
           <Route path="/lists/:id" component={ListPage} />
           <Route path="/l/:id" component={JoinIn} />
           <Route path="/add" component={AddWine} />
+          <Route path="/blind" component={BlindStart} />
+          <Route path="/answers/:id" component={AnswersPage} />
           <Route path="/taste/:id" component={Taste} />
           <Route path="/library" component={Library} />
           <Route path="/wine/:id" component={WinePage} />
@@ -198,11 +205,12 @@ function Shell() {
           <Route path="/cellar/:id" component={CellarLotPage} />
           <Route path="/me" component={MePage} />
           <Route path="/friends" component={FriendsPage} />
+          <Route path="/recs" component={RecsPage} />
           <Route default component={Home} />
         </Router>
       </main>
       {!fullScreen && (
-        <div class="dock">
+        <div class={dockHidden ? "dock hidden" : "dock"}>
           <nav class="tabbar glass-pane" aria-label={t("主菜单")}>
             <a href="/" class={tab === "lists" ? "on" : ""} aria-current={tab === "lists" ? "page" : undefined}>
               <ListIcon />

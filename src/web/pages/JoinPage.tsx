@@ -1,3 +1,4 @@
+import { shownVintage } from "../../shared/blind";
 import { useLocation, useRoute } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
@@ -125,8 +126,8 @@ export function JoinPage(props: { signedIn: boolean }) {
           <li key={i.id} class="row-wrap">
             <span class="row-n num">{n + 1}</span>
             <button type="button" class="row" onClick={() => setOpen(i.id)} disabled={!i.open || !i.notes.length}>
-              <Glass color={glassColor(i.vintage.color, undefined, i.vintage.year)} />
-              <WineName v={i.vintage} />
+              <Glass color={glassColor(shownVintage(i).color, undefined, shownVintage(i).year)} />
+              <WineName v={shownVintage(i)} />
               <span class="row-side">
                 {i.avg !== null ? (
                   <span class="row-score num">{i.avg}</span>

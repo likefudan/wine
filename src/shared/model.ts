@@ -5,6 +5,8 @@
  */
 
 import type { CellarLot, ProWindow } from "./cellar";
+import type { BlindInfo } from "./blind";
+import type { ProScore } from "./taste";
 
 export const COLORS = ["red", "white", "rose", "sparkling", "dessert"] as const;
 export type WineColor = (typeof COLORS)[number];
@@ -97,10 +99,17 @@ export interface Extra {
   glass?: string;
   dayOpen?: number;
 }
+/** 盲品 猜一猜 (src/shared/blind.ts). Places in English, as the wines have them. */
 export interface Guesses {
   grape?: string;
+  country?: string;
+  /** 产区 (older guesses: any place, as typed). */
   region?: string;
+  /** 大区 or 子产区. */
+  sub?: string;
   vintage?: number;
+  /** A PRICE_BANDS id. */
+  price?: string;
 }
 
 export interface TastingDescriptor {
@@ -139,6 +148,11 @@ export interface Tasting {
    * null: not from my cellar.
    */
   cellarId?: string | null;
+  /**
+   * 盲品: the glass's label and colour. While the wine is not known, vintageId is BLIND. undefined (an
+   * older app) keeps what the server has.
+   */
+  blind?: BlindInfo | null;
   updatedAt: string;
 }
 
@@ -298,12 +312,18 @@ export interface BoardNote {
   palate: Palate;
   descriptors: string[];
   note: string | null;
+  /** 盲品: what they guessed, once the wine is revealed. */
+  guesses?: Guesses;
+  /** 盲品: the price they wrote down, for scoring the price guess. */
+  priceUsd?: number | null;
 }
 
 export interface BoardItem {
   id: string;
   position: number;
-  vintage: VintageInfo;
+  /** null: a 盲品 glass not revealed yet. */
+  vintage: VintageInfo | null;
+  blind?: BlindInfo | null;
   /** How many people have handed in a note on it. */
   rated: number;
   /** false while 盲评 hides the others' notes: only `rated` is known. */
@@ -343,10 +363,15 @@ export interface Board {
 export interface ListItem {
   id: string;
   listId: string;
+  /** BLIND for a 盲品 glass whose wine has not been revealed. */
   vintageId: string;
   position: number;
   priceUsd: number | null;
   createdAt: string;
+  /** 盲品: the glass's label and colour (only the host adds these). */
+  blind?: BlindInfo | null;
+  /** 盲品: the host's answer, sent to the host only; 揭晓 (or the host, alone) makes it the vintage. */
+  answerVintageId?: string | null;
 }
 
 /**
@@ -413,6 +438,8 @@ export interface SyncData {
   cellar?: CellarLot[];
   /** The critics' drinking window for wines in my cellar, from the pro-review lookups. */
   proWindows?: ProWindow[];
+  /** The critics' scores on wines I have tasted or keep (推荐: 我与评论家). Missing from an older server. */
+  proScores?: ProScore[];
 }
 
 /** One change made on the phone, sent in order and safe to send twice (POST /api/ops). */

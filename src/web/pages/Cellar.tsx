@@ -129,6 +129,11 @@ export function CellarView() {
 
   return (
     <>
+      {full.length > 0 && (
+        <a href="/recs" class="button small cellar-recs">
+          {t("今晚开哪瓶")} ›
+        </a>
+      )}
       {full.length === 0 ? (
         <div class="empty">
           <p>{t("买了酒就放进来：放在哪、花了多少、什么时候喝。到了适饮期会提醒你，开一瓶就顺手记一杯。")}</p>

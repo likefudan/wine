@@ -1,17 +1,21 @@
 // Translations for every page text, keyed by the Simplified Chinese in the code (test/i18n.test.ts
 // checks none is missing). zh-TW uses Taiwan phrasing (登入, 網路, 品飲), not a character swap.
 
+import { BLIND_MESSAGES } from "./messages-blind";
 import { CELLAR_MESSAGES } from "./messages-cellar";
 import { COST_MESSAGES } from "./messages-costs";
 import { FRIEND_MESSAGES } from "./messages-friends";
 import { PROFILE_MESSAGES } from "./messages-profile";
+import { RECS_MESSAGES } from "./messages-recs";
 import { REVIEW_MESSAGES } from "./messages-reviews";
 
 export const MESSAGES: Record<string, { tw: string; en: string }> = {
   ...CELLAR_MESSAGES,
   ...COST_MESSAGES,
   ...FRIEND_MESSAGES,
+  ...BLIND_MESSAGES,
   ...PROFILE_MESSAGES,
+  ...RECS_MESSAGES,
   ...REVIEW_MESSAGES,
   我的分: { tw: "我的分數", en: "My score" },
   拖动打分: { tw: "拖動評分", en: "Slide to score" },
@@ -355,11 +359,24 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   陈年潜力: { tw: "陳年潛力", en: "Ageing potential" },
   "3–5 分钟": { tw: "3–5 分鐘", en: "3–5 min" },
   "喝过不少，要完整的品鉴表": { tw: "喝過不少，要完整的品飲表", en: "I've tasted a fair bit and want the full grid" },
+  香气特征: { tw: "香氣特徵", en: "Aroma characteristics" },
+  颜色: { tw: "顏色", en: "Colour" },
+  重新回答: { tw: "重新回答", en: "Start again" },
+  用问答重新填表: { tw: "用問答重新填表", en: "Fill in by questions again" },
+  回到表格: { tw: "回到表格", en: "Back to the table" },
+  一题一题帮我填: { tw: "一題一題幫我填", en: "Help me fill it in, one question at a time" },
+  "不知道怎么填？用大白话一题一题问你，答完自动填进下面的表格": {
+    tw: "不知道怎麼填？用白話一題一題問你，答完自動填進下面的表格",
+    en: "Not sure what to put? Answer plain questions one at a time, and they fill in the table below",
+  },
+  "重新回答会清空表格里的内容，从第一题开始。": {
+    tw: "重新回答會清空表格裡的內容，從第一題開始。",
+    en: "Answering again clears the table and starts from the first question.",
+  },
   "找香气，例如 雪松": { tw: "找香氣，例如 雪松", en: "Find an aroma, e.g. cedar" },
   你描述的是: { tw: "你描述的是", en: "What you described" },
   香气: { tw: "香氣", en: "Aromas" },
   更多香气: { tw: "更多香氣", en: "More aromas" },
-  重新走一遍问题: { tw: "重新走一遍問題", en: "Go through the questions again" },
   "第 {n} 题，共 {all} 题": { tw: "第 {n} 題，共 {all} 題", en: "Question {n} of {all}" },
   颜色深浅: { tw: "顏色深淺", en: "Depth of colour" },
   换个方向再找: { tw: "換個方向再找", en: "Try another direction" },

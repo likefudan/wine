@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono } from "hono";
+import { BLIND } from "../shared/blind";
 import { DESCRIPTORS } from "../shared/descriptors";
 import { ID_RE, isLang, ulid } from "../shared/model";
 import {
@@ -80,7 +81,10 @@ export const SCHEMA = {
     community: SOURCED_NUMBER("avg", { count: { type: ["integer", "null"] } }),
     price_usd: SOURCED_NUMBER("avg"),
     drink_window: { type: ["string", "null"] },
-    aromas: { type: "array", items: { type: "string", enum: DESCRIPTORS.map((d) => d.id) } },
+    aromas: {
+      type: "array",
+      items: { type: "string", enum: DESCRIPTORS.filter((d) => d.wset.length).map((d) => d.id) },
+    },
     summary: {
       type: "object",
       additionalProperties: false,
@@ -260,7 +264,7 @@ interface ReviewRow {
 }
 
 async function loadVintage(db: DB, rawId: string): Promise<VintageRow> {
-  if (!ID_RE.test(rawId)) throw new HttpError(404, "not_found", "找不到这款酒");
+  if (!ID_RE.test(rawId) || rawId === BLIND) throw new HttpError(404, "not_found", "找不到这款酒");
   const row = await db
     .prepare(
       `${VINTAGE_SELECT} WHERE v.id = COALESCE((SELECT vintage_id FROM vintage_aliases WHERE alias_id = ?1), ?1)`,

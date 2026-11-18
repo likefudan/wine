@@ -5,6 +5,7 @@ import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "
 import { Choice, Field } from "../components";
 import { CostsPanel } from "../Costs";
 import { GrowthPanel } from "../Growth";
+import { TastePanel } from "./Recs";
 import { Face, ProfileSheet } from "../Profile";
 import { LangSwitch } from "../LangSwitch";
 import { ask } from "../confirm";
@@ -27,7 +28,7 @@ export function Avatar() {
   return me ? <Face name={me.name ?? me.email} picture={me.picture} class="tab-avatar" /> : null;
 }
 
-type MeTab = "growth" | "tasting" | "general" | "members";
+type MeTab = "growth" | "taste" | "tasting" | "general" | "members";
 
 /** How many newcomers wait for approval (owners only): a dot on 我的 and on its 成员 tab. */
 let pending = 0;
@@ -76,6 +77,7 @@ export function MePage() {
   };
   const tabs: { id: MeTab; label: string }[] = [
     { id: "growth", label: t("成长") },
+    { id: "taste", label: t("口味") },
     { id: "tasting", label: t("记录偏好") },
     { id: "general", label: t("通用") },
     ...(me.owner ? [{ id: "members" as const, label: t("管理") }] : []),
@@ -111,6 +113,7 @@ export function MePage() {
         ))}
       </div>
       {tab === "growth" && <GrowthPanel />}
+      {tab === "taste" && <TastePanel />}
       {tab === "tasting" && (
         <section class="group" role="tabpanel">
           <Field label={t("默认品鉴深度")} hint={t(DEPTH_INFO[me.depth ?? "quick"].who)} group>

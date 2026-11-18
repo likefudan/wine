@@ -28,11 +28,14 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await expect(page.locator(".grape-picker .chip.on")).toHaveText(["赤霞珠", "梅洛", "品丽珠"]);
   await page.click("text=开始品鉴");
 
-  // 入门: plain questions, one at a time.
+  // 入门 opens on its table; the plain questions, one at a time, fill it in.
+  await page.click("text=一题一题帮我填");
   await expect(page.locator(".q-ask")).toHaveText("杯里的酒最像哪个颜色？");
   await page.click(".hue >> nth=1");
   await page.click(".choice >> text=深");
   await page.click("text=下一题");
+  await page.click(".answer >> text=清澈");
+  await page.click("text=干净，没有怪味");
   await page.click("text=正常，一闻就有");
   await page.click(".answer >> text=水果");
   await page.click("text=黑色、紫色的果子");
@@ -41,12 +44,27 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await page.click("text=完全不甜，像无糖茶");
   await page.click("text=流一点");
   await page.click("text=很干，像咬了一口没熟的柿子");
-  await page.click(".answer >> text=全脂奶");
   await page.click("text=有一点暖");
+  await page.click(".answer >> text=全脂奶");
+  await page.click(".answer >> text=适中");
+  // Flavours start from what the nose found.
+  await page.click("button:has-text('和闻到的一样')");
+  await page.click("text=下一题");
   await page.click("text=很久，十几秒以上");
+  await page.click(".answer >> text=很好");
   await expect(page.locator(".tasting-note p")).toHaveText(
-    "深宝石红，黑醋栗香气，高单宁，中酸度，酒体中等，中酒精，余味长",
+    "深宝石红，黑醋栗香气，高单宁，中酸度，酒体中等，中酒精，口中有黑醋栗，余味长",
   );
+  // The answers fill in the Level 2 table, where every item can still be changed.
+  const on = (label: string) => page.locator(`.level-two .choice[aria-label="${label}"] button.on`);
+  await expect(on("澄清度")).toHaveText("清澈");
+  await expect(on("状态")).toHaveText("干净");
+  await expect(on("单宁")).toHaveText("高");
+  await expect(on("酸度")).toHaveText("中");
+  await expect(on("品质等级")).toHaveText("很好");
+  await expect(page.locator(".level-two .aroma-chosen .chip")).toHaveText(["黑醋栗", "黑醋栗"]);
+  await page.click('.level-two .choice[aria-label="酸度"] >> text=高');
+  await expect(page.locator(".tasting-note p")).toContainText("高酸度");
 
   // Switching depth keeps the answers.
   await page.click(".depth-tabs >> text=进阶");
@@ -154,9 +172,9 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
   // 盲评: only how many rated it.
   await expect(friend.locator(".everyone-chip").first()).toHaveText("🔒 1 人已评");
 
-  // A friend new to the site starts at 入门: one plain question at a time.
+  // A friend new to the site starts at 入门, on its table.
   await friend.locator(".rows.numbered .row").first().click();
-  await expect(friend.locator(".q-ask")).toHaveText("杯里的酒最像哪个颜色？");
+  await expect(friend.locator(".level-two")).toBeVisible();
   await friend.click(".depth-tabs >> text=快记");
   await slide(friend, "我的分", 86);
   await friend.click("header >> text=完成");
@@ -197,8 +215,8 @@ test("choosing an aroma lights it up in place without moving the words around it
   await page.click(".depth-tabs >> text=进阶");
 
   const [nose, palate] = [page.locator(".aroma-picker").nth(0), page.locator(".aroma-picker").nth(1)];
-  const raspberry = nose.locator(".aroma-family .chip >> text=覆盆子");
-  const plum = nose.locator(".aroma-family .chip >> text=红李子");
+  const raspberry = nose.locator('.aroma-family .chip >> text="覆盆子"');
+  const plum = nose.locator('.aroma-family .chip >> text="红李子"');
   // Layout position, not on-screen: a tap may scroll the page or the family's row to bring a chip into view.
   const where = () => plum.evaluate((e) => [(e as HTMLElement).offsetLeft, e.getBoundingClientRect().top + scrollY]);
   const before = await where();
@@ -215,9 +233,9 @@ test("choosing an aroma lights it up in place without moving the words around it
   await expect(nose.locator(".aroma-chosen .chip")).toHaveText([/^红李子/]);
 
   // The palate's flavours use the same words, and can start from what the nose found.
-  await page.click("text=和闻到的一样");
+  await page.click("button:has-text('和闻到的一样')");
   await expect(palate.locator(".aroma-chosen .chip")).toHaveText(["红李子"]);
-  await palate.locator(".aroma-family .chip >> text=黑樱桃").click();
+  await palate.locator('.aroma-family .chip >> text="黑樱桃"').click();
   await expect(palate.locator(".aroma-chosen .chip")).toHaveText(["红李子", "黑樱桃"]);
   await expect(page.locator(".tasting-note p")).toContainText("口中有红李子和黑樱桃");
 });
@@ -239,4 +257,20 @@ test("a wine added from a tasting goes into it; the 记一杯 button always reco
     await expect(page.locator(".chips >> text=Friday at home")).toHaveCount(0);
     await page.goBack();
   }
+});
+
+test("the tab bar slides away while scrolling down the page and comes back when scrolling up", async ({ page }) => {
+  await signIn(page);
+  await page.click("text=只想快速记个分");
+  await page.evaluate(() => {
+    const pad = document.createElement("div");
+    pad.style.height = "3000px";
+    document.querySelector("main")?.append(pad);
+  });
+  const dock = page.locator(".dock");
+  await expect(dock).not.toHaveClass(/hidden/);
+  await page.mouse.wheel(0, 600);
+  await expect(dock).toHaveClass(/hidden/);
+  await page.mouse.wheel(0, -200);
+  await expect(dock).not.toHaveClass(/hidden/);
 });
