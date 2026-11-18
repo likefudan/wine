@@ -122,20 +122,26 @@ export function Library() {
         <>
           <p class="muted small">{t("{n} 款酒", { n: rows.length })}</p>
           <ul class="rows">
-            {rows.map(({ v, ts, last, best }) => (
-              <li key={v.id}>
-                <a class="row" href={`/wine/${v.id}`}>
-                  <Glass color={glassColor(v.color, last.appearance, v.year)} />
-                  <WineName v={v} />
-                  <span class="row-side">
-                    <span class="row-score num">{best ?? "—"}</span>
-                    <span class="muted small">
-                      {ts.length > 1 ? t("{n} 次", { n: ts.length }) : fmtDate(last.tastedAt, false)}
+            {rows.map(({ v, ts, last, best }) => {
+              const lastList = last.listItemId ? listTitle.get(itemList.get(last.listItemId) ?? "") : undefined;
+              return (
+                <li key={v.id}>
+                  <a class="row" href={`/wine/${v.id}`}>
+                    <Glass color={glassColor(v.color, last.appearance, v.year)} />
+                    <span class="row-main">
+                      <WineName v={v} />
+                      {lastList && <span class="row-list">{lastList}</span>}
                     </span>
-                  </span>
-                </a>
-              </li>
-            ))}
+                    <span class="row-side">
+                      <span class="row-score num">{best ?? "—"}</span>
+                      <span class="muted small">
+                        {ts.length > 1 ? t("{n} 次", { n: ts.length }) : fmtDate(last.tastedAt, false)}
+                      </span>
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}

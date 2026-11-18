@@ -102,7 +102,7 @@ export function NewListSheet(props: { onClose: () => void; onCreated: (id: strin
     props.onCreated(l.id);
   };
   return (
-    <Sheet title={t("新建酒单")} onClose={props.onClose}>
+    <Sheet title={t("新建品鉴")} onClose={props.onClose}>
       <form class="form" onSubmit={submit}>
         <Field label={t("类型")} group>
           <Choice
@@ -121,7 +121,7 @@ export function NewListSheet(props: { onClose: () => void; onCreated: (id: strin
             if (!title.trim()) setTitle(name);
           }}
         />
-        <Field label={t("酒单名称")}>
+        <Field label={t("品鉴名称")}>
           <input
             value={title}
             maxLength={80}
@@ -155,9 +155,9 @@ export function Home() {
   return (
     <div class="page">
       <div class="section-head">
-        <h1 class="section-head-title">{t("我的酒单")}</h1>
+        <h1 class="section-head-title">{t("我的品鉴")}</h1>
         <button type="button" class="button small primary" onClick={() => setAdding(true)}>
-          ＋ {t("新建酒单")}
+          ＋ {t("新建品鉴")}
         </button>
       </div>
       {me && !me.approved && (
@@ -167,7 +167,7 @@ export function Home() {
       )}
       {sorted.length === 0 && (
         <div class="empty">
-          <p>{t("一份酒单就是一次品鉴或一次旅行。去酒庄之前建一份，到了就按上酒顺序一款款记。")}</p>
+          <p>{t("一次品鉴可以是一次酒庄参观、一顿饭局或一整趟旅行。去之前建好，到了就按上酒顺序一款款记。")}</p>
         </div>
       )}
       <ul class="cards">
@@ -202,7 +202,7 @@ export function Home() {
       </ul>
       {loose.length > 0 && (
         <section>
-          <h2 class="section-title">{t("不在酒单里的记录")}</h2>
+          <h2 class="section-title">{t("单独记的酒")}</h2>
           <ul class="rows">
             {loose.map((x) => {
               const v = vById.get(x.vintageId);

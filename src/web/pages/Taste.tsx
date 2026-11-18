@@ -56,6 +56,11 @@ export function Taste() {
   const saved = useStore((s) => s.tastings.find((x) => x.id === params.id));
   const vintage = useStore((s) => (saved ? s.vintages.find((v) => v.id === saved.vintageId) : undefined));
   const defaultDepth = useStore((s) => s.me?.depth ?? "quick");
+  /** The tasting (酒单) this note belongs to, named at the top so it is clear which series it is in. */
+  const list = useStore((s) => {
+    const item = saved?.listItemId ? s.items.find((i) => i.id === saved.listItemId) : undefined;
+    return item ? s.lists.find((l) => l.id === item.listId) : undefined;
+  });
   const [x, setX] = useState<Tasting | undefined>(saved);
   const [switches, setSwitches] = useState(0);
   const [offer, setOffer] = useState<Depth | null>(null);
@@ -83,7 +88,7 @@ export function Taste() {
     return (
       <div class="page">
         <p class="empty">{t("找不到这条记录")}</p>
-        <a href="/">{t("回到酒单")}</a>
+        <a href="/">{t("回到品鉴")}</a>
       </div>
     );
 
@@ -118,6 +123,11 @@ export function Taste() {
   return (
     <div class="page taste">
       <header class="page-head sticky">
+        {list && (
+          <p class="belongs">
+            {t("属于")} <strong>{list.title}</strong>
+          </p>
+        )}
         <button type="button" class="icon-button" aria-label={t("返回")} onClick={done}>
           <BackIcon />
         </button>
