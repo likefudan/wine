@@ -42,4 +42,4 @@ One Cloudflare Worker serving both the pages and the API, following [likefudan/j
 
 ## License
 
-[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only), the same as jaysbadminton.
+No license has been chosen yet. All rights reserved.
