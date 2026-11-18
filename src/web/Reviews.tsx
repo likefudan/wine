@@ -2,6 +2,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../shared/descriptors";
 import type { VintageInfo } from "../shared/model";
+import { AromaVersus } from "./Versus";
 import { type CriticScore, type ProReview, type ReviewsView, reviewPrompt } from "../shared/reviews";
 import { Sheet } from "./components";
 import { currentLang, fmtDate, p, t, tm, useLang } from "./i18n";
@@ -131,6 +132,8 @@ export function ProReviews(props: { v: VintageInfo; tasted: boolean }) {
           }
         />
       )}
+
+      {data && !pending && s?.status === "done" && <AromaVersus vintageId={v.id} pro={s.review.aromas} />}
 
       {data && !pending && s?.status === "failed" && (
         <div class="pro-card">
