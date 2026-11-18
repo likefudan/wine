@@ -102,6 +102,10 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   "停用后对方不能再登录。确定？": { tw: "停用後對方不能再登入。確定？", en: "They won't be able to sign in. Disable?" },
   酒款库: { tw: "酒款庫", en: "Wine directory" },
   "酒款库来自 LWIN（Liv-ex）": { tw: "酒款庫來自 LWIN（Liv-ex）", en: "Wine directory: LWIN by Liv-ex" },
+  "酒款库来自 LWIN（Liv-ex）和美国 TTB 酒标库": {
+    tw: "酒款庫來自 LWIN（Liv-ex）和美國 TTB 酒標資料庫",
+    en: "Wine directory: LWIN by Liv-ex and US TTB label approvals",
+  },
   "新酒：{q}": { tw: "新酒：{q}", en: "New wine: {q}" },
   手动添加一款酒: { tw: "手動新增一款酒", en: "Add a wine by hand" },
   其他年份: { tw: "其他年份", en: "Other year" },

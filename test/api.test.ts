@@ -133,6 +133,21 @@ describe("wines", () => {
     expect(w!.lwin).toBe(1011768);
   });
 
+  it("suggests TTB labels from the same index, without keeping their ids on a wine", async () => {
+    await env.DB.prepare(
+      "INSERT INTO lwin VALUES (-7, 'Old Oaks Winery', 'Old Oaks Winery', 'red', 'USA', 'Illinois', NULL, NULL)",
+    ).run();
+    for (const w of ["old", "oaks"]) await env.DB.prepare("INSERT INTO lwin_words VALUES (?, -7)").bind(w).run();
+    const c = await signIn();
+    const found = (await c.call("/api/catalog?q=old%20oaks")).data.lwin;
+    expect(found.map((x: { lwin: number; region: string }) => [x.lwin, x.region])).toEqual([[-7, "Illinois"]]);
+    await c.ops([vintageOp({ producer: "Old Oaks Winery", wine: "Old Oaks Winery", year: 2024, lwin: -7 })]);
+    const w = await env.DB.prepare("SELECT lwin FROM wines WHERE name = 'Old Oaks Winery'").first<{
+      lwin: number | null;
+    }>();
+    expect(w!.lwin).toBeNull();
+  });
+
   it("refuses a wine without producer or with a bad year", async () => {
     const c = await signIn();
     const r = await c.ops([vintageOp({ producer: " " }), vintageOp({ year: 1700 })]);

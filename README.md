@@ -80,7 +80,15 @@ and run **Actions → Load LWIN** (`.github/workflows/lwin.yml`) once for `stagi
 
 ## American wine labels
 
-Every wine sold in the US needs a label approval from TTB, so its public COLA registry names many small American wineries that LWIN lacks. **Actions → Export TTB** (`.github/workflows/ttb.yml`) runs `scripts/ttb_export.py`, which searches the registry for American wines date range by date range (it exports at most 1,000 rows at a time), pausing between requests, and saves the result to the test site's private bucket at `ttb/ttb.csv`. A full export from 2005 takes an hour or two. The registry is public US government data.
+Every wine sold in the US needs a label approval from TTB, so its public COLA registry names many small American wineries that LWIN lacks. **Actions → Export TTB** (`.github/workflows/ttb.yml`) runs `scripts/ttb_export.py`, which searches the registry for American wines date range by date range (it exports at most 1,000 rows at a time), pausing between requests, and saves the result to the test site's private bucket at `ttb/ttb.csv`. A full export from 2005 takes an hour or two. The registry is public US government data. Then:
+
+```sh
+npx wrangler r2 object get wine-photos-staging/ttb/ttb.csv --file ttb.csv --remote
+python3 scripts/ttb_import.py ttb.csv ttb.sql LWIN.csv   # LWIN.csv: the LWIN spreadsheet saved as CSV, to skip wines it has
+npx wrangler r2 object put wine-photos-staging/ttb/ttb.sql --file ttb.sql --remote
+```
+
+and run **Actions → Load LWIN** with data `ttb`. The labels sit in the LWIN tables with negative ids (only a real LWIN code is kept on a wine), one row per brand and fanciful name, without flavoured, fruit or honey wines.
 
 ## American appellations
 

@@ -208,7 +208,8 @@ export function AddWine() {
       country: w.country ?? "",
       region: w.region ?? "",
       appellation: w.appellation ?? "",
-      lwin: w.lwin,
+      // TTB rows sit in the same list with negative ids; only a real LWIN code is kept on the wine.
+      lwin: w.lwin > 0 ? w.lwin : null,
     });
 
   // At a winery the wines are usually its own: start the producer from the list's place.
@@ -321,7 +322,11 @@ export function AddWine() {
                   </li>
                 ))}
               </ul>
-              <p class="muted small">{t("酒款库来自 LWIN（Liv-ex）")}</p>
+              <p class="muted small">
+                {shownLwin.some((w) => w.lwin < 0)
+                  ? t("酒款库来自 LWIN（Liv-ex）和美国 TTB 酒标库")
+                  : t("酒款库来自 LWIN（Liv-ex）")}
+              </p>
             </section>
           )}
           <button
