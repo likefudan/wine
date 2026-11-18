@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ulid } from "../src/shared/model";
 import { VINTAGE_SELECT, vintageInfo } from "../src/worker/data";
 import { modelsFor } from "../src/worker/label";
+import { prosePrompt } from "../src/worker/prose";
 import { suggestPlaces } from "../src/worker/places";
 import { Client, signIn, tasting, vintageOp } from "./helpers";
 
@@ -526,5 +527,27 @@ describe("label", () => {
     const c = await signIn();
     const r = await c.call("/api/label", { image: "abc" });
     expect(r.status).toBe(503);
+  });
+});
+
+describe("分享图 note", () => {
+  it("says so when AI is not set up", async () => {
+    const c = await signIn();
+    const r = await c.call("/api/prose", { wine: { producer: "Ridge", wine: "Monte Bello", year: 2016 }, lang: "en" });
+    expect([r.status, r.data.error]).toEqual([503, "ai_off"]);
+    expect((await new Client().call("/api/prose", {})).status).toBe(401);
+  });
+
+  it("asks for a faithful note in the reader's language, without the score", () => {
+    const prompt = prosePrompt(
+      "zh-TW",
+      ["Wine: Ridge Monte Bello 2016"],
+      ["Aromas: Blackcurrant"],
+      ["USA", "California"],
+    );
+    expect(prompt).toContain("Traditional Chinese");
+    expect(prompt).toContain("Aromas: Blackcurrant");
+    expect(prompt).toContain("1. USA\n2. California");
+    expect(prompt).toContain("Never add an aroma");
   });
 });
