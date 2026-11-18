@@ -13,7 +13,10 @@ import re
 import sys
 import unicodedata
 
-import openpyxl
+try:
+    import openpyxl  # only main() needs it
+except ImportError:
+    openpyxl = None
 
 # The same filler words as NOISE in src/shared/model.ts.
 NOISE = {"winery", "wines", "wine", "vineyard", "vineyards", "cellar", "cellars", "estate", "estates",
@@ -60,7 +63,7 @@ def main(src: str, dst: str) -> None:
     head = next(rows)
     n = 0
     with open(dst, "w", encoding="utf-8") as out:
-        out.write("DELETE FROM lwin_words;\nDELETE FROM lwin;\n")
+        out.write("DELETE FROM lwin_words WHERE lwin > 0;\nDELETE FROM lwin WHERE lwin > 0;\n")
         lw, ww = [], []
 
         def flush():
