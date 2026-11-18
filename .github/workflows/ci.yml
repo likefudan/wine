@@ -21,7 +21,32 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # A release tag (v*) on a commit whose CI on main already passed deploys without running the same
+  # checks and browser tests again (Release only tags a green main). Any other tag is tested first.
+  verified:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      ok: ${{ steps.main.outputs.ok }}
+    steps:
+      - id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" --branch main \
+            --status success --json databaseId --jq length)
+          if [ "${n:-0}" -gt 0 ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            echo "CI on main already passed for ${GITHUB_SHA:0:7}: not testing it again" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
   check:
+    needs: verified
+    if: ${{ !cancelled() && needs.verified.outputs.ok != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -35,6 +60,8 @@ jobs:
       - run: npm test
 
   e2e:
+    needs: verified
+    if: ${{ !cancelled() && needs.verified.outputs.ok != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -44,7 +71,25 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      # The browser is cached per Playwright version. Only the headless shell is installed (the tests
+      # run headless), and no apt packages: the runner image already has Chromium's libraries, and
+      # `--with-deps` only added fonts from a slow Ubuntu mirror (it sometimes took 2-4 minutes).
+      # If a newer runner image ever lacks a library, the apt install still runs as a fallback.
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium-shell
+      - run: npx playwright install --only-shell chromium
+      - name: Chromium libraries present
+        run: |
+          shell=$(find ~/.cache/ms-playwright -type f -name chrome-headless-shell | head -1)
+          if ldd "$shell" | grep -q "not found"; then
+            ldd "$shell" | grep "not found"
+            npx playwright install-deps chromium
+          fi
       - run: npx playwright test --trace off
         env:
           WRANGLER_SEND_METRICS: "false"
@@ -56,8 +101,11 @@ jobs:
           retention-days: 7
 
   deploy:
-    needs: [check, e2e]
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: [verified, check, e2e]
+    if: >-
+      ${{ !cancelled() && github.event_name != 'pull_request'
+      && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+      && (needs.verified.outputs.ok == 'true' || (needs.check.result == 'success' && needs.e2e.result == 'success')) }}
     runs-on: ubuntu-latest
     concurrency: deploy-${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
     env:
