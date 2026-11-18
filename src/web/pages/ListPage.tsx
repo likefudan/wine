@@ -1,7 +1,14 @@
 import { useLocation, useRoute } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
-import { type Board, type BoardItem, LIST_KINDS, type ListKind, type ListPlace } from "../../shared/model";
+import {
+  type Board,
+  type BoardItem,
+  LIST_KINDS,
+  type ListKind,
+  type ListPlace,
+  type Tasting,
+} from "../../shared/model";
 import { BLIND, blindVintage, isBlindId } from "../../shared/blind";
 import { openBlindItem } from "../Blind";
 import { EveryoneSheet, ShareSheet } from "../Sharing";
@@ -226,7 +233,7 @@ export function ListPage() {
                     <Glass color={glassColor(v.color, mine?.appearance, v.year)} />
                     <WineName v={v} />
                     <span class={`row-score num${mine?.score !== null && mine?.score === best ? " best" : ""}`}>
-                      {mine?.score ?? (mine ? "✓" : t("记"))}
+                      {mine?.score ?? (mine && hasNotes(mine) ? "✓" : t("记"))}
                     </span>
                   </button>
                   {shared && <EveryoneChip b={boardItem(i.id)} onClick={() => setEveryone(i.id)} />}
@@ -380,3 +387,13 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
     </Sheet>
   );
 }
+
+/** Whether a note says anything yet: opening a wine starts an empty one, which is not ✓ done. */
+export const hasNotes = (x: Tasting) =>
+  x.score !== null ||
+  !!x.note?.trim() ||
+  !!x.quality ||
+  x.descriptors.length > 0 ||
+  [x.appearance, x.nose, x.palate, x.extra].some((o) =>
+    Object.values(o ?? {}).some((v) => v !== undefined && v !== null),
+  );
