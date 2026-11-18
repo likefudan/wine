@@ -157,6 +157,13 @@ describe("lists and tastings", () => {
           title: "Napa day 1",
           kind: "winery",
           startsOn: "2026-11-20",
+          place: {
+            name: "Opus One",
+            id: "ChIJopusone123",
+            address: "7900 St Helena Hwy, Oakville, CA",
+            lat: 38.4,
+            lng: -122.4,
+          },
           note: null,
           createdAt: at,
           updatedAt: at,
@@ -168,6 +175,32 @@ describe("lists and tastings", () => {
     expect(r.data.results.every((x) => x.ok)).toBe(true);
     const s = (await c.call("/api/sync")).data;
     expect(s.lists[0].title).toBe("Napa day 1");
+    expect(s.lists[0].place).toEqual({
+      name: "Opus One",
+      id: "ChIJopusone123",
+      address: "7900 St Helena Hwy, Oakville, CA",
+      lat: 38.4,
+      lng: -122.4,
+    });
+    // An older app sends no place: the saved one stays.
+    const { place: _, ...old } = s.lists[0];
+    await c.ops([{ op: "putList", list: { ...old, title: "Napa day 1!" } }]);
+    const again = (await c.call("/api/sync")).data.lists[0];
+    expect(again).toMatchObject({ title: "Napa day 1!", place: { name: "Opus One" } });
+    // A place typed by hand has only a name.
+    await c.ops([
+      {
+        op: "putList",
+        list: { ...again, place: { name: " Grandma's ", id: "bad id", address: null, lat: 1, lng: 2 } },
+      },
+    ]);
+    expect((await c.call("/api/sync")).data.lists[0].place).toEqual({
+      name: "Grandma's",
+      id: null,
+      address: null,
+      lat: null,
+      lng: null,
+    });
     expect(s.items[0]).toMatchObject({ id: itemId, vintageId: v.id, priceUsd: 60 });
     expect(s.tastings[0]).toMatchObject({
       id: t.id,
@@ -218,7 +251,16 @@ describe("lists and tastings", () => {
       v,
       {
         op: "putList",
-        list: { id: listId, title: "Mine", kind: "home", startsOn: null, note: null, createdAt: at, updatedAt: at },
+        list: {
+          id: listId,
+          title: "Mine",
+          kind: "home",
+          startsOn: null,
+          place: null,
+          note: null,
+          createdAt: at,
+          updatedAt: at,
+        },
       },
       { op: "putTasting", tasting: t },
     ]);
@@ -246,7 +288,16 @@ describe("lists and tastings", () => {
       v,
       {
         op: "putList",
-        list: { id: listId, title: "Trip", kind: "trip", startsOn: null, note: null, createdAt: at, updatedAt: at },
+        list: {
+          id: listId,
+          title: "Trip",
+          kind: "trip",
+          startsOn: null,
+          place: null,
+          note: null,
+          createdAt: at,
+          updatedAt: at,
+        },
       },
       { op: "putItem", item: { id: itemId, listId, vintageId: v.id, position: 0, priceUsd: null, createdAt: at } },
       { op: "putTasting", tasting: tasting(v.id, { listItemId: itemId }) },
@@ -268,7 +319,16 @@ describe("lists and tastings", () => {
       v,
       {
         op: "putList",
-        list: { id: listId, title: "Order", kind: "winery", startsOn: null, note: null, createdAt: at, updatedAt: at },
+        list: {
+          id: listId,
+          title: "Order",
+          kind: "winery",
+          startsOn: null,
+          place: null,
+          note: null,
+          createdAt: at,
+          updatedAt: at,
+        },
       },
       ...ids.map((id, n) => ({
         op: "putItem" as const,
@@ -313,6 +373,12 @@ describe("producer places", () => {
       const r = await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "ridge", "abcdefgh-1234");
       expect(r).toEqual([{ id: "ChIJridge12345", name: "Ridge Vineyards", detail: "Cupertino, CA, USA" }]);
       expect(seen).toEqual([["winery"], null]);
+      seen.length = 0;
+      await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "napa", "abcdefgh-1234", "any");
+      expect(seen).toEqual([null]);
+      seen.length = 0;
+      await suggestPlaces({ GOOGLE_MAPS_API_KEY: "k" } as never, "french laundry", "abcdefgh-1234", "restaurant");
+      expect(seen).toEqual([["restaurant"], null]);
     } finally {
       spy.mockRestore();
     }

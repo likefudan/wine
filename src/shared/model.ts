@@ -169,11 +169,26 @@ export interface LwinWine {
   classification: string | null;
 }
 
+/** Where a 酒单 happens. `id` is set when it was picked from Google Places; typed by hand it is null. */
+export interface ListPlace {
+  name: string;
+  id: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+/** What /api/places looks for first: wineries, restaurants, or anything (towns, regions). */
+export const PLACE_KINDS = ["winery", "restaurant", "any"] as const;
+export type PlaceKind = (typeof PLACE_KINDS)[number];
+
 export interface WineList {
   id: string;
   title: string;
   kind: ListKind;
   startsOn: string | null;
+  /** Missing from changes sent by an older app: the server then keeps what it has. */
+  place: ListPlace | null;
   note: string | null;
   createdAt: string;
   updatedAt: string;

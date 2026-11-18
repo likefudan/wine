@@ -1,7 +1,8 @@
 import { useLocation } from "preact-iso";
 import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
-import { LIST_KINDS, type ListKind } from "../../shared/model";
+import { LIST_KINDS, type ListKind, type ListPlace, type PlaceKind } from "../../shared/model";
+import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
 import { fmtDate, t, tk } from "../i18n";
 import { newList, useStore } from "../store";
@@ -18,27 +19,63 @@ const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+/** The place field of each kind of list: what it is called and what Google Places looks for first. */
+const PLACE_FIELD: Record<ListKind, { label: string; placeholder: string; kind: PlaceKind } | null> = {
+  winery: { label: tk("酒庄"), placeholder: "Opus One", kind: "winery" },
+  trip: { label: tk("地点"), placeholder: "Napa Valley", kind: "any" },
+  dinner: { label: tk("餐厅"), placeholder: "", kind: "restaurant" },
+  home: null,
+};
+
+/** Where the list happens; a home tasting has no place. `onPicked`: a Google Places pick. */
+export function ListPlaceField(props: {
+  kind: ListKind;
+  value: ListPlace | null;
+  onChange: (p: ListPlace | null) => void;
+  onPicked?: (name: string) => void;
+}) {
+  const f = PLACE_FIELD[props.kind];
+  if (!f) return null;
+  return (
+    <>
+      <PlaceInput
+        label={t(f.label)}
+        kind={f.kind}
+        placeholder={f.placeholder}
+        value={props.value?.name ?? ""}
+        onInput={(name) => props.onChange(name.trim() ? { name, id: null, address: null, lat: null, lng: null } : null)}
+        onPlace={(p) => {
+          props.onChange({ name: p.name, id: p.id, address: p.address || null, lat: p.lat, lng: p.lng });
+          props.onPicked?.(p.name);
+        }}
+      />
+      {props.value?.address ? (
+        <p class="field-hint place-address">{props.value.address}</p>
+      ) : (
+        <p class="field-hint place-address">{t("打几个字，会从 Google 地图联想")}</p>
+      )}
+    </>
+  );
+}
+
+/** A list's place as saved: home tastings have none, and a name typed then cleared is none. */
+export const placeFor = (kind: ListKind, p: ListPlace | null): ListPlace | null =>
+  kind === "home" || !p?.name.trim() ? null : { ...p, name: p.name.trim() };
+
 export function NewListSheet(props: { onClose: () => void; onCreated: (id: string) => void }) {
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<ListKind>("winery");
+  const [place, setPlace] = useState<ListPlace | null>(null);
   const [date, setDate] = useState(today());
   const submit = (e: Event) => {
     e.preventDefault();
     if (!title.trim()) return;
-    const l = newList(title.trim(), kind, date || null);
+    const l = newList(title.trim(), kind, date || null, placeFor(kind, place));
     props.onCreated(l.id);
   };
   return (
     <Sheet title={t("新建酒单")} onClose={props.onClose}>
       <form class="form" onSubmit={submit}>
-        <Field label={t("名称")}>
-          <input
-            value={title}
-            maxLength={80}
-            placeholder={t("例如：Napa 第一天 · Opus One")}
-            onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
-          />
-        </Field>
         <Field label={t("类型")} group>
           <Choice
             label={t("类型")}
@@ -46,6 +83,22 @@ export function NewListSheet(props: { onClose: () => void; onCreated: (id: strin
             clearable={false}
             options={LIST_KINDS.map((k) => ({ value: k, label: t(KIND_NAMES[k]) }))}
             onChange={(v) => v && setKind(v)}
+          />
+        </Field>
+        <ListPlaceField
+          kind={kind}
+          value={place}
+          onChange={setPlace}
+          onPicked={(name) => {
+            if (!title.trim()) setTitle(name);
+          }}
+        />
+        <Field label={t("名称")}>
+          <input
+            value={title}
+            maxLength={80}
+            placeholder={t("例如：Napa 第一天 · Opus One")}
+            onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
           />
         </Field>
         <Field label={t("日期")}>
@@ -100,6 +153,7 @@ export function Home() {
                   <strong class="list-title">{l.title}</strong>
                   <span class="muted small">
                     {t(KIND_NAMES[l.kind])}
+                    {l.place ? ` · ${l.place.name}` : ""}
                     {l.startsOn ? ` · ${fmtDate(l.startsOn, false)}` : ""}
                   </span>
                 </div>

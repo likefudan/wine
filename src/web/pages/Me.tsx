@@ -34,7 +34,7 @@ export function MePage() {
   const [theme, setT] = useState<Theme>(savedTheme());
   const [syncing, setSyncing] = useState(false);
   const logout = async () => {
-    if (getState().queue.length && !confirm(t("还有没同步的记录，退出后会丢失。确定退出？"))) return;
+    if (getState().queue.length && !confirm(t("还有记录没备份到云端，退出后会丢失。确定退出？"))) return;
     try {
       await api("/api/auth/logout", { body: {} });
     } catch {
@@ -100,25 +100,35 @@ export function MePage() {
         </Field>
       </section>
       <section class="step">
-        <h2 class="step-title">{t("同步")}</h2>
-        <p class="small">
-          {queue > 0 ? t("还有 {n} 条未同步", { n: queue }) : t("全部已同步")}
-          {syncedAt
-            ? ` · ${t("上次 {time}", { time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` })}`
-            : ""}
+        <h2 class="step-title">{t("离线与备份")}</h2>
+        <p class="small muted">
+          {t("记录先存在这部手机上，有网时自动备份到云端。在酒庄没信号也能照常记，有网后会自动补传，不用手动操作。")}
         </p>
-        <button
-          type="button"
-          class="button"
-          disabled={syncing}
-          onClick={async () => {
-            setSyncing(true);
-            await flush();
-            setSyncing(false);
-          }}
-        >
-          {syncing ? t("同步中…") : t("立即同步")}
-        </button>
+        <p class="small sync-status">
+          {queue > 0
+            ? navigator.onLine
+              ? t("正在备份 {n} 条记录…", { n: queue })
+              : t("有 {n} 条记录还在手机上，有网后会自动上传", { n: queue })
+            : syncedAt
+              ? t("✓ 都已备份到云端（{time}）", {
+                  time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+                })
+              : t("✓ 都已备份到云端")}
+        </p>
+        {queue > 0 && (
+          <button
+            type="button"
+            class="button"
+            disabled={syncing}
+            onClick={async () => {
+              setSyncing(true);
+              await flush();
+              setSyncing(false);
+            }}
+          >
+            {syncing ? t("上传中…") : t("现在上传")}
+          </button>
+        )}
       </section>
       {me.owner && <Members />}
       <button type="button" class="button danger block" onClick={logout}>

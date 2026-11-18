@@ -1,11 +1,12 @@
 import { useLocation, useRoute } from "preact-iso";
 import { useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
-import { LIST_KINDS, type ListKind } from "../../shared/model";
+import { LIST_KINDS, type ListKind, type ListPlace } from "../../shared/model";
 import { BackIcon, Choice, Field, Glass, Sheet, WineName } from "../components";
 import { fmtDate, t } from "../i18n";
 import { blankTasting, deleteList, getState, moveItem, removeItem, saveList, saveTasting, useStore } from "../store";
-import { KIND_NAMES } from "./Home";
+import { mapsUrl } from "../PlaceInput";
+import { KIND_NAMES, ListPlaceField, placeFor } from "./Home";
 
 /** Opens my note for a wine in a list, starting one at my default depth the first time. */
 export function openTasting(route: (url: string) => void, vintageId: string, itemId: string | null) {
@@ -51,6 +52,17 @@ export function ListPage() {
             {t(KIND_NAMES[list.kind])}
             {list.startsOn ? ` · ${fmtDate(list.startsOn)}` : ""}
           </span>
+          {list.place && (
+            <a
+              class="small place-link block-link"
+              href={mapsUrl(list.place.name, list.place.id)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              📍 {list.place.name}
+              {list.place.address ? ` · ${list.place.address}` : ""}
+            </a>
+          )}
         </div>
         <button type="button" class="link" onClick={() => setSettings(true)}>
           {t("设置")}
@@ -132,12 +144,20 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
   const list = getState().lists.find((l) => l.id === props.listId)!;
   const [title, setTitle] = useState(list.title);
   const [kind, setKind] = useState<ListKind>(list.kind);
+  const [place, setPlace] = useState<ListPlace | null>(list.place ?? null);
   const [date, setDate] = useState(list.startsOn ?? "");
   const [note, setNote] = useState(list.note ?? "");
   const submit = (e: Event) => {
     e.preventDefault();
     if (!title.trim()) return;
-    saveList({ ...list, title: title.trim(), kind, startsOn: date || null, note: note.trim() || null });
+    saveList({
+      ...list,
+      title: title.trim(),
+      kind,
+      startsOn: date || null,
+      place: placeFor(kind, place),
+      note: note.trim() || null,
+    });
     props.onClose();
   };
   return (
@@ -155,6 +175,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
             onChange={(v) => v && setKind(v)}
           />
         </Field>
+        <ListPlaceField kind={kind} value={place} onChange={setPlace} />
         <Field label={t("日期")}>
           <input type="date" value={date} onInput={(e) => setDate((e.target as HTMLInputElement).value)} />
         </Field>

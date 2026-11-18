@@ -13,6 +13,7 @@ import {
   type SyncData,
   type Tasting,
   type VintageInfo,
+  type ListPlace,
   type WineList,
   clampText,
   isLabelModel,
@@ -165,6 +166,15 @@ export async function syncData(env: Env, user: UserRow): Promise<SyncData> {
         title: l.title!,
         kind: l.kind as WineList["kind"],
         startsOn: l.starts_on ?? null,
+        place: l.place_name
+          ? {
+              name: l.place_name,
+              id: l.place_id ?? null,
+              address: l.place_address ?? null,
+              lat: (l.place_lat as unknown as number | null) ?? null,
+              lng: (l.place_lng as unknown as number | null) ?? null,
+            }
+          : null,
         note: l.note ?? null,
         createdAt: l.created_at!,
         updatedAt: l.updated_at!,
@@ -293,12 +303,28 @@ export async function putVintage(db: DB, user: UserRow, o: Extract<Op, { op: "pu
   return vid;
 }
 
+/** A list's place as its five columns; all null when it has none. */
+function listPlace(p: unknown): [string | null, string | null, string | null, number | null, number | null] {
+  const o = (p && typeof p === "object" ? p : {}) as Partial<ListPlace>;
+  const name = clampText(o.name, 120);
+  if (!name) return [null, null, null, null, null];
+  const pid = typeof o.id === "string" && /^[A-Za-z0-9_-]{10,300}$/.test(o.id) ? o.id : null;
+  return [
+    name,
+    pid,
+    clampText(o.address, 200),
+    pid ? optNum(o.lat, -90, 90) : null,
+    pid ? optNum(o.lng, -180, 180) : null,
+  ];
+}
+
 async function putList(db: DB, user: UserRow, l: WineList) {
   const lid = id(l?.id);
   const title = clampText(l.title, 80) ?? fail("请填写酒单名称");
   const kind = (LIST_KINDS as readonly string[]).includes(l.kind) ? l.kind : "winery";
   const startsOn = typeof l.startsOn === "string" && DATE_RE.test(l.startsOn) ? l.startsOn : null;
   const note = clampText(l.note, 500);
+  const place = listPlace(l.place);
   const existing = await db.prepare("SELECT owner_id FROM lists WHERE id = ?").bind(lid).first<{ owner_id: string }>();
   const at = now();
   if (existing) {
@@ -307,14 +333,23 @@ async function putList(db: DB, user: UserRow, l: WineList) {
       .prepare("UPDATE lists SET title = ?, kind = ?, starts_on = ?, note = ?, updated_at = ? WHERE id = ?")
       .bind(title, kind, startsOn, note, at, lid)
       .run();
+    // An older app sends no `place` at all: keep the one already saved.
+    if (l.place !== undefined)
+      await db
+        .prepare(
+          "UPDATE lists SET place_name = ?, place_id = ?, place_address = ?, place_lat = ?, place_lng = ? WHERE id = ?",
+        )
+        .bind(...place, lid)
+        .run();
     return;
   }
   await db.batch([
     db
       .prepare(
-        "INSERT INTO lists (id, owner_id, title, kind, starts_on, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO lists (id, owner_id, title, kind, starts_on, note, created_at, updated_at,
+          place_name, place_id, place_address, place_lat, place_lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .bind(lid, user.id, title, kind, startsOn, note, iso(l.createdAt), at),
+      .bind(lid, user.id, title, kind, startsOn, note, iso(l.createdAt), at, ...place),
     db
       .prepare("INSERT INTO list_members (list_id, user_id, role, joined_at) VALUES (?, ?, 'owner', ?)")
       .bind(lid, user.id, at),
