@@ -3,6 +3,7 @@ import { useEffect, useState } from "preact/hooks";
 import { exportName, toCsv, toJson } from "../../shared/export";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member } from "../../shared/model";
 import { Choice, Field } from "../components";
+import { GrowthPanel } from "../Growth";
 import { LangSwitch } from "../LangSwitch";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
@@ -37,7 +38,7 @@ export function Avatar(props: { tab?: boolean }) {
   );
 }
 
-type MeTab = "tasting" | "general" | "members";
+type MeTab = "growth" | "tasting" | "general" | "members";
 
 /** How many newcomers wait for approval (owners only): a dot on 我的 and on its 成员 tab. */
 let pending = 0;
@@ -84,12 +85,13 @@ export function MePage() {
     location.href = "/";
   };
   const tabs: { id: MeTab; label: string }[] = [
+    { id: "growth", label: t("成长") },
     { id: "tasting", label: t("记录偏好") },
     { id: "general", label: t("通用") },
     ...(me.owner ? [{ id: "members" as const, label: t("成员") }] : []),
   ];
-  const tab: MeTab = tabs.some((x) => x.id === query.tab) ? (query.tab as MeTab) : "tasting";
-  const pick = (id: MeTab) => route(id === "tasting" ? "/me" : `/me?tab=${id}`, true);
+  const tab: MeTab = tabs.some((x) => x.id === query.tab) ? (query.tab as MeTab) : "growth";
+  const pick = (id: MeTab) => route(id === "growth" ? "/me" : `/me?tab=${id}`, true);
   return (
     <div class="page">
       <h1 class="visually-hidden">{t("我的")}</h1>
@@ -116,6 +118,7 @@ export function MePage() {
           </button>
         ))}
       </div>
+      {tab === "growth" && <GrowthPanel />}
       {tab === "tasting" && (
         <section class="group" role="tabpanel">
           <Field label={t("默认品鉴深度")} hint={t(DEPTH_INFO[me.depth ?? "quick"].who)} group>
