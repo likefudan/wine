@@ -12,8 +12,10 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await signIn(page);
   await page.click("text=刚开始认真喝，想学怎么品");
   await page.click("text=新建酒单");
-  await page.fill(".sheet input", "Napa day 1");
+  await page.fill('.sheet input[placeholder="Opus One"]', "Opus One");
+  await page.fill('.sheet input[placeholder^="例如"]', "Napa day 1");
   await page.click("text=建好了");
+  await expect(page.locator(".page-head .place-link")).toContainText("Opus One");
   await page.click("text=加下一款酒");
   await page.fill("input.search", "Opus One");
   await page.click("text=新酒：Opus One");

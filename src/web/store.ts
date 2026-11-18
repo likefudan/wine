@@ -288,9 +288,14 @@ export function saveList(list: WineList) {
   enqueue({ op: "putList", list: l });
 }
 
-export function newList(title: string, kind: WineList["kind"], startsOn: string | null): WineList {
+export function newList(
+  title: string,
+  kind: WineList["kind"],
+  startsOn: string | null,
+  place: WineList["place"] = null,
+): WineList {
   const at = new Date().toISOString();
-  const l: WineList = { id: ulid(), title, kind, startsOn, note: null, createdAt: at, updatedAt: at };
+  const l: WineList = { id: ulid(), title, kind, startsOn, place, note: null, createdAt: at, updatedAt: at };
   saveList(l);
   return l;
 }

@@ -98,7 +98,11 @@ function Shell() {
       {(!online || queue > 0) && (
         <div class="sync-bar" role="status">
           {!online ? t("没有网络，记录先存在手机上") : null}
-          {queue > 0 ? <span>{t("还有 {n} 条未同步", { n: queue })}</span> : null}
+          {queue > 0 ? (
+            <span>
+              {online ? t("正在备份 {n} 条记录…", { n: queue }) : t("{n} 条记录等有网后自动上传", { n: queue })}
+            </span>
+          ) : null}
         </div>
       )}
       {rejected && (

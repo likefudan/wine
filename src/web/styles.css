@@ -102,6 +102,18 @@ a:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+/* iOS Safari gives date fields a native width wider than a phone's column: let them shrink to fit. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
 input[type="checkbox"] {
   width: 20px;
   min-height: 20px;
@@ -1159,4 +1171,12 @@ h3 {
 }
 .place-link {
   color: var(--muted);
+}
+.block-link {
+  display: block;
+  margin-top: 2px;
+  text-decoration: none;
+}
+.sync-status {
+  margin: 8px 0 12px;
 }

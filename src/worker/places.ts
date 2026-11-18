@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { PlaceDetails, PlaceSuggestion } from "../shared/model";
+import { PLACE_KINDS, type PlaceDetails, type PlaceKind, type PlaceSuggestion } from "../shared/model";
 import { requireApproved, requireUser } from "./auth";
 import type { Env } from "./env";
 
@@ -35,13 +35,21 @@ async function autocomplete(key: string, body: object): Promise<Prediction[]> {
   return (json.suggestions ?? []).flatMap((s) => (s.placePrediction ? [s.placePrediction] : []));
 }
 
-/** Wineries first; when none match (a producer Google files as a shop or a farm), any place. */
-export async function suggestPlaces(env: Env, q: string, session: string): Promise<PlaceSuggestion[]> {
+/**
+ * Wineries (or restaurants) first; when none match (a producer Google files as a shop or a farm), any
+ * place. `any` (a trip's town or region) asks once, for anything.
+ */
+export async function suggestPlaces(
+  env: Env,
+  q: string,
+  session: string,
+  kind: PlaceKind = "winery",
+): Promise<PlaceSuggestion[]> {
   const key = env.GOOGLE_MAPS_API_KEY;
   if (!key || q.trim().length < 2) return [];
   const base = { input: q.trim().slice(0, 120), sessionToken: SESSION_RE.test(session) ? session : undefined };
   try {
-    let found = await autocomplete(key, { ...base, includedPrimaryTypes: ["winery"] });
+    let found = kind === "any" ? [] : await autocomplete(key, { ...base, includedPrimaryTypes: [kind] });
     if (!found.length) found = await autocomplete(key, base);
     return found.slice(0, 5).map((p) => ({
       id: p.placeId,
@@ -93,7 +101,9 @@ export async function placeDetails(env: Env, id: string, session: string): Promi
 
 placesRoutes.get("/places", async (c) => {
   requireApproved(c.env, await requireUser(c));
-  return c.json({ places: await suggestPlaces(c.env, c.req.query("q") ?? "", c.req.query("s") ?? "") });
+  const t = c.req.query("t") ?? "";
+  const kind = (PLACE_KINDS as readonly string[]).includes(t) ? (t as PlaceKind) : "winery";
+  return c.json({ places: await suggestPlaces(c.env, c.req.query("q") ?? "", c.req.query("s") ?? "", kind) });
 });
 
 placesRoutes.get("/places/:id", async (c) => {

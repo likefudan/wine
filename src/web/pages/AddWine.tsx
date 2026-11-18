@@ -210,6 +210,18 @@ export function AddWine() {
       lwin: w.lwin,
     });
 
+  // At a winery the wines are usually its own: start the producer from the list's place.
+  const fromListPlace = (): Draft => {
+    const l = lists.find((x) => x.id === listId);
+    const p = l?.kind === "winery" ? l.place : null;
+    if (!p) return EMPTY;
+    return {
+      ...EMPTY,
+      producer: p.name,
+      place: p.id && p.address ? { id: p.id, address: p.address, lat: p.lat, lng: p.lng } : null,
+    };
+  };
+
   return (
     <div class="page">
       <header class="page-head">
@@ -311,7 +323,11 @@ export function AddWine() {
               <p class="muted small">{t("酒款库来自 LWIN（Liv-ex）")}</p>
             </section>
           )}
-          <button type="button" class="button block" onClick={() => setForm({ ...EMPTY, producer: q.trim() })}>
+          <button
+            type="button"
+            class="button block"
+            onClick={() => setForm(q.trim() ? { ...EMPTY, producer: q.trim() } : fromListPlace())}
+          >
             ＋ {q.trim() ? t("新酒：{q}", { q: q.trim() }) : t("手动添加一款酒")}
           </button>
         </>
