@@ -109,12 +109,17 @@ def search(a, b):
 
 
 def download(r):
-    soup = BeautifulSoup(r.text, "html.parser")
-    link = soup.find("a", href=re.compile(r"csv|SaveToFile|saveSearch|File", re.I))
-    if not link:
-        raise SystemExit("no CSV link on the results page")
-    href = link["href"].split("/colasonline/")[-1]
-    body = get(href).content.decode("utf-8-sig", errors="replace")
+    """Fetch the results page's "Save Search Results To File" CSV."""
+    m = re.search(r"popup\('(publicSaveSearchResultsToFile\.do[^']*)'", r.text)
+    if not m:
+        raise SystemExit("no Save Search Results To File link on the results page")
+    f = get(m.group(1).replace("&amp;", "&"))
+    body = f.content.decode("utf-8-sig", errors="replace")
+    if probe:
+        print("SAVE", m.group(1), f.headers.get("content-type"), f.headers.get("content-disposition"), file=sys.stderr)
+        print(body[:1500], file=sys.stderr)
+    if body.lstrip().startswith("<"):
+        raise SystemExit("the save link returned a page, not a CSV")
     return list(csv.reader(io.StringIO(body)))
 
 
