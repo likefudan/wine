@@ -10,13 +10,17 @@ import { currentLang, fmtDate, p, t } from "../i18n";
 import { saveTasting, useStore } from "../store";
 import { AddToCellarSheet, WineCellar } from "./Cellar";
 import { openTasting } from "./ListPage";
+import { useSelected } from "../selected";
 
 /** Drawn only when someone taps 生成分享图: its own file, loaded then. */
 const TastingShareSheet = lazy(() => import("../TastingCard").then((m) => m.TastingShareSheet));
 
 /** One wine: every time I've tasted it, with the note each answer adds up to. */
-export function WinePage() {
-  const { params } = useRoute();
+export function WinePage(props: { id?: string }) {
+  const routed = useRoute().params;
+  // On the open book (book.tsx) the wine is named by whoever draws the page.
+  const params = { id: props.id ?? routed?.id };
+  const selected = useSelected();
   const { route } = useLocation();
   const v = useStore((s) => s.vintages.find((x) => x.id === params.id));
   const tastings = useStore((s) => s.tastings.filter((x) => x.vintageId === params.id));
@@ -85,7 +89,7 @@ export function WinePage() {
             x.descriptors.map((d) => d.id),
           );
           return (
-            <li key={x.id} class="card-with-action">
+            <li key={x.id} class={selected === x.id ? "card-with-action selected" : "card-with-action"}>
               <a class="card" href={`/taste/${x.id}`}>
                 <div class="list-card-head">
                   <strong class="num big-score">{x.score ?? "—"}</strong>

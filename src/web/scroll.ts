@@ -1,3 +1,4 @@
+import type { RefObject } from "preact";
 import { useEffect } from "preact/hooks";
 
 /**
@@ -20,8 +21,15 @@ addEventListener(
 );
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
-export function useScrollReset(path: string) {
+/** `pane`: the open book's right page (book.tsx), which scrolls by itself and always opens at its top. */
+export function useScrollReset(path: string, pane?: RefObject<HTMLElement | null>) {
   useEffect(() => {
+    if (pane) {
+      back = false;
+      current = "";
+      pane.current?.scrollTo(0, 0);
+      return;
+    }
     const key = location.pathname + location.search;
     const to = back ? (positions.get(key) ?? 0) : 0;
     back = false;
@@ -33,5 +41,5 @@ export function useScrollReset(path: string) {
       current = key;
     });
     return () => cancelAnimationFrame(frame);
-  }, [path]);
+  }, [path, !pane]);
 }

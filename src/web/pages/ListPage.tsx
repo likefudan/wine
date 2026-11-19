@@ -31,6 +31,7 @@ import {
 } from "../store";
 import { mapsUrl } from "../PlaceInput";
 import { KIND_NAMES, ListPlaceFields, placeFor } from "./Home";
+import { useSelected } from "../selected";
 
 /** Opens my note for a wine in a list, starting one at my default depth the first time. */
 export function openTasting(route: (url: string) => void, vintageId: string, itemId: string | null) {
@@ -44,8 +45,11 @@ export function openTasting(route: (url: string) => void, vintageId: string, ite
 
 const BOARD_POLL_MS = 10_000;
 
-export function ListPage() {
-  const { params } = useRoute();
+export function ListPage(props: { id?: string }) {
+  const routed = useRoute().params;
+  // On the open book's left page (book.tsx) the list is named by whoever draws it.
+  const params = { id: props.id ?? routed?.id };
+  const selected = useSelected();
   const { route } = useLocation();
   const list = useStore((s) => s.lists.find((l) => l.id === params.id));
   const items = useStore((s) => s.items.filter((i) => i.listId === params.id).sort((a, b) => a.position - b.position));
@@ -120,7 +124,7 @@ export function ListPage() {
   return (
     <div class="page">
       <header class="page-head">
-        <a href="/" class="icon-button" aria-label={t("返回")}>
+        <a href="/" class="icon-button back-up" aria-label={t("返回")}>
           <BackIcon />
         </a>
         <div class="page-head-title">
@@ -190,7 +194,7 @@ export function ListPage() {
           const mine = tastings.find((x) => x.listItemId === i.id);
           const open = () => (i.blind ? openBlindItem(route, i.id) : openTasting(route, v.id, i.id));
           return (
-            <li key={i.id} class="row-wrap">
+            <li key={i.id} class={selected === i.id ? "row-wrap selected" : "row-wrap"}>
               <span class="row-n num">{n + 1}</span>
               {editing ? (
                 <div class="row">

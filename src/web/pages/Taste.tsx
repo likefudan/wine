@@ -947,6 +947,8 @@ function Beginner(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Prev 
   const go = (n: number) => {
     setStep(n);
     setWhy(false);
+    // The open book's right page scrolls by itself (book.tsx).
+    document.querySelector(".book .leaf.right .leaf-scroll")?.scrollTo({ top: 0 });
     scrollTo({ top: 0 });
   };
   // Going through the questions again writes the table afresh: what they ask is cleared first.

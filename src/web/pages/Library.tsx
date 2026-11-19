@@ -10,6 +10,7 @@ import { Glass, WineName } from "../components";
 import { fmtDate, p, t } from "../i18n";
 import { useStore } from "../store";
 import { CellarView } from "./Cellar";
+import { useSelected } from "../selected";
 
 type View = "all" | "cellar";
 const VIEW_KEY = "wine.libraryView";
@@ -117,6 +118,7 @@ function AllWines() {
   const [color, setColor] = useState<WineColor | null>(null);
   const [minScore, setMinScore] = useState<number | null>(null);
   const [again, setAgain] = useState(false);
+  const selected = useSelected();
 
   const listTitle = new Map(lists.map((l) => [l.id, l.title]));
   const itemList = new Map(items.map((i) => [i.id, i.listId]));
@@ -205,7 +207,7 @@ function AllWines() {
             {rows.map(({ v, ts, last, best, stock }) => {
               const lastList = last?.listItemId ? listTitle.get(itemList.get(last.listItemId) ?? "") : undefined;
               return (
-                <li key={v.id}>
+                <li key={v.id} class={selected === v.id ? "selected" : undefined}>
                   <a class="row" href={`/wine/${v.id}`}>
                     <Glass color={glassColor(v.color, last?.appearance, v.year)} />
                     <span class="row-main">

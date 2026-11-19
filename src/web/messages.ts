@@ -472,6 +472,14 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   "约 1 分钟": { tw: "約 1 分鐘", en: "about 1 min" },
   不限: { tw: "不限", en: "no limit" },
   找不到这款酒: { tw: "找不到這款酒", en: "Wine not found" },
+  "新建一次品鉴，它的酒会写在这一页。": {
+    tw: "新增一次品飲，它的酒會寫在這一頁。",
+    en: "Start a tasting and its wines will be written on this page.",
+  },
+  "点左边的一款酒，这一页翻开它的每一次记录。": {
+    tw: "點左邊的一款酒，這一頁翻開它的每一次紀錄。",
+    en: "Pick a wine on the left and this page opens to every note on it.",
+  },
   回到酒库: { tw: "回到酒庫", en: "Back to library" },
   "这款酒你还喝过 {n} 个年份": { tw: "這款酒你還喝過 {n} 個年份", en: "You've had {n} other vintages of this wine" },
   再记一次: { tw: "再記一次", en: "Note it again" },
