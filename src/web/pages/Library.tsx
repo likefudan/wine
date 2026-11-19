@@ -42,7 +42,7 @@ export function Library() {
   return (
     <div class="page">
       <h1 class="visually-hidden">{t("我的酒")}</h1>
-      <div class="library-head">
+      <div class="library-head pin">
         <div class="segmented" role="tablist" aria-label={t("我的酒")}>
           <button
             type="button"

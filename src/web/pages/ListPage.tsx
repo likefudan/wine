@@ -123,7 +123,7 @@ export function ListPage(props: { id?: string }) {
 
   return (
     <div class="page">
-      <header class="page-head">
+      <header class="page-head pin">
         <a href="/" class="icon-button back-up" aria-label={t("返回")}>
           <BackIcon />
         </a>

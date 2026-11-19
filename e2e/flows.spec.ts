@@ -259,7 +259,9 @@ test("a wine added from a tasting goes into it; the 品一款 button always reco
   }
 });
 
-test("the tab bar slides away while scrolling down the page and comes back when scrolling up", async ({ page }) => {
+test("the tab bar and the brand bar slide away while scrolling down the page and come back when scrolling up", async ({
+  page,
+}) => {
   await signIn(page);
   await page.click("text=只想快速记个分");
   await page.evaluate(() => {
@@ -269,8 +271,15 @@ test("the tab bar slides away while scrolling down the page and comes back when 
   });
   const dock = page.locator(".dock");
   await expect(dock).not.toHaveClass(/hidden/);
+  // The brand bar on top goes with it; 我的品鉴 + 新建品鉴 stays pinned at the top of the screen.
+  const head = page.locator(".app-head");
+  const pin = page.locator(".section-head.pin");
   await page.mouse.wheel(0, 600);
   await expect(dock).toHaveClass(/hidden/);
+  await expect(head).toHaveClass(/hidden/);
+  await expect.poll(async () => (await pin.boundingBox())?.y).toBeLessThan(2);
+  await expect(pin.locator("text=新建品鉴")).toBeVisible();
   await page.mouse.wheel(0, -200);
   await expect(dock).not.toHaveClass(/hidden/);
+  await expect(head).not.toHaveClass(/hidden/);
 });
