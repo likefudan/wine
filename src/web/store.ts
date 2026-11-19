@@ -375,6 +375,8 @@ export function dropFailed() {
 }
 
 let flushing: Promise<void> | null = null;
+/** Someone asked for an upload while one was running. */
+let again = false;
 /** How many ops of the queue's head are on their way up: they must not be replaced. */
 let inFlight = 0;
 /** Set while the page is being hidden: the upload must survive the tab closing. */
@@ -382,7 +384,13 @@ let leaving = false;
 
 /** Sends the queue, then fetches the server's copy. Safe to call any time. */
 export function flush(): Promise<void> {
-  if (flushing) return flushing;
+  if (flushing) {
+    // Asked again while one is running (a page was left just as the last upload was finishing):
+    // what was added meanwhile goes up right after, not when its own timer comes round.
+    again = true;
+    return flushing;
+  }
+  again = false;
   cancelScheduled();
   flushing = (async () => {
     try {
@@ -435,15 +443,11 @@ export function flush(): Promise<void> {
       // offline or the server is down: try again later
     } finally {
       flushing = null;
+      const more =
+        !!state.me && state.queue.length > 0 && !leaving && (navigator as { onLine?: boolean }).onLine !== false;
+      if (more && again && !state.stuck) void flush();
       // Changes made while this upload was running wait for the next one.
-      if (
-        state.me &&
-        state.queue.length &&
-        !flushTimer &&
-        !leaving &&
-        (navigator as { onLine?: boolean }).onLine !== false
-      )
-        scheduleFlush(SHARED_MS);
+      else if (more && !flushTimer) scheduleFlush(SHARED_MS);
     }
   })();
   return flushing;
