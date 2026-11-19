@@ -636,7 +636,7 @@ async function putTasting(db: DB, user: UserRow, t: Tasting, photos?: R2Bucket) 
     .prepare("SELECT user_id, updated_at, photo_id FROM tastings WHERE id = ?")
     .bind(tid)
     .first<{ user_id: string; updated_at: string; photo_id: string | null }>();
-  if (existing && existing.user_id !== user.id) fail("只能修改自己的品鉴");
+  if (existing && existing.user_id !== user.id) fail("只能修改自己的笔记");
   const updatedAt = editedAt(t.updatedAt);
   // A later edit from another phone already arrived: keep it.
   if (existing && existing.updated_at > updatedAt) return;

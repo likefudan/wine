@@ -373,7 +373,7 @@ export function AnswersPage() {
           {scored.length > 0 && (
             <>
               {" · "}
-              {t("我对了 {k} 杯，共 {got} / {max} 分", { k: scored.length, got: total, max: scored.length * 10 })}
+              {t("已对答案 {k} 杯，共 {got} / {max} 分", { k: scored.length, got: total, max: scored.length * 10 })}
             </>
           )}
         </p>

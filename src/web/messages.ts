@@ -118,7 +118,10 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   地址: { tw: "地址", en: "Address" },
   地点: { tw: "地點", en: "Place" },
   餐厅: { tw: "餐廳", en: "Restaurant" },
-  "打几个字，会从 Google 地图联想": { tw: "打幾個字，會從 Google 地圖聯想", en: "Start typing to search Google Maps" },
+  "打几个字，会从 Google 地图联想": {
+    tw: "輸入幾個字，會從 Google 地圖帶出建議",
+    en: "Start typing to search Google Maps",
+  },
   知道了: { tw: "知道了", en: "OK" },
   下拉刷新: { tw: "下拉重新整理", en: "Pull to refresh" },
   松开刷新: { tw: "放開重新整理", en: "Release to refresh" },
@@ -157,7 +160,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Any Google account can sign up. New accounts may wait for the owner's approval, and can keep notes meanwhile.",
   },
   "你的账号正在等站长审核。现在就能正常记录；拍酒标识别和酒庄地址联想要等审核通过后才能用。": {
-    tw: "你的帳號正在等站長審核。現在就能正常記錄；拍酒標辨識和酒莊地址聯想要等審核通過後才能用。",
+    tw: "你的帳號正在等站長審核。現在就能正常記錄；拍酒標辨識和酒莊地址建議要等審核通過後才能用。",
     en: "Your account is waiting for the owner's approval. You can keep notes now; label reading and winery lookup start once you're approved.",
   },
   站长审核通过后才能使用这个功能: {
@@ -225,7 +228,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   日期: { tw: "日期", en: "Date" },
   建好了: { tw: "建立", en: "Create" },
   "一次品鉴可以是一次酒庄参观、一顿饭局或一整趟旅行。去之前建好，到了就按上酒顺序一款款记。": {
-    tw: "一次品飲可以是一次酒莊參訪、一頓飯局或一整趟旅行。去之前建好，到了就按上酒順序一款款記。",
+    tw: "一次品飲可以是一次酒莊參訪、一次聚餐或一整趟旅行。去之前建好，到了就按上酒順序一款款記。",
     en: "A tasting can be one winery visit, one dinner or a whole trip. Set it up beforehand, then record each wine in pouring order.",
   },
   还没有酒: { tw: "還沒有酒", en: "No wines yet" },
@@ -233,7 +236,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   单独记的酒: { tw: "單獨記的酒", en: "Wines noted on their own" },
   酒庄品鉴: { tw: "酒莊品飲", en: "Winery tasting" },
   旅行: { tw: "旅行", en: "Trip" },
-  饭局: { tw: "飯局", en: "Dinner" },
+  饭局: { tw: "聚餐", en: "Dinner" },
   在家: { tw: "在家", en: "At home" },
   找不到这次品鉴: { tw: "找不到這次品飲", en: "Tasting not found" },
   回到品鉴: { tw: "回到品飲", en: "Back to tastings" },
@@ -460,7 +463,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   只想快速记个分: { tw: "只想快速記個分數", en: "Just a quick score" },
   快记: { tw: "快記", en: "Quick" },
   入门: { tw: "入門", en: "Beginner" },
-  进阶: { tw: "進階", en: "Standard" },
+  进阶: { tw: "進階", en: "Intermediate" },
   专业: { tw: "專業", en: "Expert" },
   "打个分、点几个香气、写一句话": { tw: "打個分數、點幾個香氣、寫一句話", en: "A score, a few aromas, one line" },
   "第一次认真品酒：大白话提问，边喝边学": {
@@ -499,7 +502,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   只有品鉴的创建者能修改: { tw: "只有品飲的建立者能修改", en: "Only the tasting's creator can change it" },
   只有品鉴的创建者能删除: { tw: "只有品飲的建立者能刪除", en: "Only the tasting's creator can delete it" },
-  只能修改自己的品鉴: { tw: "只能修改自己的品飲", en: "You can only change your own notes" },
+  只能修改自己的笔记: { tw: "只能修改自己的筆記", en: "You can only change your own notes" },
   年份无效: { tw: "年份無效", en: "Invalid vintage" },
   "拍酒标识别还没有开通，请手动输入": {
     tw: "拍酒標辨識還沒有開通，請手動輸入",
@@ -640,12 +643,12 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   开: { tw: "開", en: "On" },
   "开着时，每款酒要先交自己的评价才能看到别人的，避免被带偏。": {
-    tw: "開著時，每款酒要先交出自己的評價才能看到別人的，避免被帶偏。",
+    tw: "開著時，每款酒要先交出自己的評價才能看到別人的，避免被別人影響。",
     en: "When on, you see others' notes on a wine only after handing in your own, so nobody sways you.",
   },
   "成员（{n}）": { tw: "成員（{n}）", en: "Members ({n})" },
   我: { tw: "我", en: "Me" },
-  打开品酒日记: { tw: "打開品酒日記", en: "Open the tasting journal" },
+  打开品酒日记: { tw: "打開品酒日記", en: "Open Wine Diary" },
   打开品鉴: { tw: "打開品飲", en: "Open tasting" },
   扫码加入: { tw: "掃碼加入", en: "Join by QR code" },
   扫码加入品鉴: { tw: "掃碼加入品飲", en: "Scan to join" },

@@ -20,15 +20,15 @@ export const RECS_MESSAGES: Record<string, { tw: string; en: string }> = {
   "还有 {n} 瓶，开一瓶不心疼": { tw: "還有 {n} 瓶，開一瓶不心疼", en: "{n} bottles left: one won't be missed" },
   在你的酒窖里算日常价位: { tw: "在你的酒窖裡算日常價位", en: "An everyday price for your cellar" },
   是你酒窖里比较贵的一瓶: { tw: "是你酒窖裡比較貴的一瓶", en: "One of the pricier bottles you keep" },
-  "清爽，不压菜": { tw: "清爽，不壓菜", en: "Fresh, and easy with food" },
+  "清爽，不压菜": { tw: "清爽，不搶菜的味道", en: "Fresh, and easy with food" },
   "红酒，够浓郁": { tw: "紅酒，夠濃郁", en: "A red with some weight" },
   "给至少 3 款酒打了分，推荐才会按你的口味来。记得越多越准，大约 50 款之后最准。": {
-    tw: "給至少 3 款酒打了分，推薦才會按你的口味來。記得越多越準，大約 50 款之後最準。",
+    tw: "給至少 3 款酒評了分，推薦才會按你的口味來。記得越多越準，大約 50 款之後最準。",
     en: "Score at least 3 wines and the picks follow your taste. The more you record the better; it's most accurate after about 50.",
   },
-  "根据你打过分的 {n} 款酒。": { tw: "根據你打過分的 {n} 款酒。", en: "Based on the {n} wines you scored." },
+  "根据你打过分的 {n} 款酒。": { tw: "根據你評過分的 {n} 款酒。", en: "Based on the {n} wines you scored." },
   "根据你打过分的 {n} 款酒。记得越多越准，大约 50 款之后最准。": {
-    tw: "根據你打過分的 {n} 款酒。記得越多越準，大約 50 款之後最準。",
+    tw: "根據你評過分的 {n} 款酒。記得越多越準，大約 50 款之後最準。",
     en: "Based on the {n} wines you scored. The more you record the better; it's most accurate after about 50.",
   },
   "从酒窖里 {n} 瓶中挑：先看适饮期，再看你的口味。": {
@@ -37,18 +37,18 @@ export const RECS_MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   下一款试试: { tw: "下一款試試", en: "Try next" },
   "先给几款酒打分，这里会按你喜欢的品种、产区和酒庄，找你还没喝过的酒。": {
-    tw: "先給幾款酒打分，這裡會按你喜歡的品種、產區和酒莊，找你還沒喝過的酒。",
+    tw: "先給幾款酒評分，這裡會按你喜歡的品種、產區和酒莊，找你還沒喝過的酒。",
     en: "Score a few wines first: this will find wines you haven't had from the grapes, regions and producers you like.",
   },
   "正在找…": { tw: "正在找…", en: "Looking…" },
   "没有网络，联网后再看。": { tw: "沒有網路，連網後再看。", en: "Offline: check again when you're connected." },
   "没能加载，稍后再试。": { tw: "沒能載入，稍後再試。", en: "Couldn't load. Try again later." },
   "暂时没找到合适的。多记几款、多打几次分，就会有了。": {
-    tw: "暫時沒找到合適的。多記幾款、多打幾次分，就會有了。",
+    tw: "暫時沒找到合適的。多記幾款、多評幾次分，就會有了。",
     en: "Nothing fits yet. Record and score a few more wines and there will be.",
   },
   "和你打高分的酒同品种、同产区或同酒庄，你还没喝过。": {
-    tw: "和你打高分的酒同品種、同產區或同酒莊，你還沒喝過。",
+    tw: "和你給高分的酒同品種、同產區或同酒莊，你還沒喝過。",
     en: "Same grape, region or producer as wines you scored well, and new to you.",
   },
   换一批: { tw: "換一批", en: "Show others" },
@@ -75,10 +75,10 @@ export const RECS_MESSAGES: Record<string, { tw: string; en: string }> = {
   酒体中等: { tw: "酒體中等", en: "medium body" },
   酒体饱满: { tw: "酒體飽滿", en: "full body" },
   "给至少 3 款酒打了分，这里会显示你偏爱的品种、产区和风格，以及你和评论家的差别。": {
-    tw: "給至少 3 款酒打了分，這裡會顯示你偏愛的品種、產區和風格，以及你和評論家的差別。",
+    tw: "給至少 3 款酒評了分，這裡會顯示你偏愛的品種、產區和風格，以及你和評論家的差別。",
     en: "Score at least 3 wines and this shows the grapes, regions and styles you prefer, and how you differ from the critics.",
   },
-  款打过分: { tw: "款打過分", en: "wines scored" },
+  款打过分: { tw: "款評過分", en: "wines scored" },
   平均分: { tw: "平均分", en: "average" },
   "数字是和你自己的平均分比：+3 表示这类酒你平均多给 3 分。": {
     tw: "數字是和你自己的平均分比：+3 表示這類酒你平均多給 3 分。",
@@ -98,11 +98,11 @@ export const RECS_MESSAGES: Record<string, { tw: string; en: string }> = {
   不太对你胃口: { tw: "不太對你胃口", en: "Less your style" },
   我与评论家: { tw: "我與評論家", en: "Me vs the critics" },
   "查过专业评价的酒多了，这里会显示同一款酒上你和评论家打分的差别。": {
-    tw: "查過專業評價的酒多了，這裡會顯示同一款酒上你和評論家打分的差別。",
+    tw: "查過專業評價的酒多了，這裡會顯示同一款酒上你和評論家評分的差別。",
     en: "Once more of your wines have pro reviews, this shows how your scores differ from the critics' on the same wine.",
   },
   "同样的酒，你和评论家的打分差不多（{n} 款）。": {
-    tw: "同樣的酒，你和評論家的打分差不多（{n} 款）。",
+    tw: "同樣的酒，你和評論家的評分差不多（{n} 款）。",
     en: "On the same wines you score about the same as the critics ({n} wines).",
   },
   "同样的酒，你平均比评论家高 {d} 分（{n} 款）。": {

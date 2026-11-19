@@ -38,7 +38,7 @@ export const FINISH_WORDS: Tri[] = [
 export const SWEETNESS_WORDS: Tri[] = [
   T("干", "不甜", "dry"),
   T("微甜", "微甜", "off-dry"),
-  T("半干", "半甜偏干", "medium-dry"),
+  T("半干", "半乾", "medium-dry"),
   T("半甜", "半甜", "medium-sweet"),
   T("甜", "甜", "sweet"),
   T("极甜", "極甜", "luscious"),
