@@ -38,7 +38,9 @@
   --spine-shade-1: rgb(60 42 20 / 4%);
   --spine-shade-2: rgb(60 42 20 / 13%);
   --spine-crease: rgb(50 34 16 / 34%);
-  --spine-thread: rgb(248 243 231 / 85%);
+  --spine-thread: #8a2a36;
+  --spine-thread-shadow: rgb(40 20 10 / 35%);
+  --spine-hole: rgb(50 34 16 / 55%);
   --radius: 2px;
   --serif-latin: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
   --serif:
@@ -74,7 +76,9 @@
     --spine-shade-1: rgb(0 0 0 / 14%);
     --spine-shade-2: rgb(0 0 0 / 36%);
     --spine-crease: rgb(0 0 0 / 70%);
-    --spine-thread: rgb(163 152 127 / 55%);
+    --spine-thread: #b9606a;
+    --spine-thread-shadow: rgb(0 0 0 / 70%);
+    --spine-hole: rgb(0 0 0 / 80%);
     --glass-tint: rgb(32 28 22 / 12%);
     --glass-halo: 0 0 6px rgb(0 0 0 / 85%), 0 0 2px rgb(0 0 0 / 85%);
     --glass-active: color-mix(in srgb, var(--primary) 26%, rgb(255 255 255 / 4%));
@@ -113,7 +117,9 @@
   --spine-shade-1: rgb(0 0 0 / 14%);
   --spine-shade-2: rgb(0 0 0 / 36%);
   --spine-crease: rgb(0 0 0 / 70%);
-  --spine-thread: rgb(163 152 127 / 55%);
+  --spine-thread: #b9606a;
+  --spine-thread-shadow: rgb(0 0 0 / 70%);
+  --spine-hole: rgb(0 0 0 / 80%);
   --glass-tint: rgb(32 28 22 / 12%);
   --glass-halo: 0 0 6px rgb(0 0 0 / 85%), 0 0 2px rgb(0 0 0 / 85%);
   --glass-active: color-mix(in srgb, var(--primary) 26%, rgb(255 255 255 / 4%));
@@ -2833,16 +2839,32 @@ a.pro-score {
       transparent 100%
     );
   }
-  .book .spine::before {
-    content: "";
+  /* The sewing, drawn by hand in book.tsx: waxed thread with a little shadow under it. */
+  .book .spine-thread {
     position: absolute;
     top: 0;
-    bottom: 0;
     left: 50%;
-    width: 1px;
-    margin-left: -0.5px;
-    /* The thread: long stitches with short gaps. */
-    background: repeating-linear-gradient(180deg, var(--spine-thread) 0 22px, transparent 22px 30px);
+    height: 100%;
+    margin-left: -20px;
+    overflow: visible;
+  }
+  .book .spine-thread .thread {
+    fill: none;
+    stroke: var(--spine-thread);
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0.6px 0.8px 0.5px var(--spine-thread-shadow));
+  }
+  .book .spine-thread .thread .fine {
+    stroke-width: 1.1;
+  }
+  .book .spine-thread .holes {
+    fill: var(--spine-hole);
+  }
+  .book .spine-thread .leaves {
+    fill: var(--spine-thread);
+    opacity: 0.8;
   }
   .book .spine-ribbon {
     position: absolute;
