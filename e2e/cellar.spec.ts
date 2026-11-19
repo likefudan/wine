@@ -10,7 +10,7 @@ test("cellar: add bottles, reminder, open one, take one from a note", async ({ p
 
   // The 酒窖 is a view of the 酒库, not a tab of its own.
   await expect(page.locator("nav >> text=酒窖")).toHaveCount(0);
-  await page.click("nav >> text=酒库");
+  await page.click("nav >> text=我的酒");
   await page.click(".segmented >> text=酒窖");
   await expect(page.locator(".empty")).toContainText("买了酒就放进来");
   await page.click(".library-head >> text=放进酒窖");
@@ -47,11 +47,11 @@ test("cellar: add bottles, reminder, open one, take one from a note", async ({ p
   await page.click("nav >> text=品鉴");
   await expect(page.locator(".cellar-alert")).toHaveCount(0);
 
-  // 开一瓶 = 记一杯, from the 酒窖 view .
-  await page.click("nav >> text=酒库");
+  // 开一瓶 = 品一款, from the 酒窖 view .
+  await page.click("nav >> text=我的酒");
   await page.click(".segmented >> text=酒窖");
   await page.click(".row >> text=Cellar Test Cab");
-  await page.click("text=开一瓶，记一杯");
+  await page.click("text=开一瓶，品一款");
   await expect(page).toHaveURL(/\/taste\//);
   await expect(page.locator(".cellar-line")).toContainText("从酒窖开的 · 家里酒柜 · 还剩 2 瓶");
   await page.click("header >> text=完成");
@@ -59,7 +59,7 @@ test("cellar: add bottles, reminder, open one, take one from a note", async ({ p
   // The wine's page shows what is left, with 开一瓶 right there.
   await expect(page.locator(".wine-cellar")).toContainText("存 2 瓶");
 
-  // 记一杯 elsewhere: "this bottle came from the cellar" takes one off.
+  // 品一款 elsewhere: "this bottle came from the cellar" takes one off.
   await page.click(".dock-add");
   await page.fill("input.search", "Cellar Test");
   await expect(page.locator(".row", { hasText: "Cellar Test Cab" })).toContainText("酒窖里 2 瓶");
@@ -81,7 +81,7 @@ test("cellar: add bottles, reminder, open one, take one from a note", async ({ p
   expect(s.tastings.filter((x: { cellarId: string | null }) => x.cellarId)).toHaveLength(2);
 
   // From a note on the wine's page: the bottle button opens a sheet to put more in the cellar.
-  await page.click("nav >> text=酒库");
+  await page.click("nav >> text=我的酒");
   await page.click(".segmented >> text=全部");
   await page.click(".row >> text=Cellar Test Cab");
   await page.locator(".card-action.second").first().click();

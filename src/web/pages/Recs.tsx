@@ -181,7 +181,7 @@ function Tonight(props: { profile: TasteProfile }) {
               {pick.lot.location && <li class="muted">{pick.lot.location}</li>}
             </ul>
             <button type="button" class={i === 0 ? "button small primary" : "button small"} onClick={() => open(pick)}>
-              {t("开一瓶，记一杯")}
+              {t("开一瓶，品一款")}
             </button>
           </li>
         ))}

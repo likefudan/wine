@@ -120,7 +120,7 @@ export function Taste() {
   if (!x || !v)
     return (
       <div class="page">
-        <p class="empty">{t("找不到这条记录")}</p>
+        <p class="empty">{t("找不到这条笔记")}</p>
         <a href="/">{t("回到品鉴")}</a>
       </div>
     );
@@ -242,7 +242,7 @@ export function Taste() {
           type="button"
           class="link danger small"
           onClick={async () => {
-            if (!(await ask(t("删除这条品鉴记录？"), { ok: t("删除") }))) return;
+            if (!(await ask(t("删除这条笔记？"), { ok: t("删除") }))) return;
             // A bottle opened from the 酒窖 by mistake goes back on the shelf.
             const putBack =
               !!saved?.cellarId &&
@@ -255,7 +255,7 @@ export function Taste() {
             route(backOf(x), true);
           }}
         >
-          {t("删除这条记录")}
+          {t("删除这条笔记")}
         </button>
       </div>
       {buying && saved && !blindOpen && <AddToCellarSheet x={saved} onClose={() => setBuying(false)} />}
@@ -297,7 +297,7 @@ function Conclusion(props: { x: Tasting; patch: Patch; standard?: boolean }) {
       </Field>
       {props.standard && (
         <>
-          <Field label={t("品质等级")} hint={t("「我的分」记你有多喜欢，这里记客观判断")} group>
+          <Field label={t("品质等级")} hint={t("「我的评分」记你有多喜欢，这里记客观判断")} group>
             <Choice
               label={t("品质等级")}
               value={x.quality ?? undefined}
@@ -685,7 +685,7 @@ function LevelTwoTable(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: 
 
       <section class="step">
         <h2 class="step-title">4 · {t("结论")}</h2>
-        <Field label={t("品质等级")} hint={t("「我的分」记你有多喜欢，这里记客观判断")} group>
+        <Field label={t("品质等级")} hint={t("「我的评分」记你有多喜欢，这里记客观判断")} group>
           <Choice
             label={t("品质等级")}
             value={x.quality ?? undefined}

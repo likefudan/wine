@@ -32,7 +32,7 @@ const feed = (c: Client, q = "") => c.call<FriendFeed>(`/api/friends${q}`);
 const later = (s: number) => new Date(Date.now() + s * 1000).toISOString();
 
 describe("朋友动态", () => {
-  it("shows friends' notes in shared 品鉴, keeps 盲评, and never their private notes or where they tasted", async () => {
+  it("shows friends' notes in shared 品鉴, keeps 先评后看, and never their private notes or where they tasted", async () => {
     const owner = await signIn("feed-owner@example.com");
     const friend = await signIn("feed-friend@example.com");
     const { list, wines, items, key } = await sharedList(owner, "Napa");
@@ -84,7 +84,7 @@ describe("朋友动态", () => {
 
     const blind = (await feed(owner)).data;
     expect(blind.notes.map((n) => n.vintage.wine)).toEqual(["Napa wine 1", "Napa wine 0"]);
-    // 盲评: they rated it, nothing more, until I hand in mine.
+    // 先评后看: they rated it, nothing more, until I hand in mine.
     expect(blind.notes[0]).toMatchObject({
       open: false,
       score: null,

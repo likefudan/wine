@@ -365,7 +365,7 @@ export async function putVintage(
   const grapes = Array.isArray(o.grapes)
     ? o.grapes.flatMap((g) => (typeof g === "string" && g.trim() ? [g.trim().slice(0, 60)] : [])).slice(0, 8)
     : [];
-  // Only a number that is really in 公共酒款库: an LWIN wine is shown to everyone (trustedWine).
+  // Only a number that is really in 公共酒款目录: an LWIN wine is shown to everyone (trustedWine).
   const lwin =
     Number.isInteger(o.lwin) &&
     o.lwin! > 0 &&
@@ -472,7 +472,7 @@ async function putList(db: DB, user: UserRow, l: WineList) {
   const existing = await db.prepare("SELECT owner_id FROM lists WHERE id = ?").bind(lid).first<{ owner_id: string }>();
   const at = now();
   if (existing) {
-    if (existing.owner_id !== user.id) fail("只有品鉴的创建者能修改");
+    if (existing.owner_id !== user.id) fail("只有品鉴的主持人能修改");
     await db
       .prepare("UPDATE lists SET title = ?, kind = ?, starts_on = ?, note = ?, updated_at = ? WHERE id = ?")
       .bind(title, kind, startsOn, note, at, lid)
@@ -503,7 +503,7 @@ async function putList(db: DB, user: UserRow, l: WineList) {
 async function deleteList(db: DB, user: UserRow, listId: string) {
   const l = await db.prepare("SELECT owner_id FROM lists WHERE id = ?").bind(id(listId)).first<{ owner_id: string }>();
   if (!l) return;
-  if (l.owner_id !== user.id) fail("只有品鉴的创建者能删除");
+  if (l.owner_id !== user.id) fail("只有品鉴的主持人能删除");
   // The notes stay in each person's 酒库 (docs/design.zh.md §3.6): they lose only their place in the list.
   await db.batch([
     db
@@ -601,7 +601,7 @@ async function deleteItem(db: DB, user: UserRow, itemId: string) {
     .bind(id(itemId))
     .first<{ list_id: string; added_by: string; owner_id: string }>();
   if (!row) return;
-  if (row.added_by !== user.id && row.owner_id !== user.id) fail("只有添加的人或品鉴创建者能移除");
+  if (row.added_by !== user.id && row.owner_id !== user.id) fail("只有添加的人或品鉴主持人能移除");
   await db.batch([
     db.prepare("UPDATE tastings SET list_item_id = NULL WHERE list_item_id = ?").bind(itemId),
     db.prepare("DELETE FROM list_items WHERE id = ?").bind(itemId),
@@ -956,7 +956,7 @@ dataRoutes.get("/catalog", async (c) => {
 });
 
 /**
- * 公共酒款库 (LWIN): wines with every typed word as the start of one of their words. The longest word
+ * 公共酒款目录 (LWIN): wines with every typed word as the start of one of their words. The longest word
  * reads its index range first; grand vins and short names come first.
  */
 export async function searchLwin(db: DB, q: string): Promise<LwinWine[]> {

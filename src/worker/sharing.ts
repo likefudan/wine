@@ -19,10 +19,10 @@ import { NAME_SQL, PICTURE_SQL } from "./profile";
 
 /**
  * 分享与共同评价 (docs/design.zh.md §3.6). A list's QR code holds /l/{list id}?k={key}: scanning it
- * and signing in makes you a member, who adds wines and writes their own note on each. 盲评 is
+ * and signing in makes you a member, who adds wines and writes their own note on each. 先评后看 is
  * enforced here, not on the phone: until I hand in my note on a wine, nothing of anyone else's note
  * on it leaves the server, only how many have rated it. Visitors who have not joined see the notes
- * only once the owner reveals them (揭晓) or turns 盲评 off, so a private window cannot peek.
+ * only once the owner reveals them (揭晓) or turns 先评后看 off, so a private window cannot peek.
  */
 
 type DB = D1Database;
@@ -92,7 +92,7 @@ export async function board(db: DB, l: ListRow, user: UserRow | null, k: string 
   const viaKey = keyOk(l, k);
   if (!member && l.visibility !== "public" && !viaKey) {
     // Signed out, or not a member, with no key: a private list says nothing about itself.
-    throw new HttpError(403, "private_list", "这次品鉴是私密的，请向创建者要二维码");
+    throw new HttpError(403, "private_list", "这次品鉴是私密的，请向主持人要二维码");
   }
   const open = notesOpen(l);
   // Someone without a name shows as the front of their email to the people they taste with, never
@@ -283,7 +283,7 @@ sharingRoutes.post("/lists/:id/join", async (c) => {
   if (!(await memberOf(db, l.id, user.id))) {
     const k = (await readJson(c.req.raw)).k;
     if (!keyOk(l, typeof k === "string" ? k : null))
-      throw new HttpError(403, "bad_key", "二维码已失效，请向创建者要新的");
+      throw new HttpError(403, "bad_key", "二维码已失效，请向主持人要新的");
     if (!l.join_open) throw new HttpError(403, "join_closed", "这次品鉴已停止扫码加入");
     await db.batch([
       db
@@ -295,13 +295,13 @@ sharingRoutes.post("/lists/:id/join", async (c) => {
   return c.json(await board(db, l, (await currentUser(c))!, null));
 });
 
-/** The owner's switches: 私密 / 公开, 盲评, 揭晓, 扫码加入, and a new QR code. */
+/** The owner's switches: 私密 / 公开, 先评后看, 揭晓, 扫码加入, and a new QR code. */
 sharingRoutes.post("/lists/:id/share", async (c) => {
   requireSameOrigin(c);
   const user = await requireUser(c);
   const db = c.env.DB;
   const l = await loadList(db, c.req.param("id"));
-  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有品鉴的创建者能修改");
+  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有品鉴的主持人能修改");
   const b = await readJson(c.req.raw);
   const sets: string[] = [];
   const values: unknown[] = [];
@@ -348,7 +348,7 @@ sharingRoutes.post("/lists/:id/leave", async (c) => {
   requireSameOrigin(c);
   const user = await requireUser(c);
   const l = await loadList(c.env.DB, c.req.param("id"));
-  if (l.owner_id === user.id) throw new HttpError(400, "owner", "创建者不能退出，可以删除品鉴");
+  if (l.owner_id === user.id) throw new HttpError(400, "owner", "主持人不能退出，可以删除品鉴");
   await removeMember(c.env.DB, l.id, user.id);
   return c.json({ ok: true });
 });
@@ -359,8 +359,8 @@ sharingRoutes.post("/lists/:id/members/:user/remove", async (c) => {
   const user = await requireUser(c);
   const db = c.env.DB;
   const l = await loadList(db, c.req.param("id"));
-  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有品鉴的创建者能修改");
-  if (c.req.param("user") === user.id) throw new HttpError(400, "owner", "创建者不能退出，可以删除品鉴");
+  if (l.owner_id !== user.id) throw new HttpError(403, "not_owner", "只有品鉴的主持人能修改");
+  if (c.req.param("user") === user.id) throw new HttpError(400, "owner", "主持人不能退出，可以删除品鉴");
   await removeMember(db, l.id, c.req.param("user"));
   // The QR code they scanned stops working, so they cannot simply scan it again.
   await db

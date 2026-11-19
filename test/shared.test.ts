@@ -442,7 +442,7 @@ describe("compare with the last wine", () => {
   });
 
   it("says how they differ and keeps nudges on the scale", () => {
-    expect(compareLine("zh-CN", t3, t1)).toBe("和上一款比：酸度差不多，单宁更高，我的分高 3 分");
+    expect(compareLine("zh-CN", t3, t1)).toBe("和上一款比：酸度差不多，单宁更高，我的评分高 3 分");
     expect(compareLine("en", t3, t1)).toBe(
       "Compared with the last wine: acidity about the same, tannin higher, 3 points higher on my score",
     );

@@ -35,7 +35,7 @@ export function WinePage(props: { id?: string }) {
     return (
       <div class="page">
         <p class="empty">{t("找不到这款酒")}</p>
-        <a href="/library">{t("回到酒库")}</a>
+        <a href="/library">{t("回到我的酒")}</a>
       </div>
     );
   const listOf = (itemId: string | null) => {
@@ -119,7 +119,7 @@ export function WinePage(props: { id?: string }) {
               <button
                 type="button"
                 class="icon-button card-action"
-                aria-label={t("分享这条记录")}
+                aria-label={t("分享这条笔记")}
                 onClick={() => setSharing(x.id)}
               >
                 <ShareIcon />

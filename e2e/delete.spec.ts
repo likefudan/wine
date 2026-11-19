@@ -25,13 +25,13 @@ test("a tasting is deleted after confirming in the app's own box", async ({ page
   await expect(page).toHaveURL(/\/taste\//);
 
   // 取消 keeps it.
-  await page.locator("text=删除这条记录").tap();
-  await expect(page.locator(".confirm p")).toHaveText("删除这条品鉴记录？");
+  await page.locator("text=删除这条笔记").tap();
+  await expect(page.locator(".confirm p")).toHaveText("删除这条笔记？");
   await page.locator(".confirm >> text=取消").tap();
   await expect(page.locator(".confirm")).toHaveCount(0);
   await expect(page).toHaveURL(/\/taste\//);
 
-  await page.locator("text=删除这条记录").tap();
+  await page.locator("text=删除这条笔记").tap();
   await page.locator(".confirm-actions .danger").tap();
   await expect(page).toHaveURL(/\/lists\//);
   await expect

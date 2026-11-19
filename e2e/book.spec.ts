@@ -49,10 +49,10 @@ test.describe("a phone on its side", () => {
     await expect(page).toHaveURL(/\/lists\//);
 
     // 酒库: the wines on the left, the one tasted last open on the right; 我的: sections left, the chosen one right.
-    await left.locator(".tabbar >> text=酒库").click();
+    await left.locator(".tabbar >> text=我的酒").click();
     await expect(left.locator(".rows .selected")).toContainText("Spine Winery");
     await expect(right.locator(".page-head")).toContainText("Spine Winery");
-    await left.locator(".tabbar >> text=我的").click();
+    await left.locator('.tabbar >> text="我的"').click();
     await left.locator(".segmented >> text=通用").click();
     await expect(right).toContainText("外观");
     await expect(left.locator(".me-card")).toBeVisible();

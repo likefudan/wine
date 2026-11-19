@@ -3,7 +3,7 @@
  * and no AI call. Worked out on the phone from its own copy, so it is free and works offline.
  *
  * - 口味画像: how much each grape, place, colour, producer, aroma family and structure level moves
- *   "我的分" away from my own average. Shrunk towards 0, so one great bottle doesn't make a rule.
+ *   "我的评分" away from my own average. Shrunk towards 0, so one great bottle doesn't make a rule.
  * - 我与评论家: my score minus the critics' on the same wines, overall and by grape / colour.
  * - 今晚开哪瓶: my cellar, ranked by how urgent the drinking window is, how much I should like it
  *   and the occasion.

@@ -48,7 +48,7 @@ const boardOf = (c: Client, listId: string, k?: string) =>
   c.call<Board & { error?: string }>(`/api/lists/${listId}/board${k ? `?k=${encodeURIComponent(k)}` : ""}`);
 
 describe("分享与共同评价", () => {
-  it("a friend joins by the QR code and writes their own notes; 盲评 hides the others' until they hand in", async () => {
+  it("a friend joins by the QR code and writes their own notes; 先评后看 hides the others' until they hand in", async () => {
     const owner = await signIn("owner@example.com");
     const { list, wines, items } = await napaDay(owner);
 

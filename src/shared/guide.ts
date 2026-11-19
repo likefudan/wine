@@ -474,8 +474,8 @@ const QUALITY_Q: GuideQuestion = {
     "Think of four things: is it balanced, is the finish long, are the flavours intense, is it complex? Not whether you like it.",
   ),
   why: T(
-    "这叫「品质等级」。「我的分」记你有多喜欢，这里记客观判断。",
-    "這叫「品質等級」。「我的分數」記你有多喜歡，這裡記客觀判斷。",
+    "这叫「品质等级」。「我的评分」记你有多喜欢，这里记客观判断。",
+    "這叫「品質等級」。「我的評分」記你有多喜歡，這裡記客觀判斷。",
     "That's the quality level. My score is how much you liked it; this is your objective judgement.",
   ),
   options: [

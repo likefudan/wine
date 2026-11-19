@@ -100,8 +100,8 @@ export function compareLine(lang: Lang, cur: Tasting, prev: Tasting): string {
       lang === "en"
         ? `${Math.abs(d)} points ${d > 0 ? "higher" : "lower"} on my score`
         : lang === "zh-TW"
-          ? `我的分數${d > 0 ? "高" : "低"} ${Math.abs(d)} 分`
-          : `我的分${d > 0 ? "高" : "低"} ${Math.abs(d)} 分`,
+          ? `我的評分${d > 0 ? "高" : "低"} ${Math.abs(d)} 分`
+          : `我的评分${d > 0 ? "高" : "低"} ${Math.abs(d)} 分`,
     );
   }
   if (!parts.length) return "";
