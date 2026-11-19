@@ -69,7 +69,7 @@ export const CELLAR_MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   家里酒柜: { tw: "家裡酒櫃", en: "Wine fridge" },
   在哪买的: { tw: "在哪買的", en: "Bought from" },
-  "酒庄、酒铺、网店或朋友": { tw: "酒莊、酒鋪、網店或朋友", en: "Winery, shop, website or a friend" },
+  "酒庄、酒铺、网店或朋友": { tw: "酒莊、酒專、網路商店或朋友", en: "Winery, shop, website or a friend" },
   买入日期: { tw: "購買日期", en: "Bought on" },
   每瓶价格: { tw: "每瓶價格", en: "Price per bottle" },
   币种: { tw: "幣別", en: "Currency" },

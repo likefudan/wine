@@ -1,8 +1,8 @@
 // 盲品 (Blind.tsx, src/shared/blind.ts): kept apart from messages.ts, which spreads it in.
 
 export const BLIND_MESSAGES: Record<string, { tw: string; en: string }> = {
-  盲品: { tw: "盲品", en: "Blind" },
-  "盲品：先不看酒名": { tw: "盲品：先不看酒名", en: "Taste blind: no wine name yet" },
+  盲品: { tw: "盲飲", en: "Blind" },
+  "盲品：先不看酒名": { tw: "盲飲：先不看酒名", en: "Taste blind: no wine name yet" },
   "直接开始品，记成杯号，最后再对答案": {
     tw: "直接開始品，記成杯號，最後再對答案",
     en: "Start tasting right away as a numbered glass; fill in the wine at the end",
@@ -14,12 +14,12 @@ export const BLIND_MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "No name, region or vintage needed. Take a guess after tasting, then fill in the real wine under “Reveal” and see how close you came.",
   },
   "开始品 {label}": { tw: "開始品 {label}", en: "Start tasting {label}" },
-  只有主持人能加盲品杯: { tw: "只有主持人能加盲品杯", en: "Only the host can add blind glasses" },
+  只有主持人能加盲品杯: { tw: "只有主持人能加盲飲杯", en: "Only the host can add blind glasses" },
   "只有主持人能加盲品杯，这样大家喝的 #1、#2 是同一杯。": {
-    tw: "只有主持人能加盲品杯，這樣大家喝的 #1、#2 是同一杯。",
+    tw: "只有主持人能加盲飲杯，這樣大家喝的 #1、#2 是同一杯。",
     en: "Only the host adds blind glasses, so everyone's #1 and #2 are the same wine.",
   },
-  加一杯盲品: { tw: "加一杯盲品", en: "Add a blind glass" },
+  加一杯盲品: { tw: "加一杯盲飲", en: "Add a blind glass" },
   猜一猜这是什么酒: { tw: "猜一猜這是什麼酒", en: "Guess the wine" },
   "都可以不填。对答案时按猜中的部分算分：品种 4 分、产地 4 分、年份 2 分。": {
     tw: "都可以不填。對答案時按猜中的部分算分：品種 4 分、產地 4 分、年份 2 分。",
@@ -41,12 +41,12 @@ export const BLIND_MESSAGES: Record<string, { tw: string; en: string }> = {
   就是这款: { tw: "就是這款", en: "This is it" },
   待对答案: { tw: "待對答案", en: "To reveal" },
   "{n} 杯": { tw: "{n} 杯", en: "{n} glasses" },
-  "{n} 杯盲品": { tw: "{n} 杯盲品", en: "{n} blind glasses" },
+  "{n} 杯盲品": { tw: "{n} 杯盲飲", en: "{n} blind glasses" },
   "{n} 杯待揭晓": { tw: "{n} 杯待揭曉", en: "{n} to reveal" },
   "{n} 杯已揭晓": { tw: "{n} 杯已揭曉", en: "{n} revealed" },
-  "我对了 {k} 杯，共 {got} / {max} 分": {
-    tw: "我對了 {k} 杯，共 {got} / {max} 分",
-    en: "{k} checked: {got} / {max} points",
+  "已对答案 {k} 杯，共 {got} / {max} 分": {
+    tw: "已對答案 {k} 杯，共 {got} / {max} 分",
+    en: "{k} revealed: {got} / {max} points",
   },
   "主持人：先把答案填好": { tw: "主持人：先把答案填好", en: "Host: fill in the answers first" },
   "答案只有你看得到。大家看到的一直是杯号，等你点「揭晓」，才看到答案、彼此的猜测和得分。": {
@@ -61,7 +61,7 @@ export const BLIND_MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "等主持人揭曉答案。先把每杯的「猜一猜」填好吧。",
     en: "Waiting for the host to reveal. Fill in your guess for each glass meanwhile.",
   },
-  "这次品鉴还没有盲品杯。": { tw: "這次品飲還沒有盲品杯。", en: "No blind glasses in this tasting yet." },
+  "这次品鉴还没有盲品杯。": { tw: "這次品飲還沒有盲飲杯。", en: "No blind glasses in this tasting yet." },
   去品这杯: { tw: "去品這杯", en: "Taste it" },
   "还没揭晓：只有你看得到这个答案": {
     tw: "還沒揭曉：只有你看得到這個答案",
