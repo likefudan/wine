@@ -169,3 +169,12 @@ export function Spine() {
 
 /** The right page of 我的: the section picked in the left page's list. */
 export const MeRight = () => <MePage part="panels" />;
+
+/**
+ * The pages whose right-hand side differs on the open book. They ask for the width themselves: the
+ * router keeps what it drew until the address changes, so a phone turned on its side while a page
+ * is open would otherwise keep the upright page on the right (Ke Li 2026-11-19: 品鉴 showed twice).
+ */
+export const HomeRoute = () => (useWide() ? <HomeRight /> : <Home />);
+export const LibraryRoute = () => (useWide() ? <LibraryRight /> : <Library />);
+export const MeRoute = () => (useWide() ? <MeRight /> : <MePage />);
