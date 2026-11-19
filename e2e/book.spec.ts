@@ -68,3 +68,26 @@ test("an upright phone keeps its one page", async ({ page }) => {
   await expect(page.locator(".leaf.left")).toHaveCount(0);
   await expect(page.locator(".spine")).toBeHidden();
 });
+
+test("turning the phone on its side opens the book, with 品鉴 on the left only", async ({ page }) => {
+  await page.goto("/");
+  await page.fill('input[type="email"]', `turn${Date.now()}@example.com`);
+  await page.click("text=Dev login");
+  await page.click("text=刚开始认真喝，想学怎么品");
+  await page.click("text=新建品鉴");
+  await page.fill('.sheet input[placeholder^="例如"]', "Turn day");
+  await page.click("text=建好了");
+  await page.goto("/");
+  await expect(page.locator(".list-card")).toHaveCount(1);
+
+  await page.setViewportSize({ width: 956, height: 440 });
+  // The list of 品鉴 is on the left; the right page is the newest one, not the list again.
+  await expect(page.locator(".leaf.left .list-card")).toHaveCount(1);
+  await expect(page.locator(".leaf.right .list-card")).toHaveCount(0);
+  await expect(page.locator(".leaf.right h1")).toHaveText("Turn day");
+
+  // And upright again: one page, the list.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".list-card")).toHaveCount(1);
+  await expect(page.locator(".leaf.left")).toHaveCount(0);
+});

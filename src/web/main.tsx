@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
-import { HomeRight, LeftPage, LibraryRight, MeRight, Spine, useWide } from "./book";
+import { HomeRoute, LeftPage, LibraryRoute, MeRoute, Spine, useWide } from "./book";
 import { GlassIcon, ListIcon, PersonIcon, SearchIcon } from "./components";
 import { LangMenu } from "./LangSwitch";
 import { Logo } from "./Logo";
@@ -21,12 +21,10 @@ import { PullRefresh } from "./PullRefresh";
 import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
 import { CellarLotPage, CellarRedirect } from "./pages/Cellar";
-import { Home } from "./pages/Home";
-import { Library } from "./pages/Library";
 import { JoinPage } from "./pages/JoinPage";
 import { ListPage } from "./pages/ListPage";
 import { Login } from "./pages/Login";
-import { Avatar, MePage, refreshPending, usePending } from "./pages/Me";
+import { Avatar, refreshPending, usePending } from "./pages/Me";
 import { Taste } from "./pages/Taste";
 import { Welcome } from "./pages/Welcome";
 import { WinePage } from "./pages/WinePage";
@@ -276,23 +274,23 @@ function Shell() {
           <div class="leaf-scroll" ref={rightRef}>
             <main class={fullScreen || wide ? "main full" : "main"}>
               <Router>
-                <Route path="/" component={wide ? HomeRight : Home} />
+                <Route path="/" component={HomeRoute} />
                 <Route path="/lists/:id" component={ListPage} />
                 <Route path="/l/:id" component={JoinIn} />
                 <Route path="/add" component={AddWine} />
                 <Route path="/blind" component={BlindStart} />
                 <Route path="/answers/:id" component={AnswersPage} />
                 <Route path="/taste/:id" component={Taste} />
-                <Route path="/library" component={wide ? LibraryRight : Library} />
+                <Route path="/library" component={LibraryRoute} />
                 <Route path="/wine/:id" component={WinePage} />
                 <Route path="/cellar" component={CellarRedirect} />
                 <Route path="/cellar/add" component={AddToCellar} />
                 <Route path="/cellar/new" component={CellarLotPage} />
                 <Route path="/cellar/:id" component={CellarLotPage} />
-                <Route path="/me" component={wide ? MeRight : MePage} />
+                <Route path="/me" component={MeRoute} />
                 <Route path="/friends" component={FriendsPage} />
                 <Route path="/recs" component={RecsPage} />
-                <Route default component={wide ? HomeRight : Home} />
+                <Route default component={HomeRoute} />
               </Router>
             </main>
           </div>
