@@ -2398,6 +2398,11 @@ a.pro-score {
 .versus-missed .button {
   flex: none;
 }
+.versus-missed .button.on {
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
 
 /* 酒窖 */
 .cellar-sum {
