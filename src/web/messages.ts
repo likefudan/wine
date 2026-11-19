@@ -19,7 +19,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   ...RECS_MESSAGES,
   ...REVIEW_MESSAGES,
   ...SYNC_MESSAGES,
-  我的分: { tw: "我的分數", en: "My score" },
+  我的评分: { tw: "我的評分", en: "My score" },
   拖动打分: { tw: "拖動評分", en: "Slide to score" },
   清除: { tw: "清除", en: "Clear" },
   关闭: { tw: "關閉", en: "Close" },
@@ -127,8 +127,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   松开刷新: { tw: "放開重新整理", en: "Release to refresh" },
   正在刷新: { tw: "正在重新整理", en: "Refreshing" },
   主菜单: { tw: "主選單", en: "Main menu" },
-  记一杯: { tw: "記一杯", en: "Taste" },
-  酒库: { tw: "酒庫", en: "Library" },
+  品一款: { tw: "品一款", en: "Taste a wine" },
   "没认出这是哪款酒，请换个角度重拍，或手动输入": {
     tw: "沒認出這是哪款酒，請換個角度重拍，或手動輸入",
     en: "Couldn't recognise this wine. Try another angle or type it in.",
@@ -139,7 +138,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Reading a label needs a connection. Please type it in for now.",
   },
   返回: { tw: "返回", en: "Back" },
-  "单独记一杯，不属于任何品鉴": { tw: "單獨記一杯，不屬於任何品飲", en: "A glass on its own, not part of a tasting" },
+  "单独品一款，不属于任何品鉴": { tw: "單獨品一款，不屬於任何品飲", en: "A wine on its own, not part of a tasting" },
   "酒庄或酒名，例如 Opus One": { tw: "酒莊或酒名，例如 Opus One", en: "Producer or wine, e.g. Opus One" },
   "识别中…": { tw: "辨識中…", en: "Reading…" },
   拍酒标: { tw: "拍酒標", en: "Scan label" },
@@ -190,10 +189,10 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   恢复: { tw: "恢復", en: "Restore" },
   停用: { tw: "停用", en: "Disable" },
   "停用后对方不能再登录。确定？": { tw: "停用後對方不能再登入。確定？", en: "They won't be able to sign in. Disable?" },
-  酒款库: { tw: "酒款庫", en: "Wine directory" },
-  "酒款库来自 LWIN（Liv-ex）": { tw: "酒款庫來自 LWIN（Liv-ex）", en: "Wine directory: LWIN by Liv-ex" },
-  "酒款库来自 LWIN（Liv-ex）和美国 TTB 酒标库": {
-    tw: "酒款庫來自 LWIN（Liv-ex）和美國 TTB 酒標資料庫",
+  酒款目录: { tw: "酒款目錄", en: "Wine directory" },
+  "酒款目录来自 LWIN（Liv-ex）": { tw: "酒款目錄來自 LWIN（Liv-ex）", en: "Wine directory: LWIN by Liv-ex" },
+  "酒款目录来自 LWIN（Liv-ex）和美国 TTB 酒标库": {
+    tw: "酒款目錄來自 LWIN（Liv-ex）和美國 TTB 酒標資料庫",
     en: "Wine directory: LWIN by Liv-ex and US TTB label approvals",
   },
   "新酒：{q}": { tw: "新酒：{q}", en: "New wine: {q}" },
@@ -250,18 +249,18 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   上移: { tw: "上移", en: "Move up" },
   下移: { tw: "下移", en: "Move down" },
   移除: { tw: "移除", en: "Remove" },
-  "从这次品鉴移除这款酒？你的笔记会留在酒库里。": {
-    tw: "從這次品飲移除這款酒？你的筆記會留在酒庫裡。",
-    en: "Remove this wine from this tasting? Your note stays in your library.",
+  "从这次品鉴移除这款酒？你的笔记会留在「我的酒」里。": {
+    tw: "從這次品飲移除這款酒？你的筆記會留在「我的酒」裡。",
+    en: "Remove this wine from this tasting? Your note stays in My wines.",
   },
   记: { tw: "記", en: "Note" },
   加下一款酒: { tw: "加下一款酒", en: "Add next wine" },
   品鉴设置: { tw: "品飲設定", en: "Tasting settings" },
   备注: { tw: "備註", en: "Notes" },
   保存: { tw: "儲存", en: "Save" },
-  "删除这次品鉴？里面的笔记会留在你的酒库里。": {
-    tw: "刪除這次品飲？裡面的筆記會留在你的酒庫裡。",
-    en: "Delete this tasting? The notes in it stay in your library.",
+  "删除这次品鉴？里面的笔记会留在「我的酒」里。": {
+    tw: "刪除這次品飲？裡面的筆記會留在「我的酒」裡。",
+    en: "Delete this tasting? The notes in it stay in My wines.",
   },
   删除品鉴: { tw: "刪除品飲", en: "Delete tasting" },
   "搜酒名、酒庄、产区、品种、香气、笔记": {
@@ -277,9 +276,9 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   "{n} 款酒": { tw: "{n} 款酒", en: "Wines: {n}" },
   "{n} 次": { tw: "{n} 次", en: "×{n}" },
   品酒日记: { tw: "品酒日記", en: "Wine Diary" },
-  "在酒庄 30 秒记下一款酒，回家后变成可搜索的个人酒库。不懂品酒术语也能上手。": {
-    tw: "在酒莊 30 秒記下一款酒，回家後變成可搜尋的個人酒庫。不懂品酒術語也能上手。",
-    en: "Note a wine in 30 seconds at the winery and build a searchable journal. No wine jargon needed.",
+  "在酒庄 30 秒记下一款酒，回家后随时都能搜到。不懂品酒术语也能上手。": {
+    tw: "在酒莊 30 秒記下一款酒，回家後隨時都能搜尋。不懂品酒術語也能上手。",
+    en: "Note a wine in 30 seconds at the winery and find it again any time. No wine jargon needed.",
   },
   "微信里不能用 Google 登录": { tw: "微信裡不能用 Google 登入", en: "Google sign-in doesn't work inside WeChat" },
   "点右上角「⋯」，选「在 Safari 中打开」": {
@@ -316,19 +315,19 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   添加: { tw: "新增", en: "Add" },
   已加入: { tw: "已加入", en: "Joined" },
   未登录过: { tw: "未登入過", en: "Not yet signed in" },
-  找不到这条记录: { tw: "找不到這筆紀錄", en: "Note not found" },
+  找不到这条笔记: { tw: "找不到這則筆記", en: "Note not found" },
   品鉴深度: { tw: "品飲深度", en: "Depth" },
   "以后默认用「{d}」吗？": { tw: "以後預設用「{d}」嗎？", en: "Use {d} by default from now on?" },
   好: { tw: "好", en: "Yes" },
   不用: { tw: "不用", en: "No thanks" },
-  "删除这条品鉴记录？": { tw: "刪除這筆品飲紀錄？", en: "Delete this tasting note?" },
-  删除这条记录: { tw: "刪除這筆紀錄", en: "Delete this note" },
+  "删除这条笔记？": { tw: "刪除這則筆記？", en: "Delete this tasting note?" },
+  删除这条笔记: { tw: "刪除這則筆記", en: "Delete this note" },
   "还会买吗？": { tw: "還會買嗎？", en: "Would you buy it again?" },
   会: { tw: "會", en: "Yes" },
   不会: { tw: "不會", en: "No" },
   品质等级: { tw: "品質等級", en: "Quality" },
-  "「我的分」记你有多喜欢，这里记客观判断": {
-    tw: "「我的分數」記你有多喜歡，這裡記客觀判斷",
+  "「我的评分」记你有多喜欢，这里记客观判断": {
+    tw: "「我的評分」記你有多喜歡，這裡記客觀判斷",
     en: "My score is how much you liked it; this is your objective judgement",
   },
   买了几瓶: { tw: "買了幾瓶", en: "Bottles bought" },
@@ -486,7 +485,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "點左邊的一款酒，這一頁翻開它的每一次紀錄。",
     en: "Pick a wine on the left and this page opens to every note on it.",
   },
-  回到酒库: { tw: "回到酒庫", en: "Back to library" },
+  回到我的酒: { tw: "回到我的酒", en: "Back to My wines" },
   "这款酒你还喝过 {n} 个年份": { tw: "這款酒你還喝過 {n} 個年份", en: "You've had {n} other vintages of this wine" },
   再记一次: { tw: "再記一次", en: "Note it again" },
   "一次最多上传 100 条": { tw: "一次最多上傳 100 筆", en: "At most 100 changes at a time" },
@@ -496,12 +495,12 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   你不是这次品鉴的成员: { tw: "你不是這次品飲的成員", en: "You're not part of this tasting" },
   内容太长: { tw: "內容太長", en: "Too long" },
-  只有添加的人或品鉴创建者能移除: {
-    tw: "只有新增的人或品飲建立者能移除",
-    en: "Only whoever added it or the tasting's creator can remove it",
+  只有添加的人或品鉴主持人能移除: {
+    tw: "只有新增的人或品飲主持人能移除",
+    en: "Only whoever added it or the tasting's host can remove it",
   },
-  只有品鉴的创建者能修改: { tw: "只有品飲的建立者能修改", en: "Only the tasting's creator can change it" },
-  只有品鉴的创建者能删除: { tw: "只有品飲的建立者能刪除", en: "Only the tasting's creator can delete it" },
+  只有品鉴的主持人能修改: { tw: "只有品飲的主持人能修改", en: "Only the tasting's host can change it" },
+  只有品鉴的主持人能删除: { tw: "只有品飲的主持人能刪除", en: "Only the tasting's host can delete it" },
   只能修改自己的笔记: { tw: "只能修改自己的筆記", en: "You can only change your own notes" },
   年份无效: { tw: "年份無效", en: "Invalid vintage" },
   "拍酒标识别还没有开通，请手动输入": {
@@ -556,35 +555,35 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "這張照片現在打不開，可以重拍一張",
     en: "This photo can't be opened right now; you can take another",
   },
-  "照片先用在这张图上，没能存进记录（需要联网）": {
-    tw: "照片先用在這張圖上，沒能存進紀錄（需要連網）",
+  "照片先用在这张图上，没能存进笔记（需要联网）": {
+    tw: "照片先用在這張圖上，沒能存進筆記（需要連網）",
     en: "The photo is on this image, but couldn't be saved to the note (you need to be online)",
   },
   "这张照片打不开，换一张试试": { tw: "這張照片打不開，換一張試試", en: "That photo can't be opened; try another" },
   照片存储还没有开通: { tw: "照片儲存尚未開通", en: "Photo storage isn't set up yet" },
   "今天上传的照片太多了，明天再试": { tw: "今天上傳的照片太多了，明天再試", en: "Too many photos today; try tomorrow" },
-  分享这条记录: { tw: "分享這筆紀錄", en: "Share this note" },
+  分享这条笔记: { tw: "分享這則筆記", en: "Share this note" },
   生成分享图: { tw: "產生分享圖", en: "Make a share image" },
   "{name} 品鉴": { tw: "{name} 品飲", en: "Tasted by {name}" },
   品鉴笔记: { tw: "品飲筆記", en: "Tasting note" },
-  "正在把你的记录写成酒评…": { tw: "正在把你的紀錄寫成酒評…", en: "Writing your notes up as a review…" },
+  "正在把你的笔记写成酒评…": { tw: "正在把你的筆記寫成酒評…", en: "Writing your notes up as a review…" },
   样式: { tw: "樣式", en: "Style" },
   尺寸: { tw: "尺寸", en: "Size" },
   "酒评文字（可以改）": { tw: "酒評文字（可以修改）", en: "Review text (you can edit it)" },
-  "这条记录改过了，可以重新生成文字": {
-    tw: "這筆紀錄改過了，可以重新產生文字",
+  "这条笔记改过了，可以重新生成文字": {
+    tw: "這則筆記改過了，可以重新產生文字",
     en: "This note has changed since; you can rewrite the text",
   },
   "生成中…": { tw: "產生中…", en: "Writing…" },
   重新生成文字: { tw: "重新產生文字", en: "Rewrite text" },
-  "文字由 AI 根据你的记录改写，只用你记下的内容，发出前请看一遍": {
-    tw: "文字由 AI 根據你的紀錄改寫，只用你記下的內容，發出前請看一遍",
+  "文字由 AI 根据你的笔记改写，只用你记下的内容，发出前请看一遍": {
+    tw: "文字由 AI 根據你的筆記改寫，只用你記下的內容，發出前請看一遍",
     en: "AI rewrites your own notes, using only what you recorded. Give it a read before you post.",
   },
   分享图片: { tw: "分享圖片", en: "Share image" },
   保存图片: { tw: "儲存圖片", en: "Save image" },
   也可以长按图片保存: { tw: "也可以長按圖片儲存", en: "Or press and hold the image to save it" },
-  "没有网络，先用记录里的文字": { tw: "沒有網路，先用紀錄裡的文字", en: "Offline: using the words from your notes" },
+  "没有网络，先用笔记里的文字": { tw: "沒有網路，先用筆記裡的文字", en: "Offline: using the words from your notes" },
   "AI 还没有开通": { tw: "AI 尚未開通", en: "AI isn't set up yet" },
   缺少酒款信息: { tw: "缺少酒款資訊", en: "Wine details are missing" },
   "今天的 AI 次数用完了，明天再试": {
@@ -597,9 +596,9 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   不会再买: { tw: "不會再買", en: "Wouldn't buy again" },
   二维码: { tw: "QR Code", en: "QR code" },
-  "二维码已失效，请向创建者要新的": {
-    tw: "QR Code 已失效，請向建立者要新的",
-    en: "This QR code no longer works. Ask the tasting's creator for a new one.",
+  "二维码已失效，请向主持人要新的": {
+    tw: "QR Code 已失效，請向主持人要新的",
+    en: "This QR code no longer works. Ask the tasting's host for a new one.",
   },
   停止: { tw: "停止", en: "Off" },
   允许: { tw: "允許", en: "On" },
@@ -612,10 +611,10 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   分享: { tw: "分享", en: "Share" },
   分享品鉴: { tw: "分享品飲", en: "Share tasting" },
   分歧最大: { tw: "分歧最大", en: "Most debated" },
-  创建者: { tw: "建立者", en: "Creator" },
-  "创建者不能退出，可以删除品鉴": {
-    tw: "建立者不能退出，可以刪除品飲",
-    en: "The creator can't leave the tasting, but can delete it",
+  主持人: { tw: "主持人", en: "Host" },
+  "主持人不能退出，可以删除品鉴": {
+    tw: "主持人不能退出，可以刪除品飲",
+    en: "The host can't leave the tasting, but can delete it",
   },
   "加入后，你可以和大家一起往品鉴里加酒，每款酒记下自己的感受和评分。不懂品酒术语也没关系，会一步步用大白话问你。": {
     tw: "加入後，你可以和大家一起往品飲裡加酒，每款酒記下自己的感受和評分。不懂品飲術語也沒關係，會一步步用白話問你。",
@@ -653,9 +652,9 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   扫码加入: { tw: "掃碼加入", en: "Join by QR code" },
   扫码加入品鉴: { tw: "掃碼加入品飲", en: "Scan to join" },
   扫码查看品鉴: { tw: "掃碼查看品飲", en: "Scan to view" },
-  "把 {name} 移出这次品鉴？TA 的笔记会留在 TA 自己的酒库里。": {
-    tw: "把 {name} 移出這次品飲？對方的筆記會留在自己的酒庫裡。",
-    en: "Remove {name} from this tasting? Their notes stay in their own library.",
+  "把 {name} 移出这次品鉴？TA 自己的笔记不会被删除。": {
+    tw: "把 {name} 移出這次品飲？對方自己的筆記不會被刪除。",
+    en: "Remove {name} from this tasting? Their own notes are not deleted.",
   },
   按大家的平均分排序: { tw: "依大家的平均分排序", en: "Ranked by everyone's average" },
   换一个二维码: { tw: "換一個 QR Code", en: "New QR code" },
@@ -670,27 +669,27 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Offline: please scan again once you're connected",
   },
   "用 Google 登录并加入": { tw: "用 Google 登入並加入", en: "Sign in with Google to join" },
-  盲评: { tw: "盲評", en: "Blind scoring" },
-  "盲评中，评分揭晓后再看": { tw: "盲評中，評分揭曉後再看", en: "Blind: scores show after the reveal" },
-  "盲评中：交了自己的评价才能看别人的": {
-    tw: "盲評中：交出自己的評價才能看別人的",
-    en: "blind: hand in yours to see others'",
+  先评后看: { tw: "先評後看", en: "Score first" },
+  "先评后看：评分揭晓后再看": { tw: "先評後看：評分揭曉後再看", en: "Score first: scores show after the reveal" },
+  "先评后看：交了自己的评价才能看别人的": {
+    tw: "先評後看：交出自己的評價才能看別人的",
+    en: "score first: hand in yours to see others'",
   },
-  "盲评中：大家的评分会在创建者揭晓后显示。": {
-    tw: "盲評中：大家的評分會在建立者揭曉後顯示。",
-    en: "Blind: scores show once the creator reveals them.",
+  "先评后看：大家的评分会在主持人揭晓后显示。": {
+    tw: "先評後看：大家的評分會在主持人揭曉後顯示。",
+    en: "Score first: scores show once the host reveals them.",
   },
-  "盲评中：每款酒交了自己的评价后，才能看到别人的分": {
-    tw: "盲評中：每款酒交出自己的評價後，才能看到別人的分數",
-    en: "Blind: on each wine, you see others' scores after handing in yours",
+  "先评后看：每款酒交了自己的评价后，才能看到别人的分": {
+    tw: "先評後看：每款酒交出自己的評價後，才能看到別人的分數",
+    en: "Score first: on each wine, you see others' scores after handing in yours",
   },
-  "盲评已关：大家随时能看到彼此的评分": {
-    tw: "盲評已關：大家隨時能看到彼此的評分",
-    en: "Blind scoring off: everyone sees each other's scores",
+  "先评后看已关：大家随时能看到彼此的评分": {
+    tw: "先評後看已關：大家隨時能看到彼此的評分",
+    en: "Score first is off: everyone sees each other's scores",
   },
-  "盲评：已有 {n} 人评了这款酒。交了你自己的评分或笔记后，就能看到大家的。": {
-    tw: "盲評：已有 {n} 人評了這款酒。交出你自己的評分或筆記後，就能看到大家的。",
-    en: "Blind: {n} rated this wine. Hand in your own score or note to see theirs.",
+  "先评后看：已有 {n} 人评了这款酒。交了你自己的评分或笔记后，就能看到大家的。": {
+    tw: "先評後看：已有 {n} 人評了這款酒。交出你自己的評分或筆記後，就能看到大家的。",
+    en: "Score first: {n} rated this wine. Hand in your own score or note to see theirs.",
   },
   "私密：只有成员": { tw: "私密：只有成員", en: "Private: members only" },
   移出: { tw: "移出", en: "Remove" },
@@ -701,17 +700,17 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "這次品飲已停止掃碼加入",
     en: "This tasting is no longer taking new members by QR code",
   },
-  "这次品鉴是别人建的，只有创建者能改名称和设置。你可以往里加酒、记自己的感受。": {
-    tw: "這次品飲是別人建的，只有建立者能改名稱和設定。你可以往裡加酒、記下自己的感受。",
+  "这次品鉴是别人建的，只有主持人能改名称和设置。你可以往里加酒、记自己的感受。": {
+    tw: "這次品飲是別人建的，只有主持人能改名稱和設定。你可以往裡加酒、記下自己的感受。",
     en: "Someone else made this tasting, so only they can change its name and settings. You can add wines and note your own impressions.",
   },
-  "这次品鉴是私密的，请向创建者要二维码": {
-    tw: "這次品飲是私密的，請向建立者要 QR Code",
-    en: "This tasting is private. Ask its creator for the QR code.",
+  "这次品鉴是私密的，请向主持人要二维码": {
+    tw: "這次品飲是私密的，請向主持人要 QR Code",
+    en: "This tasting is private. Ask its host for the QR code.",
   },
-  "退出这次品鉴？你记的笔记会留在你的酒库里。": {
-    tw: "退出這次品飲？你記的筆記會留在你的酒庫裡。",
-    en: "Leave this tasting? Your notes stay in your library.",
+  "退出这次品鉴？你记的笔记会留在「我的酒」里。": {
+    tw: "退出這次品飲？你記的筆記會留在「我的酒」裡。",
+    en: "Leave this tasting? Your notes stay in My wines.",
   },
   退出品鉴: { tw: "退出品飲", en: "Leave tasting" },
   品鉴卡片: { tw: "品飲卡片", en: "Tasting card" },
@@ -764,8 +763,8 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "品飲地點只有你自己看得到，不會出現在分享的品飲裡。",
     en: "Only you can see where you tasted; it never shows on shared tastings.",
   },
-  "记一杯时用手机定位记下在哪儿喝的，只有你自己看得到。": {
-    tw: "記一杯時用手機定位記下在哪裡喝的，只有你自己看得到。",
-    en: "When you log a glass, your phone's location notes where you were. Only you can see it.",
+  "品一款酒时，用手机定位记下在哪儿喝的，只有你自己看得到。": {
+    tw: "品一款酒時，用手機定位記下在哪裡喝的，只有你自己看得到。",
+    en: "When you taste a wine, your phone's location notes where you were. Only you can see it.",
   },
 };

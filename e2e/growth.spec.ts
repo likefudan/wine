@@ -6,7 +6,7 @@ test("growth shows the aromas and grapes I have tasted", async ({ page }) => {
   await page.fill('input[type="email"]', `growth${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=只想快速记个分");
-  await page.click("nav >> text=我的");
+  await page.click('nav >> text="我的"');
   await expect(page.locator(".growth, [role=tabpanel]")).toContainText("记几款酒之后");
 
   await page.click("nav >> text=品鉴");
@@ -25,7 +25,7 @@ test("growth shows the aromas and grapes I have tasted", async ({ page }) => {
   await page.click(".chip >> text=雪松");
   await page.click("header >> text=完成");
 
-  await page.click("nav >> text=我的");
+  await page.click('nav >> text="我的"');
   await expect(page.locator(".stat").first()).toContainText("1");
   await expect(page.locator(".growth-months li")).toHaveCount(1);
   await expect(page.locator(".growth-months")).toContainText("每款平均 2 个香气词");

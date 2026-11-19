@@ -139,7 +139,7 @@ export interface Tasting {
   note: string | null;
   photoId: string | null;
   /**
-   * Where it was tasted (记一杯 with the phone's position): private, never on a shared list's board.
+   * Where it was tasted (品一款 with the phone's position): private, never on a shared list's board.
    * undefined (an older app, or a page that did not touch it) keeps what the server has; null removes it.
    */
   location?: TastingLocation | null;
@@ -326,7 +326,7 @@ export interface BoardItem {
   blind?: BlindInfo | null;
   /** How many people have handed in a note on it. */
   rated: number;
-  /** false while 盲评 hides the others' notes: only `rated` is known. */
+  /** false while 先评后看 hides the others' notes: only `rated` is known. */
   open: boolean;
   avg: number | null;
   notes: BoardNote[];
@@ -540,7 +540,7 @@ export const clampText = (v: unknown, max: number): string | null => {
 
 /**
  * 朋友动态 (GET /api/friends): a note handed in by someone I share a 品鉴 with, on a wine in that
- * 品鉴. Only what the list's board would show me: while 盲评 hides it (`open` false) the score,
+ * 品鉴. Only what the list's board would show me: while 先评后看 hides it (`open` false) the score,
  * aromas and words stay on the server. Where it was tasted is never sent.
  */
 export interface FriendNote {

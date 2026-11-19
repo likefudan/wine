@@ -584,7 +584,7 @@ export function TastingShareSheet(props: {
         const r = await api<{ photoId: string }>("/api/photos", { body: { image } });
         props.onPhoto(r.photoId);
       } catch (e) {
-        setPhotoNote(e instanceof ApiError ? tm(e.message) : t("照片先用在这张图上，没能存进记录（需要联网）"));
+        setPhotoNote(e instanceof ApiError ? tm(e.message) : t("照片先用在这张图上，没能存进笔记（需要联网）"));
       }
     } catch {
       setPhotoNote(t("这张照片打不开，换一张试试"));
@@ -606,7 +606,7 @@ export function TastingShareSheet(props: {
       setEdited(false);
       setStale(false);
     } catch (e) {
-      setError(e instanceof ApiError ? tm(e.message) : t("没有网络，先用记录里的文字"));
+      setError(e instanceof ApiError ? tm(e.message) : t("没有网络，先用笔记里的文字"));
       setProse((p) => p || plainNote(v, x, lang));
     } finally {
       setBusy(false);
@@ -668,13 +668,13 @@ export function TastingShareSheet(props: {
   })();
 
   return (
-    <Sheet title={t("分享这条记录")} onClose={props.onClose}>
+    <Sheet title={t("分享这条笔记")} onClose={props.onClose}>
       <div class="form share-card">
         {img ? (
           <img class="list-card-img" src={img} alt={`${v.producer} ${yearLabel(v.year)}`} />
         ) : (
           <div class={`share-card-wait ${size === "9:16" ? "tall" : ""}`}>
-            <span class="muted">{busy ? t("正在把你的记录写成酒评…") : ""}</span>
+            <span class="muted">{busy ? t("正在把你的笔记写成酒评…") : ""}</span>
           </div>
         )}
         <div class="share-card-opts">
@@ -753,7 +753,7 @@ export function TastingShareSheet(props: {
             maxLength={PROSE_MAX}
             value={prose}
             disabled={busy}
-            placeholder={busy ? t("正在把你的记录写成酒评…") : ""}
+            placeholder={busy ? t("正在把你的笔记写成酒评…") : ""}
             onInput={(e) => {
               setProse((e.target as HTMLTextAreaElement).value);
               setEdited(true);
@@ -761,13 +761,13 @@ export function TastingShareSheet(props: {
           />
         </Field>
         {error && <p class="small danger">{error}</p>}
-        {stale && !busy && <p class="small muted">{t("这条记录改过了，可以重新生成文字")}</p>}
+        {stale && !busy && <p class="small muted">{t("这条笔记改过了，可以重新生成文字")}</p>}
         {me?.approved && (
           <button type="button" class="link small" disabled={busy} onClick={write}>
             {busy ? t("生成中…") : t("重新生成文字")}
           </button>
         )}
-        <p class="muted small">{t("文字由 AI 根据你的记录改写，只用你记下的内容，发出前请看一遍")}</p>
+        <p class="muted small">{t("文字由 AI 根据你的笔记改写，只用你记下的内容，发出前请看一遍")}</p>
         {canShare && (
           <button
             type="button"

@@ -46,7 +46,7 @@ export function Login(props: { session: { google: boolean; dev: boolean; me: Me 
           <Logo size={56} />
           <h1 class="brand">{t("品酒日记")}</h1>
         </div>
-        <p class="lead">{t("在酒庄 30 秒记下一款酒，回家后变成可搜索的个人酒库。不懂品酒术语也能上手。")}</p>
+        <p class="lead">{t("在酒庄 30 秒记下一款酒，回家后随时都能搜到。不懂品酒术语也能上手。")}</p>
       </div>
       {unsentCount(getState()) > 0 && (
         <p class="notice" role="status">

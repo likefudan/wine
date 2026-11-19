@@ -137,7 +137,7 @@ export function CellarView() {
       )}
       {full.length === 0 ? (
         <div class="empty">
-          <p>{t("买了酒就放进来：放在哪、花了多少、什么时候喝。到了适饮期会提醒你，开一瓶就顺手记一杯。")}</p>
+          <p>{t("买了酒就放进来：放在哪、花了多少、什么时候喝。到了适饮期会提醒你，开一瓶就顺手记下来。")}</p>
         </div>
       ) : (
         <>
@@ -328,7 +328,7 @@ export function CellarLotPage() {
           {(saved?.qty ?? 0) > 0 && (
             <>
               <button type="button" class="button primary block" onClick={() => open(true)}>
-                {t("开一瓶，记一杯")}
+                {t("开一瓶，品一款")}
               </button>
               <button
                 type="button"
@@ -357,7 +357,7 @@ export function CellarLotPage() {
             route("/library?view=cellar", true);
           }}
         >
-          {t("删除这条记录")}
+          {t("删除这条笔记")}
         </button>
       )}
     </div>
@@ -681,7 +681,7 @@ export const statusTitle = (s: WindowStatus) => t(STATUS_TITLE[s]);
 // ── On a note ─────────────────────────────────────────────────────────────────────────────────
 
 /**
- * On a note just started: 酒窖里还有这款酒 → "这瓶是从酒窖拿的" takes one off (喝掉一瓶 = 记一杯).
+ * On a note just started: 酒窖里还有这款酒 → "这瓶是从酒窖拿的" takes one off (喝掉一瓶 = 品一款).
  * On a note from the cellar: where it came from, and, while fresh, 放回去 in case it was a mistake.
  */
 export function TastingFromCellar(props: { x: Tasting; fresh: boolean }) {

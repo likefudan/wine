@@ -8,7 +8,7 @@ import { mapsUrl, PlaceInput } from "./PlaceInput";
 import { fillLocations, setTastingLocation, updateMe, useStore } from "./store";
 
 /**
- * 品酒地点 on a note: where the glass was tasted. A new note (记一杯) notes the phone's position by
+ * 品酒地点 on a note: where the glass was tasted. A new note (品一款) notes the phone's position by
  * itself when 记下品酒地点 is on (我的 → 品鉴); the first time it asks. The place is private: it
  * never shows on a shared list. Offline, the position is kept and the address follows later.
  */

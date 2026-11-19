@@ -112,7 +112,7 @@ export function AddWine(props: { cellar?: boolean }) {
   const lists = useStore((s) => s.lists);
   const mine = useStore((s) => s.vintages);
   const listId = query.list ?? null;
-  /** Came from a list's page (加下一款酒, or 记一杯 while on it): the wine belongs to that list. */
+  /** Came from a list's page (加下一款酒, or 品一款 while on it): the wine belongs to that list. */
   const fixedList = query.list ? lists.find((l) => l.id === query.list) : undefined;
   const [q, setQ] = useState("");
   const [catalog, setCatalog] = useState<CatalogWine[]>([]);
@@ -281,11 +281,11 @@ export function AddWine(props: { cellar?: boolean }) {
         <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
           <BackIcon />
         </button>
-        <h1 class="page-head-title">{answering ? t("对答案") : cellar ? t("放进酒窖") : t("记一杯")}</h1>
+        <h1 class="page-head-title">{answering ? t("对答案") : cellar ? t("放进酒窖") : t("品一款")}</h1>
       </header>
 
       {answering && <p class="add-to-list">{t("{label} 其实是哪款酒？", { label: answerLabel ?? "#" })}</p>}
-      {/* From a 品鉴's page the wine goes into it; from the 记一杯 button it stands on its own. Never a choice. */}
+      {/* From a 品鉴's page the wine goes into it; from the 品一款 button it stands on its own. Never a choice. */}
       {!cellar && !answering && (
         <p class="add-to-list">
           {fixedList ? (
@@ -293,7 +293,7 @@ export function AddWine(props: { cellar?: boolean }) {
               {t("属于")} <strong>{fixedList.title}</strong>
             </>
           ) : (
-            t("单独记一杯，不属于任何品鉴")
+            t("单独品一款，不属于任何品鉴")
           )}
         </p>
       )}
@@ -359,7 +359,7 @@ export function AddWine(props: { cellar?: boolean }) {
           )}
           {shownLwin.length > 0 && (
             <section>
-              <h2 class="section-title">{t("酒款库")}</h2>
+              <h2 class="section-title">{t("酒款目录")}</h2>
               <ul class="rows">
                 {shownLwin.map((w) => (
                   <li key={w.lwin}>
@@ -378,8 +378,8 @@ export function AddWine(props: { cellar?: boolean }) {
               </ul>
               <p class="muted small">
                 {shownLwin.some((w) => w.lwin < 0)
-                  ? t("酒款库来自 LWIN（Liv-ex）和美国 TTB 酒标库")
-                  : t("酒款库来自 LWIN（Liv-ex）")}
+                  ? t("酒款目录来自 LWIN（Liv-ex）和美国 TTB 酒标库")
+                  : t("酒款目录来自 LWIN（Liv-ex）")}
               </p>
             </section>
           )}

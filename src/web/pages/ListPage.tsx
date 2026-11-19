@@ -63,7 +63,7 @@ export function ListPage(props: { id?: string }) {
   const [shareError, setShareError] = useState("");
   const syncedAt = useStore((s) => s.syncedAt);
   const me = useStore((s) => s.me);
-  // Everyone's notes come from the server, which applies 盲评; refreshed after each upload, and
+  // Everyone's notes come from the server, which applies 先评后看; refreshed after each upload, and
   // every BOARD_POLL_MS while a list with friends in it is on screen, so their notes show up too.
   const sharedNow =
     !!list && ((list.members ?? 1) > 1 || list.visibility === "public" || (!!list.ownerId && list.ownerId !== me?.id));
@@ -165,7 +165,7 @@ export function ListPage(props: { id?: string }) {
             ? t("大家的评分互相可见")
             : board.list.revealedAt
               ? t("已揭晓")
-              : t("盲评中：交了自己的评价才能看别人的")}
+              : t("先评后看：交了自己的评价才能看别人的")}
         </p>
       )}
       {blindItems.length > 0 && (
@@ -224,7 +224,7 @@ export function ListPage(props: { id?: string }) {
                       class="icon-button danger"
                       aria-label={t("移除")}
                       onClick={async () =>
-                        (await ask(t("从这次品鉴移除这款酒？你的笔记会留在酒库里。"))) && removeItem(i.id)
+                        (await ask(t("从这次品鉴移除这款酒？你的笔记会留在「我的酒」里。"))) && removeItem(i.id)
                       }
                     >
                       ✕
@@ -300,7 +300,7 @@ function MemberSettings(props: { listId: string; onClose: () => void; onLeft: ()
   return (
     <Sheet title={t("品鉴设置")} onClose={props.onClose}>
       <div class="form">
-        <p class="muted">{t("这次品鉴是别人建的，只有创建者能改名称和设置。你可以往里加酒、记自己的感受。")}</p>
+        <p class="muted">{t("这次品鉴是别人建的，只有主持人能改名称和设置。你可以往里加酒、记自己的感受。")}</p>
         {error && (
           <p class="notice" role="alert">
             {error}
@@ -310,7 +310,7 @@ function MemberSettings(props: { listId: string; onClose: () => void; onLeft: ()
           type="button"
           class="button danger"
           onClick={async () => {
-            if (!(await ask(t("退出这次品鉴？你记的笔记会留在你的酒库里。")))) return;
+            if (!(await ask(t("退出这次品鉴？你记的笔记会留在「我的酒」里。")))) return;
             try {
               await leaveList(props.listId);
               props.onLeft();
@@ -380,7 +380,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
           type="button"
           class="button danger"
           onClick={async () => {
-            if (!(await ask(t("删除这次品鉴？里面的笔记会留在你的酒库里。"), { ok: t("删除") }))) return;
+            if (!(await ask(t("删除这次品鉴？里面的笔记会留在「我的酒」里。"), { ok: t("删除") }))) return;
             deleteList(list.id);
             props.onDeleted();
           }}

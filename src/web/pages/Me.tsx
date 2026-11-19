@@ -99,9 +99,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
   const deleteAccount = async () => {
     if (
       !(await ask(
-        t(
-          "删除后，你的所有品鉴记录、酒窖、酒标照片和你创建的品鉴都会永久删除，无法恢复。建议先在上面导出一份。确定删除？",
-        ),
+        t("删除后，你的所有笔记、酒窖、酒标照片和你创建的品鉴都会永久删除，无法恢复。建议先在上面导出一份。确定删除？"),
       ))
     )
       return;
@@ -183,7 +181,11 @@ export function MePage(props: { part?: "index" | "panels" }) {
                   onChange={(m) => m && updateMe({ labelModel: m })}
                 />
               </Field>
-              <Field label={t("记下品酒地点")} hint={t("记一杯时用手机定位记下在哪儿喝的，只有你自己看得到。")} group>
+              <Field
+                label={t("记下品酒地点")}
+                hint={t("品一款酒时，用手机定位记下在哪儿喝的，只有你自己看得到。")}
+                group
+              >
                 <Choice
                   label={t("记下品酒地点")}
                   value={me.locationOn === false ? "off" : me.locationOn ? "on" : undefined}

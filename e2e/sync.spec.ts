@@ -24,7 +24,7 @@ test("tapping through a private note does not upload each change", async ({ page
   const before = uploads;
 
   for (const v of [80, 85, 88, 91]) {
-    await page.locator('input[type="range"][aria-label="我的分"]').evaluate((el, n) => {
+    await page.locator('input[type="range"][aria-label="我的评分"]').evaluate((el, n) => {
       const input = el as HTMLInputElement;
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, String(n));
       input.dispatchEvent(new Event("input", { bubbles: true }));

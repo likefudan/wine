@@ -31,8 +31,8 @@ export const CELLAR_MESSAGES: Record<string, { tw: string; en: string }> = {
   我定的: { tw: "我定的", en: "Mine" },
   酒评: { tw: "酒評", en: "Critics" },
   我的笔记: { tw: "我的筆記", en: "My notes" },
-  "买了酒就放进来：放在哪、花了多少、什么时候喝。到了适饮期会提醒你，开一瓶就顺手记一杯。": {
-    tw: "買了酒就放進來：放在哪、花了多少、什麼時候喝。到了適飲期會提醒你，開一瓶就順手記一杯。",
+  "买了酒就放进来：放在哪、花了多少、什么时候喝。到了适饮期会提醒你，开一瓶就顺手记下来。": {
+    tw: "買了酒就放進來：放在哪、花了多少、什麼時候喝。到了適飲期會提醒你，開一瓶就順手記下來。",
     en: "Keep the bottles you buy here: where they are, what they cost, when to drink them. You'll be reminded when they're ready, and opening one starts a note.",
   },
   "{n} 瓶 · {k} 款": { tw: "{n} 瓶 · {k} 款", en: "{n} bottles · {k} wines" },
@@ -43,7 +43,7 @@ export const CELLAR_MESSAGES: Record<string, { tw: string; en: string }> = {
   找不到这瓶酒: { tw: "找不到這瓶酒", en: "Bottle not found" },
   回到酒窖: { tw: "回到酒窖", en: "Back to the cellar" },
   瓶: { tw: "瓶", en: "bottles" },
-  "开一瓶，记一杯": { tw: "開一瓶，記一杯", en: "Open a bottle and take a note" },
+  "开一瓶，品一款": { tw: "開一瓶，品一款", en: "Open a bottle and taste it" },
   "不记录，只把数量减一瓶？": { tw: "不記錄，只把數量減一瓶？", en: "Take one bottle off without a note?" },
   减一瓶: { tw: "減一瓶", en: "Take one off" },
   "只减一瓶，不记录": { tw: "只減一瓶，不記錄", en: "Take one off, no note" },

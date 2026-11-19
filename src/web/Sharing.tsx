@@ -14,13 +14,13 @@ import { ApiError, getState, removeMember, shareList } from "./store";
 /**
  * 分享与共同评价 on the phone (docs/design.zh.md §3.6): the QR code and the owner's switches, everyone's
  * notes on one wine, and the 酒单卡片 picture to send on WeChat. All of it needs the network; the
- * server decides what 盲评 lets me see.
+ * server decides what 先评后看 lets me see.
  */
 
 export const joinLink = (b: Board) =>
   `${location.origin}/l/${b.list.id}${b.key && b.list.joinOpen ? `?k=${encodeURIComponent(b.key)}` : ""}`;
 
-/** Whether everyone's notes are open to everyone (盲评 off, or revealed). */
+/** Whether everyone's notes are open to everyone (先评后看 off, or revealed). */
 export const notesOpen = (b: Board) => !b.list.blind || !!b.list.revealedAt;
 
 const errorText = (e: unknown) => (e instanceof ApiError ? tm(e.message) : t("没有网络，分享要联网才能用"));
@@ -83,10 +83,10 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
     void change({ visibility: v });
   };
   const blindLine = !b.list.blind
-    ? t("盲评已关：大家随时能看到彼此的评分")
+    ? t("先评后看已关：大家随时能看到彼此的评分")
     : b.list.revealedAt
       ? t("已揭晓：大家都能看到所有人的评分和笔记")
-      : t("盲评中：每款酒交了自己的评价后，才能看到别人的分");
+      : t("先评后看：每款酒交了自己的评价后，才能看到别人的分");
 
   return (
     <Sheet title={t("分享品鉴")} onClose={props.onClose}>
@@ -148,9 +148,9 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
                 onChange={(v) => v && setVisibility(v)}
               />
             </Field>
-            <Field label={t("盲评")} group hint={t("开着时，每款酒要先交自己的评价才能看到别人的，避免被带偏。")}>
+            <Field label={t("先评后看")} group hint={t("开着时，每款酒要先交自己的评价才能看到别人的，避免被带偏。")}>
               <Choice
-                label={t("盲评")}
+                label={t("先评后看")}
                 value={b.list.blind ? "on" : "off"}
                 clearable={false}
                 options={[
@@ -207,7 +207,7 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
               <Initial name={m.name || t("品鉴者")} picture={m.picture} />
               <span>
                 {m.name || t("品鉴者")}
-                {m.owner ? <span class="muted small"> · {t("创建者")}</span> : null}
+                {m.owner ? <span class="muted small"> · {t("主持人")}</span> : null}
                 {m.id === getState().me?.id ? <span class="muted small"> · {t("我")}</span> : null}
               </span>
               {b.owner && !m.owner && (
@@ -215,8 +215,7 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
                   type="button"
                   class="link danger small"
                   onClick={async () => {
-                    if (!(await ask(t("把 {name} 移出这次品鉴？TA 的笔记会留在 TA 自己的酒库里。", { name: m.name }))))
-                      return;
+                    if (!(await ask(t("把 {name} 移出这次品鉴？TA 自己的笔记不会被删除。", { name: m.name })))) return;
                     try {
                       props.onChange(await removeMember(b.list.id, m.id));
                     } catch (e) {
@@ -279,7 +278,7 @@ function NoteView(props: { n: BoardNote; item: BoardItem }) {
   );
 }
 
-/** 大家的评价 on one wine; while 盲评 hides them, says how to open them. */
+/** 大家的评价 on one wine; while 先评后看 hides them, says how to open them. */
 export function EveryoneSheet(props: { item: BoardItem; onTaste: () => void; onClose: () => void }) {
   const { item } = props;
   return (
@@ -293,7 +292,7 @@ export function EveryoneSheet(props: { item: BoardItem; onTaste: () => void; onC
         {!item.open ? (
           <>
             <p class="notice">
-              {t("盲评：已有 {n} 人评了这款酒。交了你自己的评分或笔记后，就能看到大家的。", { n: item.rated })}
+              {t("先评后看：已有 {n} 人评了这款酒。交了你自己的评分或笔记后，就能看到大家的。", { n: item.rated })}
             </p>
             <button type="button" class="button primary" onClick={props.onTaste}>
               {t("去记这款")}
@@ -350,7 +349,7 @@ function fit(ctx: CanvasRenderingContext2D, text: string, max: number): string {
 
 /**
  * The 酒单卡片 (docs/design.zh.md §3.5): the list's wines as glasses of their colour, best first once
- * the scores are open (and marking the one people disagreed on most), and the QR code. While 盲评
+ * the scores are open (and marking the one people disagreed on most), and the QR code. While 先评后看
  * still hides the scores, the card shows the wines in pouring order and no score.
  */
 export async function drawListCard(b: Board): Promise<string> {
@@ -401,7 +400,7 @@ export async function drawListCard(b: Board): Promise<string> {
   let y = 460;
   ctx.font = `400 28px ${sans}`;
   ctx.fillStyle = "rgba(255,247,242,0.6)";
-  ctx.fillText(open ? t("按大家的平均分排序") : t("盲评中，评分揭晓后再看"), 80, y);
+  ctx.fillText(open ? t("按大家的平均分排序") : t("先评后看：评分揭晓后再看"), 80, y);
   y += 30;
   shown.forEach((i, n) => {
     const top = y + n * ROW;

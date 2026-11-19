@@ -120,7 +120,7 @@ export function JoinPage(props: { signedIn: boolean }) {
       )}
 
       <h2 class="section-title">{t("{n} 款", { n: board.items.length })}</h2>
-      {blindHidden && !board.member && <p class="muted small">{t("盲评中：大家的评分会在创建者揭晓后显示。")}</p>}
+      {blindHidden && !board.member && <p class="muted small">{t("先评后看：大家的评分会在主持人揭晓后显示。")}</p>}
       <ol class="rows numbered">
         {board.items.map((i, n) => (
           <li key={i.id} class="row-wrap">

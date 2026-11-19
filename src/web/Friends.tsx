@@ -9,7 +9,7 @@ import { api } from "./store";
 
 /**
  * 朋友动态: what the people I share a 品鉴 with have noted there. Read from the server each time (it
- * needs a network, and a friend's notes are not part of my own copy); 盲评 is decided there too.
+ * needs a network, and a friend's notes are not part of my own copy); 先评后看 is decided there too.
  */
 
 const SEEN_KEY = "wine.friendsSeen";
@@ -86,7 +86,7 @@ export function FriendNoteCard(props: { n: FriendNote; fresh?: boolean; wine?: b
           ) : (
             <span class="friend-lock">
               <span aria-hidden="true">🔒</span>
-              <span class="visually-hidden">{t("盲评中")}</span>
+              <span class="visually-hidden">{t("先评后看")}</span>
             </span>
           )}
         </div>
@@ -103,7 +103,7 @@ export function FriendNoteCard(props: { n: FriendNote; fresh?: boolean; wine?: b
             {n.buyAgain && <p class="muted small">{t("还会买")}</p>}
           </>
         ) : (
-          <p class="muted small">{t("盲评中：交了你自己的评分或笔记后就能看到。")}</p>
+          <p class="muted small">{t("先评后看：交了你自己的评分或笔记后就能看到。")}</p>
         )}
       </a>
     </li>

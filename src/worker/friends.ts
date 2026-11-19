@@ -12,7 +12,7 @@ import { displayName, handedIn } from "./sharing";
  * 朋友动态: the notes my friends handed in on wines in the 品鉴 we share, newest first. A friend is
  * anyone in a 品鉴 with me; what they record on their own, outside a shared 品鉴, stays private.
  * Nothing here goes past what each list's board already shows me: a wine I have not handed in my own
- * note on, in a list still under 盲评, comes back as "they rated it" and no more. Where a note was
+ * note on, in a list still under 先评后看, comes back as "they rated it" and no more. Where a note was
  * written (tastings.location) is never read.
  */
 

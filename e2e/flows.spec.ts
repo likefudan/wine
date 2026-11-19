@@ -72,7 +72,7 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await page.click("header >> text=完成");
   await expect(page.locator(".rows.numbered .row")).toHaveCount(1);
 
-  await page.click(".tabbar >> text=酒库");
+  await page.click(".tabbar >> text=我的酒");
   await page.fill("input.search", "黑醋栗");
   await expect(page.locator(".rows .row")).toHaveCount(1);
   await expect(page.locator(".rows .row .wine-sub")).toContainText("赤霞珠 / 梅洛 / 品丽珠");
@@ -136,7 +136,7 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
     await owner.fill('input[placeholder="2019"]', year);
     await owner.click(".choice >> text=红");
     await owner.click("text=开始品鉴");
-    await slide(owner, "我的分", wine.startsWith("Caymus") ? 90 : 94);
+    await slide(owner, "我的评分", wine.startsWith("Caymus") ? 90 : 94);
     await owner.click("header >> text=完成");
   }
   await expect(owner.locator(".rows.numbered .row")).toHaveCount(2);
@@ -169,14 +169,14 @@ test("a friend scans the Napa list's QR code, joins, and sees the scores only af
   await friend.click("text=Dev login");
   await expect(friend).toHaveURL(new RegExp(`/lists/${listId}$`));
   await expect(friend.locator(".rows.numbered .row")).toHaveCount(2);
-  // 盲评: only how many rated it.
+  // 先评后看: only how many rated it.
   await expect(friend.locator(".everyone-chip").first()).toHaveText("🔒 1 人已评");
 
   // A friend new to the site starts at 入门, on its table.
   await friend.locator(".rows.numbered .row").first().click();
   await expect(friend.locator(".level-two")).toBeVisible();
   await friend.click(".depth-tabs >> text=快记");
-  await slide(friend, "我的分", 86);
+  await slide(friend, "我的评分", 86);
   await friend.click("header >> text=完成");
   await expect(friend.locator(".everyone-chip").first()).toHaveText("大家 2 人 · 平均 88");
   await expect(friend.locator(".everyone-chip").nth(1)).toHaveText("🔒 1 人已评");
@@ -240,7 +240,7 @@ test("choosing an aroma lights it up in place without moving the words around it
   await expect(page.locator(".tasting-note p")).toContainText("口中有红李子和黑樱桃");
 });
 
-test("a wine added from a tasting goes into it; the 记一杯 button always records one on its own", async ({ page }) => {
+test("a wine added from a tasting goes into it; the 品一款 button always records one on its own", async ({ page }) => {
   await signIn(page);
   await page.click("text=只想快速记个分");
   await page.click("text=新建品鉴");
@@ -253,7 +253,7 @@ test("a wine added from a tasting goes into it; the 记一杯 button always reco
   for (const where of ["here", "/"]) {
     if (where === "/") await page.goto("/");
     await page.click(".dock-add");
-    await expect(page.locator(".add-to-list")).toHaveText("单独记一杯，不属于任何品鉴");
+    await expect(page.locator(".add-to-list")).toHaveText("单独品一款，不属于任何品鉴");
     await expect(page.locator(".chips >> text=Friday at home")).toHaveCount(0);
     await page.goBack();
   }

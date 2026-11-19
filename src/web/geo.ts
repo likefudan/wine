@@ -45,7 +45,7 @@ const locating = new Set<string>();
 const handled = new Set<string>();
 export const stopLocating = (id: string) => handled.add(id);
 /**
- * 记一杯: notes where this glass is being tasted. The position is kept at once (no network needed);
+ * 品一款: notes where this glass is being tasted. The position is kept at once (no network needed);
  * the name and address follow from Google when online (fillLocations). Returns false with no position.
  */
 export async function locateTasting(id: string): Promise<boolean> {

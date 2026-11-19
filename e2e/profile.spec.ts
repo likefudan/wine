@@ -24,7 +24,7 @@ test("a person changes their display name and photo", async ({ page }) => {
   await page.fill('input[type="email"]', `profile${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=只想快速记个分");
-  await page.click("nav >> text=我的");
+  await page.click('nav >> text="我的"');
 
   await page.click(".me-card");
   const sheet = page.locator(".sheet");

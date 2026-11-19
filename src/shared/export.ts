@@ -45,7 +45,7 @@ const COLUMNS: [Tri, (r: Row) => string | number | null | undefined][] = [
   [T("酒精度", "酒精濃度", "ABV"), (r) => r.v?.abv],
   [T("品鉴", "品飲", "Tasting"), (r) => r.list?.title],
   [T("深度", "深度", "Depth"), (r) => pick(DEPTH_NAMES[r.t.depth] ?? DEPTH_NAMES.quick!, r.lang)],
-  [T("我的分", "我的分數", "My score"), (r) => r.t.score],
+  [T("我的评分", "我的評分", "My score"), (r) => r.t.score],
   [
     T("还会买", "還會買", "Buy again"),
     (r) => (r.t.buyAgain === null ? null : pick(r.t.buyAgain ? T("会", "會", "yes") : T("不会", "不會", "no"), r.lang)),

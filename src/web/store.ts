@@ -801,7 +801,7 @@ export function deleteLot(id: string) {
 
 /**
  * 开一瓶: one bottle fewer in the lot and, unless `note` is false, a new tasting of it that points
- * back at the lot (喝掉一瓶 = 记一杯). Returns the tasting, if one was started.
+ * back at the lot (喝掉一瓶 = 品一款). Returns the tasting, if one was started.
  */
 export function openBottle(lotId: string, note = true): Tasting | null {
   const lot = state.cellar.find((l) => l.id === lotId);

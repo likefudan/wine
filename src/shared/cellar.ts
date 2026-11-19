@@ -2,7 +2,7 @@
  * 酒窖 (docs/design.zh.md §6, 第三期): the bottles I keep. One row ("lot") is one purchase of one
  * wine and vintage: how many are left, how big, where they are, what they cost and when to drink
  * them. Opening a bottle takes one off and starts a tasting that points back at the lot, so 喝掉一瓶 =
- * 记一杯. Kept on the phone like everything else and sent up as ops.
+ * 品一款. Kept on the phone like everything else and sent up as ops.
  */
 
 import type { Extra, Lang, Tasting } from "./model";

@@ -98,7 +98,7 @@ export function ScoreSlider(props: { value: number | null; onChange: (v: number 
   return (
     <div class="score">
       <div class="score-head">
-        <span class="score-label">{t("我的分")}</span>
+        <span class="score-label">{t("我的评分")}</span>
         <span class="score-value num">{v ?? "—"}</span>
         <span class="score-word">{word ? t(word) : t("拖动打分")}</span>
         {v !== null && (
@@ -114,7 +114,7 @@ export function ScoreSlider(props: { value: number | null; onChange: (v: number 
         step={1}
         value={v ?? 85}
         class={v === null ? "unset" : ""}
-        aria-label={t("我的分")}
+        aria-label={t("我的评分")}
         onInput={(e) => props.onChange(Number((e.target as HTMLInputElement).value))}
       />
       <div class="score-marks" aria-hidden="true">

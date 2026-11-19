@@ -117,7 +117,7 @@ test("recommendations: tonight's bottle, taste profile and a step further", asyn
   await expect(page.locator(".stretch")).toContainText("马尔贝克");
 
   // Open a bottle from here: one fewer, and a note starts.
-  await page.locator(".rec-card", { hasText: "Old Vine Cellars" }).locator("text=开一瓶，记一杯").click();
+  await page.locator(".rec-card", { hasText: "Old Vine Cellars" }).locator("text=开一瓶，品一款").click();
   await expect(page).toHaveURL(/\/taste\/[0-9A-Z]{26}/);
 
   // 我的 → 口味

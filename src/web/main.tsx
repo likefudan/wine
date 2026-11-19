@@ -208,7 +208,7 @@ function Shell() {
               <span class="visually-hidden">{t("酒窖提醒")}</span>
             </span>
           )}
-          <span>{t("酒库")}</span>
+          <span>{t("我的酒")}</span>
         </a>
         <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
           <PersonIcon />
@@ -220,7 +220,7 @@ function Shell() {
           <span>{t("我的")}</span>
         </a>
       </nav>
-      <a href="/add" class="dock-add" aria-label={t("记一杯")}>
+      <a href="/add" class="dock-add" aria-label={t("品一款")}>
         <GlassIcon />
       </a>
     </div>

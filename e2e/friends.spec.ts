@@ -2,7 +2,7 @@ import { type Page, expect, test } from "@playwright/test";
 import { ulid } from "../src/shared/model";
 
 // 朋友动态: a friend's notes in a shared 品鉴 show on 品鉴, on /friends and on the wine's page,
-// behind 盲评 until I hand in my own.
+// behind 先评后看 until I hand in my own.
 
 async function signIn(page: Page, who: string, depth = "只想快速记个分") {
   await page.goto("/");
@@ -54,7 +54,7 @@ const note = (vintageId: string, listItemId: string, over: Record<string, unknow
   };
 };
 
-test("friends' notes show behind 盲评 until I hand in mine", async ({ browser }) => {
+test("friends' notes show behind 先评后看 until I hand in mine", async ({ browser }) => {
   const ownerCtx = await browser.newContext();
   const owner = await ownerCtx.newPage();
   await signIn(owner, "feedowner");
@@ -119,12 +119,12 @@ test("friends' notes show behind 盲评 until I hand in mine", async ({ browser 
     ]),
   ).toBe(true);
 
-  // 品鉴: the friend rated it, but 盲评 keeps the score and words away.
+  // 品鉴: the friend rated it, but 先评后看 keeps the score and words away.
   await owner.goto("/");
   const section = owner.locator("section.friends");
   await expect(section.locator(".friend-note")).toHaveCount(1);
   await expect(section).toContainText("1 条新的");
-  await expect(section.locator(".friend-note")).toContainText("盲评中");
+  await expect(section.locator(".friend-note")).toContainText("先评后看");
   await expect(section.locator(".row-score")).toHaveCount(0);
   await expect(section).not.toContainText("黑醋栗");
 
