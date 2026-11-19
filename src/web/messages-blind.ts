@@ -3,10 +3,6 @@
 export const BLIND_MESSAGES: Record<string, { tw: string; en: string }> = {
   盲品: { tw: "盲飲", en: "Blind" },
   "盲品：先不看酒名": { tw: "盲飲：先不看酒名", en: "Taste blind: no wine name yet" },
-  "直接开始品，记成杯号，最后再对答案": {
-    tw: "直接開始品，記成杯號，最後再對答案",
-    en: "Start tasting right away as a numbered glass; fill in the wine at the end",
-  },
   "杯号（可以改）": { tw: "杯號（可以改）", en: "Glass (rename if you like)" },
   "杯里是什么颜色的酒？": { tw: "杯裡是什麼顏色的酒？", en: "What colour is the wine in the glass?" },
   "不用填酒名、产区、年份。品完之后猜一猜，最后在「对答案」里填上真正的酒，看看猜中了多少。": {

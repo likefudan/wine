@@ -214,10 +214,16 @@ export const ListIcon = () => (
     <circle cx="4" cy="18" r="1.3" fill="currentColor" />
   </svg>
 );
-export const SearchIcon = () => (
+/** 酒册: a few bottles side by side. */
+export const BottlesIcon = () => (
   <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-    <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2" />
-    <path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <path
+      d="M4.1 6.5h1.8v2.6c1.2.7 1.6 1.7 1.6 3V21h-5V12.1c0-1.3.4-2.3 1.6-3zM11.1 3h1.8v2.6c1.2.7 1.6 1.7 1.6 3V21h-5V8.6c0-1.3.4-2.3 1.6-3zM18.1 6.5h1.8v2.6c1.2.7 1.6 1.7 1.6 3V21h-5V12.1c0-1.3.4-2.3 1.6-3z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
   </svg>
 );
 export const PersonIcon = () => (

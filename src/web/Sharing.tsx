@@ -95,7 +95,6 @@ export function ShareSheet(props: { board: Board; onChange: (b: Board) => void; 
           <>
             <p class="lead">{t("同行的朋友扫这个码，用 Google 登录后就能加入，一起记录和评分。")}</p>
             {qr && <img class="qr" src={qr} alt={t("二维码")} width={240} height={240} />}
-            <p class="muted small center">{t("长按二维码可保存图片")}</p>
           </>
         ) : (
           <p class="notice">{t("已停止扫码加入。")}</p>

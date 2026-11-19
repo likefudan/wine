@@ -126,7 +126,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
     <div class={props.part === "index" ? "page me-index" : "page"}>
       {index && (
         <>
-          <h1 class="visually-hidden">{t("我的")}</h1>
+          <h1 class="visually-hidden">{t("我")}</h1>
           <button type="button" class="me-card" aria-label={t("编辑资料")} onClick={() => setEditing(true)}>
             <Face name={me.name ?? me.email} picture={me.picture} size={56} />
             <div class="me-card-text">

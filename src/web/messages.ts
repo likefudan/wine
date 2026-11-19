@@ -68,10 +68,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   以后默认用进阶: { tw: "以後預設用進階", en: "Use Intermediate from now on" },
   每个月: { tw: "每個月", en: "Month by month" },
-  "每款酒找到的香气越多，说明鼻子越来越灵。": {
-    tw: "每款酒找到的香氣越多，代表鼻子越來越靈。",
-    en: "The more aromas you find in each wine, the sharper your nose is getting.",
-  },
   "平均 {s} 分": { tw: "平均 {s} 分", en: "avg {s}" },
   "每款平均 {n} 个香气词": { tw: "每款平均 {n} 個香氣詞", en: "{n} aroma words per wine" },
   "新认识：{words}": { tw: "新認識：{words}", en: "New: {words}" },
@@ -138,7 +134,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Reading a label needs a connection. Please type it in for now.",
   },
   返回: { tw: "返回", en: "Back" },
-  "单独品一款，不属于任何品鉴": { tw: "單獨品一款，不屬於任何品飲", en: "A wine on its own, not part of a tasting" },
   "酒庄或酒名，例如 Opus One": { tw: "酒莊或酒名，例如 Opus One", en: "Producer or wine, e.g. Opus One" },
   "识别中…": { tw: "辨識中…", en: "Reading…" },
   拍酒标: { tw: "拍酒標", en: "Scan label" },
@@ -196,7 +191,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     en: "Wine directory: LWIN by Liv-ex and US TTB label approvals",
   },
   "新酒：{q}": { tw: "新酒：{q}", en: "New wine: {q}" },
-  手动添加一款酒: { tw: "手動新增一款酒", en: "Add a wine by hand" },
   其他年份: { tw: "其他年份", en: "Other year" },
   酒庄: { tw: "酒莊", en: "Producer" },
   酒名: { tw: "酒名", en: "Wine" },
@@ -205,7 +199,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   "无年份 (NV)": { tw: "無年份 (NV)", en: "Non-vintage (NV)" },
   类型: { tw: "類型", en: "Type" },
   葡萄品种: { tw: "葡萄品種", en: "Grapes" },
-  "可多选，混酿就都点上": { tw: "可多選，混釀就都點上", en: "Pick all that apply for a blend" },
   更多品种: { tw: "更多品種", en: "More grapes" },
   "更多品种…": { tw: "更多品種…", en: "More grapes…" },
   红葡萄: { tw: "紅葡萄", en: "Red grapes" },
@@ -216,8 +209,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   国家: { tw: "國家", en: "Country" },
   子产区: { tw: "子產區", en: "Appellation" },
   大区: { tw: "大區", en: "Sub-region" },
-  选了子产区会自动填: { tw: "選了子產區會自動填", en: "Filled in from the appellation" },
-  酒标上最小的产区: { tw: "酒標上最小的產區", en: "The most precise one on the label" },
   "酒精度 %": { tw: "酒精濃度 %", en: "Alcohol %" },
   开始品鉴: { tw: "開始品飲", en: "Start tasting" },
   返回搜索: { tw: "返回搜尋", en: "Back to search" },
@@ -249,18 +240,18 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   上移: { tw: "上移", en: "Move up" },
   下移: { tw: "下移", en: "Move down" },
   移除: { tw: "移除", en: "Remove" },
-  "从这次品鉴移除这款酒？你的笔记会留在「我的酒」里。": {
-    tw: "從這次品飲移除這款酒？你的筆記會留在「我的酒」裡。",
-    en: "Remove this wine from this tasting? Your note stays in My wines.",
+  "从这次品鉴移除这款酒？你的笔记会留在「酒册」里。": {
+    tw: "從這次品飲移除這款酒？你的筆記會留在「酒冊」裡。",
+    en: "Remove this wine from this tasting? Your note stays in Wines.",
   },
   记: { tw: "記", en: "Note" },
   加下一款酒: { tw: "加下一款酒", en: "Add next wine" },
   品鉴设置: { tw: "品飲設定", en: "Tasting settings" },
   备注: { tw: "備註", en: "Notes" },
   保存: { tw: "儲存", en: "Save" },
-  "删除这次品鉴？里面的笔记会留在「我的酒」里。": {
-    tw: "刪除這次品飲？裡面的筆記會留在「我的酒」裡。",
-    en: "Delete this tasting? The notes in it stay in My wines.",
+  "删除这次品鉴？里面的笔记会留在「酒册」里。": {
+    tw: "刪除這次品飲？裡面的筆記會留在「酒冊」裡。",
+    en: "Delete this tasting? The notes in it stay in Wines.",
   },
   删除品鉴: { tw: "刪除品飲", en: "Delete tasting" },
   "搜酒名、酒庄、产区、品种、香气、笔记": {
@@ -294,7 +285,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   "登录已取消。": { tw: "登入已取消。", en: "Sign-in cancelled." },
   "登录超时了，请再试一次。": { tw: "登入逾時了，請再試一次。", en: "Sign-in timed out. Please try again." },
   "登录失败，请再试一次。": { tw: "登入失敗，請再試一次。", en: "Sign-in failed. Please try again." },
-  我的: { tw: "我的", en: "Me" },
   "已记录 {n} 款": { tw: "已記錄 {n} 款", en: "Wines noted: {n}" },
   语言: { tw: "語言", en: "Language" },
   默认品鉴深度: { tw: "預設品飲深度", en: "Default depth" },
@@ -348,10 +338,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   干净: { tw: "乾淨", en: "Clean" },
   不干净: { tw: "不乾淨", en: "Unclean" },
   风味特征: { tw: "風味特徵", en: "Flavour characteristics" },
-  "嘴里尝到的味道，和闻到的常常一样，也会多出或少了几样": {
-    tw: "嘴裡嚐到的味道，和聞到的常常一樣，也會多出或少了幾樣",
-    en: "What you taste: often the same as the nose, sometimes more or fewer",
-  },
   和闻到的一样: { tw: "和聞到的一樣", en: "Same as the nose" },
   "找风味，例如 黑醋栗": { tw: "找風味，例如 黑醋栗", en: "Find a flavour, e.g. blackcurrant" },
   "平衡、余味长度、强度、复杂度，哪几样做得好": {
@@ -451,8 +437,8 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   惊艳: { tw: "驚豔", en: "Stunning" },
   不喜欢: { tw: "不喜歡", en: "Not for me" },
   "你平时怎么喝酒？": { tw: "你平常怎麼喝酒？", en: "How do you usually drink wine?" },
-  "选一个最像你的。以后每款酒都能临时换深度，也可以在「我的」里改。": {
-    tw: "選一個最像你的。之後每款酒都能臨時換深度，也可以在「我的」裡改。",
+  "选一个最像你的。以后每款酒都能临时换深度，也可以在「我」里改。": {
+    tw: "選一個最像你的。之後每款酒都能臨時換深度，也可以在「我」裡改。",
     en: "Pick the closest. You can switch depth for any wine, or change it later under Me.",
   },
   "刚开始认真喝，想学怎么品": {
@@ -485,7 +471,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "點左邊的一款酒，這一頁翻開它的每一次紀錄。",
     en: "Pick a wine on the left and this page opens to every note on it.",
   },
-  回到我的酒: { tw: "回到我的酒", en: "Back to My wines" },
+  回到酒册: { tw: "回到酒冊", en: "Back to Wines" },
   "这款酒你还喝过 {n} 个年份": { tw: "這款酒你還喝過 {n} 個年份", en: "You've had {n} other vintages of this wine" },
   再记一次: { tw: "再記一次", en: "Note it again" },
   "一次最多上传 100 条": { tw: "一次最多上傳 100 筆", en: "At most 100 changes at a time" },
@@ -582,7 +568,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   分享图片: { tw: "分享圖片", en: "Share image" },
   保存图片: { tw: "儲存圖片", en: "Save image" },
-  也可以长按图片保存: { tw: "也可以長按圖片儲存", en: "Or press and hold the image to save it" },
   "没有网络，先用笔记里的文字": { tw: "沒有網路，先用筆記裡的文字", en: "Offline: using the words from your notes" },
   "AI 还没有开通": { tw: "AI 尚未開通", en: "AI isn't set up yet" },
   缺少酒款信息: { tw: "缺少酒款資訊", en: "Wine details are missing" },
@@ -708,13 +693,12 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "這次品飲是私密的，請向主持人要 QR Code",
     en: "This tasting is private. Ask its host for the QR code.",
   },
-  "退出这次品鉴？你记的笔记会留在「我的酒」里。": {
-    tw: "退出這次品飲？你記的筆記會留在「我的酒」裡。",
-    en: "Leave this tasting? Your notes stay in My wines.",
+  "退出这次品鉴？你记的笔记会留在「酒册」里。": {
+    tw: "退出這次品飲？你記的筆記會留在「酒冊」裡。",
+    en: "Leave this tasting? Your notes stay in Wines.",
   },
   退出品鉴: { tw: "退出品飲", en: "Leave tasting" },
   品鉴卡片: { tw: "品飲卡片", en: "Tasting card" },
-  长按二维码可保存图片: { tw: "長按 QR Code 可儲存圖片", en: "Press and hold the code to save it" },
   "长按图片保存，发到微信": {
     tw: "長按圖片儲存，傳到 LINE 或微信",
     en: "Press and hold to save, then send it to friends",

@@ -56,7 +56,7 @@ test("品一款 notes where I am, and 新建品鉴 finds the place around me", a
 
   // 我的 → 品鉴 turns it off.
   await page.click("text=完成");
-  await page.click('nav >> text="我的"');
+  await page.click('nav >> text="我"');
   await page.click(".segmented >> text=记录偏好");
   await expect(page.locator('[aria-label="记下品酒地点"] .on')).toHaveText("开");
   await page.click('[aria-label="记下品酒地点"] >> text=关');
@@ -69,7 +69,7 @@ test("with no signal the position is kept, and the address follows once online",
   await page.fill('input[type="email"]', "owner@example.com");
   await page.click("text=Dev login");
   // The first test turned it off at the end.
-  await page.click('nav >> text="我的"');
+  await page.click('nav >> text="我"');
   await page.click(".segmented >> text=记录偏好");
   await page.click('[aria-label="记下品酒地点"] >> text=开');
   await page.click(".dock-add");
