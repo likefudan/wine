@@ -35,6 +35,7 @@ import {
   takeFromLot,
   useStore,
 } from "../store";
+import { useSelected } from "../selected";
 import { markCellarSeen } from "../CellarAlerts";
 
 /**
@@ -229,10 +230,11 @@ function LotRow(props: {
   lang: ReturnType<typeof currentLang>;
 }) {
   const { l, v, w } = props;
+  const selected = useSelected();
   if (!v) return null;
   const sub = [l.location, w ? `${t("适饮期")} ${windowLabel(w, props.lang)}` : null].filter(Boolean).join(" · ");
   return (
-    <li>
+    <li class={selected === l.id ? "selected" : undefined}>
       <a class="row" href={`/cellar/${l.id}`}>
         <Glass color={glassColor(v.color, undefined, v.year)} />
         <span class="row-main">

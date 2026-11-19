@@ -4,10 +4,11 @@ import "@fontsource/cormorant-garamond/500-italic.css";
 import "./styles.css";
 import { render } from "preact";
 import { LocationProvider, Route, Router, useLocation } from "preact-iso";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
+import { HomeRight, LeftPage, LibraryRight, MeRight, Spine, useWide } from "./book";
 import { GlassIcon, ListIcon, SearchIcon } from "./components";
 import { Logo } from "./Logo";
 import { useHideOnScroll } from "./hideOnScroll";
@@ -64,13 +65,20 @@ function Shell() {
   const rejected = useStore((s) => s.rejected);
   const [online, setOnline] = useState(navigator.onLine);
   useLang();
-  const { path, route } = useLocation();
-  const dockHidden = useHideOnScroll(path);
+  const { path, route, query } = useLocation();
+  const wide = useWide();
+  const leftRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  // The open book: the tab bar sits on the left page and follows that page's scrolling; the right page starts at its top.
+  const dockHidden = useHideOnScroll(
+    wide ? `book ${boot.state} ${path.split("/")[1]}` : path,
+    wide ? leftRef : undefined,
+  );
   // Leaving a screen sends what was changed on it.
   useEffect(() => {
     if (boot.state === "in") flushPending();
   }, [path]);
-  useScrollReset(path);
+  useScrollReset(path, wide ? rightRef : undefined);
 
   useEffect(() => {
     const on = () => setOnline(navigator.onLine);
@@ -170,9 +178,48 @@ function Shell() {
     path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add") || path.startsWith("/blind");
   const waiting = usePending();
   const due = useCellarAlerts().length;
+  const head = (
+    <header class="app-head">
+      <a href="/" class="app-brand" aria-label={t("品酒日记")}>
+        <Logo size={30} class="head-logo" />
+        <span class="brand">{t("品酒日记")}</span>
+      </a>
+    </header>
+  );
+  const dock = (
+    <div class={dockHidden ? "dock hidden" : "dock"}>
+      <nav class="tabbar glass-pane" aria-label={t("主菜单")}>
+        <a href="/" class={tab === "lists" ? "on" : ""} aria-current={tab === "lists" ? "page" : undefined}>
+          <ListIcon />
+          <span>{t("品鉴")}</span>
+        </a>
+        <a href="/library" class={tab === "library" ? "on" : ""} aria-current={tab === "library" ? "page" : undefined}>
+          <SearchIcon />
+          {due > 0 && (
+            <span class="dot">
+              <span class="visually-hidden">{t("酒窖提醒")}</span>
+            </span>
+          )}
+          <span>{t("酒库")}</span>
+        </a>
+        <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
+          <Avatar />
+          {waiting > 0 && (
+            <span class="dot">
+              <span class="visually-hidden">{t("{n} 人待审核", { n: waiting })}</span>
+            </span>
+          )}
+          <span>{t("我的")}</span>
+        </a>
+      </nav>
+      <a href="/add" class="dock-add" aria-label={t("记一杯")}>
+        <GlassIcon />
+      </a>
+    </div>
+  );
   return (
-    <div class="app">
-      <PullRefresh enabled={!fullScreen} />
+    <div class={wide ? "app book" : "app"}>
+      <PullRefresh enabled={!fullScreen && !wide} />
       {/* Uploading is silent; only no signal, or uploads that keep failing, are worth a line. */}
       {!online ? (
         <div class="sync-bar" role="status">
@@ -202,70 +249,46 @@ function Shell() {
         </div>
       )}
       {/* Every page but the two full-screen ones has the brand on top; deeper pages add a back row. */}
-      {!fullScreen && (
-        <header class="app-head">
-          <a href="/" class="app-brand" aria-label={t("品酒日记")}>
-            <Logo size={30} class="head-logo" />
-            <span class="brand">{t("品酒日记")}</span>
-          </a>
-        </header>
-      )}
-      <main class={fullScreen ? "main full" : "main"}>
-        <Router>
-          <Route path="/" component={Home} />
-          <Route path="/lists/:id" component={ListPage} />
-          <Route path="/l/:id" component={JoinIn} />
-          <Route path="/add" component={AddWine} />
-          <Route path="/blind" component={BlindStart} />
-          <Route path="/answers/:id" component={AnswersPage} />
-          <Route path="/taste/:id" component={Taste} />
-          <Route path="/library" component={Library} />
-          <Route path="/wine/:id" component={WinePage} />
-          <Route path="/cellar" component={CellarRedirect} />
-          <Route path="/cellar/add" component={AddToCellar} />
-          <Route path="/cellar/new" component={CellarLotPage} />
-          <Route path="/cellar/:id" component={CellarLotPage} />
-          <Route path="/me" component={MePage} />
-          <Route path="/friends" component={FriendsPage} />
-          <Route path="/recs" component={RecsPage} />
-          <Route default component={Home} />
-        </Router>
-      </main>
-      {!fullScreen && (
-        <div class={dockHidden ? "dock hidden" : "dock"}>
-          <nav class="tabbar glass-pane" aria-label={t("主菜单")}>
-            <a href="/" class={tab === "lists" ? "on" : ""} aria-current={tab === "lists" ? "page" : undefined}>
-              <ListIcon />
-              <span>{t("品鉴")}</span>
-            </a>
-            <a
-              href="/library"
-              class={tab === "library" ? "on" : ""}
-              aria-current={tab === "library" ? "page" : undefined}
-            >
-              <SearchIcon />
-              {due > 0 && (
-                <span class="dot">
-                  <span class="visually-hidden">{t("酒窖提醒")}</span>
-                </span>
-              )}
-              <span>{t("酒库")}</span>
-            </a>
-            <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
-              <Avatar />
-              {waiting > 0 && (
-                <span class="dot">
-                  <span class="visually-hidden">{t("{n} 人待审核", { n: waiting })}</span>
-                </span>
-              )}
-              <span>{t("我的")}</span>
-            </a>
-          </nav>
-          <a href="/add" class="dock-add" aria-label={t("记一杯")}>
-            <GlassIcon />
-          </a>
-        </div>
-      )}
+      {!wide && !fullScreen && head}
+      {/* One page on a phone; the open book's two pages and its spine on a wide screen (book.tsx). */}
+      <div class="spread">
+        {wide && (
+          <section key="left" class="leaf left">
+            <div class="leaf-scroll" ref={leftRef}>
+              {head}
+              <LeftPage path={path} query={query} />
+            </div>
+            {dock}
+          </section>
+        )}
+        {wide && <Spine key="spine" />}
+        <section key="right" class="leaf right">
+          <div class="leaf-scroll" ref={rightRef}>
+            <main class={fullScreen || wide ? "main full" : "main"}>
+              <Router>
+                <Route path="/" component={wide ? HomeRight : Home} />
+                <Route path="/lists/:id" component={ListPage} />
+                <Route path="/l/:id" component={JoinIn} />
+                <Route path="/add" component={AddWine} />
+                <Route path="/blind" component={BlindStart} />
+                <Route path="/answers/:id" component={AnswersPage} />
+                <Route path="/taste/:id" component={Taste} />
+                <Route path="/library" component={wide ? LibraryRight : Library} />
+                <Route path="/wine/:id" component={WinePage} />
+                <Route path="/cellar" component={CellarRedirect} />
+                <Route path="/cellar/add" component={AddToCellar} />
+                <Route path="/cellar/new" component={CellarLotPage} />
+                <Route path="/cellar/:id" component={CellarLotPage} />
+                <Route path="/me" component={wide ? MeRight : MePage} />
+                <Route path="/friends" component={FriendsPage} />
+                <Route path="/recs" component={RecsPage} />
+                <Route default component={wide ? HomeRight : Home} />
+              </Router>
+            </main>
+          </div>
+        </section>
+      </div>
+      {!wide && !fullScreen && dock}
     </div>
   );
 }

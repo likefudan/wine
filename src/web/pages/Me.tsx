@@ -64,7 +64,13 @@ export function usePending(): number {
   return n;
 }
 
-export function MePage() {
+/**
+ * `part`: on the open book (book.tsx) the page is split in two: who I am and the list of sections
+ * on the left page ("index"), the chosen section on the right ("panels").
+ */
+export function MePage(props: { part?: "index" | "panels" }) {
+  const index = props.part !== "panels";
+  const panels = props.part !== "index";
   const me = useStore((s) => s.me)!;
   const queue = useStore((s) => s.queue.length);
   const failedCount = useStore((s) => s.failed.length);
@@ -118,165 +124,173 @@ export function MePage() {
   const tab: MeTab = tabs.some((x) => x.id === query.tab) ? (query.tab as MeTab) : "growth";
   const pick = (id: MeTab) => route(id === "growth" ? "/me" : `/me?tab=${id}`, true);
   return (
-    <div class="page">
-      <h1 class="visually-hidden">{t("我的")}</h1>
-      <button type="button" class="me-card" aria-label={t("编辑资料")} onClick={() => setEditing(true)}>
-        <Face name={me.name ?? me.email} picture={me.picture} size={56} />
-        <div class="me-card-text">
-          <strong>{me.name ?? me.email}</strong>
-          <div class="muted small">{me.email}</div>
-          <div class="muted small">{t("已记录 {n} 款", { n: count })}</div>
-        </div>
-        <span class="me-card-edit">{t("编辑")}</span>
-      </button>
-      {editing && <ProfileSheet onClose={() => setEditing(false)} />}
-      <div class="segmented" role="tablist" aria-label={t("设置")}>
-        {tabs.map((x) => (
-          <button
-            key={x.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === x.id}
-            class={tab === x.id ? "on" : ""}
-            onClick={() => pick(x.id)}
-          >
-            {x.label}
-            {x.id === "members" && waiting > 0 && <span class="badge">{waiting}</span>}
-          </button>
-        ))}
-      </div>
-      {tab === "growth" && <GrowthPanel />}
-      {tab === "taste" && <TastePanel />}
-      {tab === "tasting" && (
-        <section class="group" role="tabpanel">
-          <Field label={t("默认品鉴深度")} hint={t(DEPTH_INFO[me.depth ?? "quick"].who)} group>
-            <Choice
-              label={t("默认品鉴深度")}
-              value={me.depth ?? undefined}
-              clearable={false}
-              options={DEPTHS.map((d: Depth) => ({ value: d, label: t(DEPTH_INFO[d].name) }))}
-              onChange={(d) => d && updateMe({ depth: d })}
-            />
-          </Field>
-          <Field label={t("拍酒标识别模型")} hint={t(LABEL_MODEL_HINT[me.labelModel ?? LABEL_MODELS[0].id])} group>
-            <Choice
-              label={t("拍酒标识别模型")}
-              value={me.labelModel ?? LABEL_MODELS[0].id}
-              clearable={false}
-              options={LABEL_MODELS.filter((m) => me.owner || !OWNER_ONLY_MODELS.includes(m.id)).map((m) => ({
-                value: m.id,
-                label: m.name,
-              }))}
-              onChange={(m) => m && updateMe({ labelModel: m })}
-            />
-          </Field>
-          <Field label={t("记下品酒地点")} hint={t("记一杯时用手机定位记下在哪儿喝的，只有你自己看得到。")} group>
-            <Choice
-              label={t("记下品酒地点")}
-              value={me.locationOn === false ? "off" : me.locationOn ? "on" : undefined}
-              clearable={false}
-              options={[
-                { value: "on" as const, label: t("开") },
-                { value: "off" as const, label: t("关") },
-              ]}
-              onChange={(v) => v && updateMe({ locationOn: v === "on" })}
-            />
-          </Field>
-        </section>
-      )}
-      {tab === "general" && (
+    <div class={props.part === "index" ? "page me-index" : "page"}>
+      {index && (
         <>
-          <section class="group" role="tabpanel">
-            <Field label={t("语言")} group>
-              <LangSwitch />
-            </Field>
-            <Field label={t("外观")} group>
-              <Choice
-                label={t("外观")}
-                value={theme}
-                clearable={false}
-                options={[
-                  { value: "auto" as const, label: t("跟随系统") },
-                  { value: "light" as const, label: t("浅色") },
-                  { value: "dark" as const, label: t("深色") },
-                ]}
-                onChange={(v) => {
-                  if (!v) return;
-                  setT(v);
-                  setTheme(v);
-                }}
-              />
-            </Field>
-          </section>
-          <section class="group">
-            <h2 class="group-title">{t("离线与备份")}</h2>
-            <p class="small muted">
-              {t(
-                "记录先存在这部手机上，有网时自动备份到云端。在酒庄没信号也能照常记，有网后会自动补传，不用手动操作。",
-              )}
-            </p>
-            <p class="small sync-status">
-              {queue > 0
-                ? navigator.onLine
-                  ? t("有 {n} 条修改在手机上，稍后自动上传", { n: queue })
-                  : t("有 {n} 条记录还在手机上，有网后会自动上传", { n: queue })
-                : failedCount > 0
-                  ? t("有 {n} 条修改没能保存，见下方", { n: failedCount })
-                  : syncedAt
-                    ? t("✓ 都已备份到云端（{time}）", {
-                        time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-                      })
-                    : t("✓ 都已备份到云端")}
-            </p>
-            {queue > 0 && (
+          <h1 class="visually-hidden">{t("我的")}</h1>
+          <button type="button" class="me-card" aria-label={t("编辑资料")} onClick={() => setEditing(true)}>
+            <Face name={me.name ?? me.email} picture={me.picture} size={56} />
+            <div class="me-card-text">
+              <strong>{me.name ?? me.email}</strong>
+              <div class="muted small">{me.email}</div>
+              <div class="muted small">{t("已记录 {n} 款", { n: count })}</div>
+            </div>
+            <span class="me-card-edit">{t("编辑")}</span>
+          </button>
+          {editing && <ProfileSheet onClose={() => setEditing(false)} />}
+          <div class="segmented" role="tablist" aria-label={t("设置")}>
+            {tabs.map((x) => (
               <button
+                key={x.id}
                 type="button"
-                class="button"
-                disabled={syncing}
-                onClick={async () => {
-                  setSyncing(true);
-                  await flush();
-                  setSyncing(false);
-                }}
+                role="tab"
+                aria-selected={tab === x.id}
+                class={tab === x.id ? "on" : ""}
+                onClick={() => pick(x.id)}
               >
-                {syncing ? t("上传中…") : t("现在上传")}
+                {x.label}
+                {x.id === "members" && waiting > 0 && <span class="badge">{waiting}</span>}
               </button>
-            )}
-          </section>
-          <FailedChanges />
-          <ExportData />
-          <button type="button" class="button danger block" onClick={logout}>
-            {t("退出登录")}
-          </button>
-          <button type="button" class="link danger delete-account" onClick={deleteAccount}>
-            {t("删除账号和全部数据")}
-          </button>
+            ))}
+          </div>
         </>
       )}
-      {tab === "members" && (
+      {panels && (
         <>
-          <div class="segmented sub" role="tablist" aria-label={t("管理")}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={query.view !== "costs"}
-              class={query.view !== "costs" ? "on" : ""}
-              onClick={() => route("/me?tab=members", true)}
-            >
-              {t("成员")}
-              {waiting > 0 && <span class="badge">{waiting}</span>}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={query.view === "costs"}
-              class={query.view === "costs" ? "on" : ""}
-              onClick={() => route("/me?tab=members&view=costs", true)}
-            >
-              {t("模型开销")}
-            </button>
-          </div>
-          {query.view === "costs" ? <CostsPanel /> : <Members />}
+          {tab === "growth" && <GrowthPanel />}
+          {tab === "taste" && <TastePanel />}
+          {tab === "tasting" && (
+            <section class="group" role="tabpanel">
+              <Field label={t("默认品鉴深度")} hint={t(DEPTH_INFO[me.depth ?? "quick"].who)} group>
+                <Choice
+                  label={t("默认品鉴深度")}
+                  value={me.depth ?? undefined}
+                  clearable={false}
+                  options={DEPTHS.map((d: Depth) => ({ value: d, label: t(DEPTH_INFO[d].name) }))}
+                  onChange={(d) => d && updateMe({ depth: d })}
+                />
+              </Field>
+              <Field label={t("拍酒标识别模型")} hint={t(LABEL_MODEL_HINT[me.labelModel ?? LABEL_MODELS[0].id])} group>
+                <Choice
+                  label={t("拍酒标识别模型")}
+                  value={me.labelModel ?? LABEL_MODELS[0].id}
+                  clearable={false}
+                  options={LABEL_MODELS.filter((m) => me.owner || !OWNER_ONLY_MODELS.includes(m.id)).map((m) => ({
+                    value: m.id,
+                    label: m.name,
+                  }))}
+                  onChange={(m) => m && updateMe({ labelModel: m })}
+                />
+              </Field>
+              <Field label={t("记下品酒地点")} hint={t("记一杯时用手机定位记下在哪儿喝的，只有你自己看得到。")} group>
+                <Choice
+                  label={t("记下品酒地点")}
+                  value={me.locationOn === false ? "off" : me.locationOn ? "on" : undefined}
+                  clearable={false}
+                  options={[
+                    { value: "on" as const, label: t("开") },
+                    { value: "off" as const, label: t("关") },
+                  ]}
+                  onChange={(v) => v && updateMe({ locationOn: v === "on" })}
+                />
+              </Field>
+            </section>
+          )}
+          {tab === "general" && (
+            <>
+              <section class="group" role="tabpanel">
+                <Field label={t("语言")} group>
+                  <LangSwitch />
+                </Field>
+                <Field label={t("外观")} group>
+                  <Choice
+                    label={t("外观")}
+                    value={theme}
+                    clearable={false}
+                    options={[
+                      { value: "auto" as const, label: t("跟随系统") },
+                      { value: "light" as const, label: t("浅色") },
+                      { value: "dark" as const, label: t("深色") },
+                    ]}
+                    onChange={(v) => {
+                      if (!v) return;
+                      setT(v);
+                      setTheme(v);
+                    }}
+                  />
+                </Field>
+              </section>
+              <section class="group">
+                <h2 class="group-title">{t("离线与备份")}</h2>
+                <p class="small muted">
+                  {t(
+                    "记录先存在这部手机上，有网时自动备份到云端。在酒庄没信号也能照常记，有网后会自动补传，不用手动操作。",
+                  )}
+                </p>
+                <p class="small sync-status">
+                  {queue > 0
+                    ? navigator.onLine
+                      ? t("有 {n} 条修改在手机上，稍后自动上传", { n: queue })
+                      : t("有 {n} 条记录还在手机上，有网后会自动上传", { n: queue })
+                    : failedCount > 0
+                      ? t("有 {n} 条修改没能保存，见下方", { n: failedCount })
+                      : syncedAt
+                        ? t("✓ 都已备份到云端（{time}）", {
+                            time: `${fmtDate(syncedAt, false)} ${new Date(syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+                          })
+                        : t("✓ 都已备份到云端")}
+                </p>
+                {queue > 0 && (
+                  <button
+                    type="button"
+                    class="button"
+                    disabled={syncing}
+                    onClick={async () => {
+                      setSyncing(true);
+                      await flush();
+                      setSyncing(false);
+                    }}
+                  >
+                    {syncing ? t("上传中…") : t("现在上传")}
+                  </button>
+                )}
+              </section>
+              <FailedChanges />
+              <ExportData />
+              <button type="button" class="button danger block" onClick={logout}>
+                {t("退出登录")}
+              </button>
+              <button type="button" class="link danger delete-account" onClick={deleteAccount}>
+                {t("删除账号和全部数据")}
+              </button>
+            </>
+          )}
+          {tab === "members" && (
+            <>
+              <div class="segmented sub" role="tablist" aria-label={t("管理")}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={query.view !== "costs"}
+                  class={query.view !== "costs" ? "on" : ""}
+                  onClick={() => route("/me?tab=members", true)}
+                >
+                  {t("成员")}
+                  {waiting > 0 && <span class="badge">{waiting}</span>}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={query.view === "costs"}
+                  class={query.view === "costs" ? "on" : ""}
+                  onClick={() => route("/me?tab=members&view=costs", true)}
+                >
+                  {t("模型开销")}
+                </button>
+              </div>
+              {query.view === "costs" ? <CostsPanel /> : <Members />}
+            </>
+          )}
         </>
       )}
     </div>

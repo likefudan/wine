@@ -12,6 +12,7 @@ import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
 import { fmtDate, t, tk } from "../i18n";
 import { newList, useStore } from "../store";
+import { useSelected } from "../selected";
 
 export const KIND_NAMES: Record<ListKind, string> = {
   winery: tk("酒庄品鉴"),
@@ -153,6 +154,7 @@ export function Home() {
   const tastings = useStore((s) => s.tastings);
   const me = useStore((s) => s.me);
   const [adding, setAdding] = useState(false);
+  const selected = useSelected();
   const vById = new Map(vintages.map((v) => [v.id, v]));
   const loose = tastings.filter((x) => !x.listItemId).slice(0, 5);
   const sorted = [...lists].sort((a, b) => (b.startsOn ?? b.createdAt).localeCompare(a.startsOn ?? a.createdAt));
@@ -170,9 +172,11 @@ export function Home() {
           {t("你的账号正在等站长审核。现在就能正常记录；拍酒标识别和酒庄地址联想要等审核通过后才能用。")}
         </p>
       )}
-      <CellarAlertCard />
-      <RecsHomeCard />
-      <FriendsSection />
+      <div class="home-extras">
+        <CellarAlertCard />
+        <RecsHomeCard />
+        <FriendsSection />
+      </div>
       {sorted.length === 0 && (
         <div class="empty">
           <p>{t("一次品鉴可以是一次酒庄参观、一顿饭局或一整趟旅行。去之前建好，到了就按上酒顺序一款款记。")}</p>
@@ -182,7 +186,7 @@ export function Home() {
         {sorted.map((l) => {
           const its = items.filter((i) => i.listId === l.id).sort((a, b) => a.position - b.position);
           return (
-            <li key={l.id}>
+            <li key={l.id} class={selected === l.id ? "selected" : undefined}>
               <a class="card list-card" href={`/lists/${l.id}`}>
                 <div class="list-card-head">
                   <strong class="list-title">{l.title}</strong>

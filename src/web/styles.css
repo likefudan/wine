@@ -34,6 +34,11 @@
   --glass-shadow:
     0 12px 32px rgb(29 26 22 / 16%), 0 2px 6px rgb(29 26 22 / 8%), inset 0 1px 0.5px rgb(255 255 255 / 85%),
     inset 0 -1px 1px rgb(255 255 255 / 30%), inset 0 0 0 0.5px rgb(255 255 255 / 25%);
+  --book-desk: #d9cdb4;
+  --spine-shade-1: rgb(60 42 20 / 4%);
+  --spine-shade-2: rgb(60 42 20 / 13%);
+  --spine-crease: rgb(50 34 16 / 34%);
+  --spine-thread: rgb(248 243 231 / 85%);
   --radius: 2px;
   --serif-latin: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
   --serif:
@@ -65,6 +70,11 @@
     --danger: #e8837a;
     --shadow: none;
     --paper-glow: #1d1914;
+    --book-desk: #0c0a08;
+    --spine-shade-1: rgb(0 0 0 / 14%);
+    --spine-shade-2: rgb(0 0 0 / 36%);
+    --spine-crease: rgb(0 0 0 / 70%);
+    --spine-thread: rgb(163 152 127 / 55%);
     --glass-tint: rgb(32 28 22 / 12%);
     --glass-halo: 0 0 6px rgb(0 0 0 / 85%), 0 0 2px rgb(0 0 0 / 85%);
     --glass-active: color-mix(in srgb, var(--primary) 26%, rgb(255 255 255 / 4%));
@@ -99,6 +109,11 @@
   --danger: #e8837a;
   --shadow: none;
   --paper-glow: #1d1914;
+  --book-desk: #0c0a08;
+  --spine-shade-1: rgb(0 0 0 / 14%);
+  --spine-shade-2: rgb(0 0 0 / 36%);
+  --spine-crease: rgb(0 0 0 / 70%);
+  --spine-thread: rgb(163 152 127 / 55%);
   --glass-tint: rgb(32 28 22 / 12%);
   --glass-halo: 0 0 6px rgb(0 0 0 / 85%), 0 0 2px rgb(0 0 0 / 85%);
   --glass-active: color-mix(in srgb, var(--primary) 26%, rgb(255 255 255 / 4%));
@@ -2619,4 +2634,319 @@ a.pro-score {
   display: block;
   margin: 18px auto 0;
   font-size: 14px;
+}
+
+/* ---- The open diary (book.tsx; Ke Li 2026-11-19) ----
+ * On a phone the wrappers below are not there as far as layout goes. On a wide screen (an unfolded
+ * iPhone Duo, a phone on its side, a tablet, a computer) they are a book lying open: two pages that
+ * scroll by themselves, and the fold between them drawn as the spine. Keep in step with WIDE_QUERY. */
+.spread,
+.leaf,
+.leaf-scroll {
+  display: contents;
+}
+.home-extras {
+  display: contents;
+}
+.spine,
+.blank-page {
+  display: none;
+}
+@media (min-width: 800px) {
+  html:has(.book),
+  html:has(.book) body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  .app.book {
+    --gutter: 22px; /* from the fold to the text */
+    --edge-l: max(18px, env(safe-area-inset-left));
+    --edge-r: max(18px, env(safe-area-inset-right));
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+    padding-bottom: 0;
+    /* The desk under the book, seen past the pages' outer edges. */
+    background: var(--book-desk);
+  }
+  .book .spread {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  /* A page. Sheets and the tab bar opened from it stay on it (`contain` keeps `position: fixed`
+     children inside), so nothing lies across the fold. */
+  .book .leaf {
+    position: relative;
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    contain: layout;
+    background:
+      radial-gradient(120% 60% at 50% 0%, var(--paper-glow) 0%, transparent 70%) no-repeat,
+      var(--bg);
+  }
+  .book .leaf-scroll {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .book .leaf-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .book .leaf.left .leaf-scroll {
+    padding-left: calc(var(--edge-l) - 16px);
+    padding-right: calc(var(--gutter) - 16px);
+    /* Room for the tab bar floating over the foot of the page. */
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+  .book .leaf.right .leaf-scroll {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .book .leaf.right .page {
+    padding-left: var(--gutter);
+    padding-right: var(--edge-r);
+  }
+  /* A heading that stays put reaches from the fold to the page's outer edge. */
+  .book .leaf.right .page-head.sticky {
+    margin-left: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--edge-r));
+    padding-left: var(--gutter);
+    padding-right: var(--edge-r);
+    background: color-mix(in srgb, var(--paper-glow) 92%, transparent);
+  }
+  .book .main {
+    max-width: none;
+  }
+  /* The pages' outer edges: the rest of the diary's leaves, stacked. Drawn over the page, so a
+     sticky heading doesn't wipe them out. */
+  .book .leaf::after {
+    content: "";
+    position: absolute;
+    z-index: 20;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    pointer-events: none;
+    background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 4px);
+  }
+  .book .leaf.left::after {
+    left: 0;
+  }
+  .book .leaf.right::after {
+    right: 0;
+    transform: scaleX(-1);
+  }
+
+  /* The fold. The pages dip into the binding: a soft shadow either side, the crease itself, the
+     sewing thread showing in it, and a ribbon marker hanging from the head of the book. */
+  .book .spine {
+    display: block;
+    position: absolute;
+    z-index: 30;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 104px;
+    margin-left: -52px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--spine-shade-1) 26%,
+      var(--spine-shade-2) 43%,
+      var(--spine-crease) 49.3%,
+      var(--spine-crease) 50.7%,
+      var(--spine-shade-2) 57%,
+      var(--spine-shade-1) 74%,
+      transparent 100%
+    );
+  }
+  .book .spine::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    margin-left: -0.5px;
+    /* The thread: long stitches with short gaps. */
+    background: repeating-linear-gradient(180deg, var(--spine-thread) 0 22px, transparent 22px 30px);
+  }
+  .book .spine-ribbon {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 11px;
+    height: clamp(44px, 16vh, 110px);
+    margin-left: 3px;
+    background:
+      linear-gradient(90deg, rgb(0 0 0 / 22%), transparent 35%, rgb(255 255 255 / 10%) 70%, rgb(0 0 0 / 12%)),
+      var(--fill);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 7px), 0 100%);
+    filter: drop-shadow(1px 1px 1px rgb(0 0 0 / 25%));
+    transform: rotate(1.2deg);
+    transform-origin: top center;
+  }
+
+  /* The brand heads the left page, as a diary's running title; it scrolls away with the page. */
+  .book .app-head {
+    position: static;
+    padding: max(10px, env(safe-area-inset-top)) 16px 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .book .leaf.right .page {
+    padding-top: max(14px, env(safe-area-inset-top));
+  }
+  .book .page-head.sticky {
+    top: 0;
+  }
+  /* The lists come first on the left page; reminders, 推荐 and friends follow them. */
+  .book .leaf.left .home-extras {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    order: 9;
+  }
+  .book .leaf.left .home-extras:empty {
+    display: none;
+  }
+
+  /* The entry open on the right page, marked in the left page's list like a line someone underlined. */
+  .book .leaf.left .selected {
+    position: relative;
+    /* Brought into view (book.tsx) clear of the tab bar. */
+    scroll-margin: 12px 0 110px;
+    background: linear-gradient(90deg, var(--primary-soft), transparent 92%);
+  }
+  .book .leaf.left .selected::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    background: var(--primary);
+  }
+  .book .leaf.left .cards > .selected > .card,
+  .book .leaf.left .rows > .selected > .row {
+    padding-left: 8px;
+  }
+
+  /* A 品鉴 on the right page has all the 品鉴 beside it: no way back is needed. */
+  .book .leaf.right .back-up {
+    display: none;
+  }
+
+  /* 我的 on the left page: the sections as a table of contents. */
+  .book .me-index .segmented {
+    flex-direction: column;
+    overflow: visible;
+    border-bottom: 0;
+  }
+  .book .me-index .segmented button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 50px;
+    padding: 0 6px;
+    border-bottom: 1px dotted var(--line-2);
+    font-size: 18px;
+    text-align: left;
+  }
+  .book .me-index .segmented button::after {
+    content: "›";
+    margin-left: auto;
+    color: var(--muted);
+  }
+  .book .me-index .segmented button.on {
+    text-decoration: none;
+    background: linear-gradient(90deg, var(--primary-soft), transparent 92%);
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
+
+  /* The tab bar keeps to the left page, in its middle, clear of the fold. */
+  .book .dock {
+    left: calc(50% + (var(--edge-l) - var(--gutter)) / 2);
+    width: min(100% - var(--edge-l) - var(--gutter) - 8px, 420px);
+  }
+
+  .book .blank-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    color: var(--muted);
+    text-align: center;
+  }
+  .book .blank-page .logo {
+    opacity: 0.35;
+  }
+  .book .sheet {
+    max-height: 92%;
+  }
+  .book .sync-bar {
+    flex: none;
+  }
+}
+/* A phone on its side (440 high on a 16 Pro Max, less with Safari's bars): smaller headings and a
+   lower tab bar, so the page keeps most of its height. */
+@media (min-width: 800px) and (max-height: 520px) {
+  .book .app-head {
+    padding-top: max(6px, env(safe-area-inset-top));
+  }
+  .book .app-brand .brand {
+    font-size: 20px;
+  }
+  .book .app-brand .logo {
+    width: 24px;
+    height: 24px;
+  }
+  .book .app-head::after {
+    margin-top: 4px;
+  }
+  .book .dock {
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  .book .tabbar a {
+    min-height: 44px;
+  }
+  .book .dock-add {
+    width: 54px;
+    height: 54px;
+  }
+  .book .leaf.left .leaf-scroll {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .book .page {
+    gap: 10px;
+  }
+  .book .card {
+    padding: 10px 2px;
+  }
+  .book .list-title {
+    font-size: 20px;
+  }
+  .book .glass-row {
+    margin-top: 6px;
+  }
+  .book .row {
+    min-height: 52px;
+    padding: 8px 2px;
+  }
+  .book .page-head {
+    min-height: 40px;
+  }
 }
