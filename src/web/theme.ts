@@ -25,3 +25,30 @@ export function setTheme(theme: Theme) {
   }
   applyTheme(theme);
 }
+
+/** How a chosen option is marked: circled by pen (the default) or brushed over. Kept in this browser. */
+export type Marks = "circle" | "brush";
+const MARKS_KEY = "marks";
+
+export function savedMarks(): Marks {
+  try {
+    return localStorage.getItem(MARKS_KEY) === "brush" ? "brush" : "circle";
+  } catch {
+    return "circle";
+  }
+}
+
+export function applyMarks(marks: Marks = savedMarks()) {
+  if (marks === "circle") delete document.documentElement.dataset.marks;
+  else document.documentElement.dataset.marks = marks;
+}
+
+export function setMarks(marks: Marks) {
+  try {
+    if (marks === "circle") localStorage.removeItem(MARKS_KEY);
+    else localStorage.setItem(MARKS_KEY, marks);
+  } catch {
+    // private mode
+  }
+  applyMarks(marks);
+}

@@ -22,7 +22,7 @@ import {
   updateMe,
   useStore,
 } from "../store";
-import { type Theme, savedTheme, setTheme } from "../theme";
+import { type Marks, type Theme, savedMarks, savedTheme, setMarks, setTheme } from "../theme";
 
 /** Only the site's owners open 模型开销: its own file. */
 const CostsPanel = lazy(() => import("../Costs").then((m) => m.CostsPanel));
@@ -77,6 +77,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
   const syncedAt = useStore((s) => s.syncedAt);
   const count = useStore((s) => s.tastings.length);
   const [theme, setT] = useState<Theme>(savedTheme());
+  const [marks, setM] = useState<Marks>(savedMarks());
   const [syncing, setSyncing] = useState(false);
   const [editing, setEditing] = useState(false);
   const { query, route } = useLocation();
@@ -216,6 +217,22 @@ export function MePage(props: { part?: "index" | "panels" }) {
                       if (!v) return;
                       setT(v);
                       setTheme(v);
+                    }}
+                  />
+                </Field>
+                <Field label={t("选项样式")} group>
+                  <Choice
+                    label={t("选项样式")}
+                    value={marks}
+                    clearable={false}
+                    options={[
+                      { value: "circle" as const, label: t("手写圈选") },
+                      { value: "brush" as const, label: t("笔刷涂抹") },
+                    ]}
+                    onChange={(v) => {
+                      if (!v) return;
+                      setM(v);
+                      setMarks(v);
                     }}
                   />
                 </Field>

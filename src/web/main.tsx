@@ -30,7 +30,7 @@ import { Avatar, MePage, refreshPending, usePending } from "./pages/Me";
 import { Taste } from "./pages/Taste";
 import { Welcome } from "./pages/Welcome";
 import { WinePage } from "./pages/WinePage";
-import { applyTheme } from "./theme";
+import { applyMarks, applyTheme } from "./theme";
 import {
   api,
   applySync,
@@ -304,6 +304,7 @@ function Shell() {
 }
 
 applyTheme();
+applyMarks();
 render(
   // The router handles in-app links only: /api links (Google sign-in, photos) must reach the Worker as
   // real page loads, or a click just changes the address bar until the page is reloaded.
