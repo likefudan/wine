@@ -161,7 +161,7 @@ export function Home() {
 
   return (
     <div class="page">
-      <div class="section-head">
+      <div class="section-head pin">
         <h1 class="section-head-title">{t("我的品鉴")}</h1>
         <button type="button" class="button small primary" onClick={() => setAdding(true)}>
           ＋ {t("新建品鉴")}
@@ -214,7 +214,7 @@ export function Home() {
       </ul>
       {loose.length > 0 && (
         <section>
-          <h2 class="section-title">{t("单独记的酒")}</h2>
+          <h2 class="visually-hidden">{t("单独记的酒")}</h2>
           <ul class="rows">
             {loose.map((x) => {
               const v = blindShown(x, vById.get(x.vintageId));

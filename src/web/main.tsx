@@ -4,7 +4,7 @@ import "@fontsource/cormorant-garamond/500-italic.css";
 import "./styles.css";
 import { render } from "preact";
 import { LocationProvider, Route, Router, useLocation } from "preact-iso";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
@@ -78,6 +78,22 @@ function Shell() {
     if (boot.state === "in") flushPending();
   }, [path]);
   useScrollReset(path, wide ? rightRef : undefined);
+  // How tall the brand bar is: what stays pinned under it (.pin) needs to know where it ends.
+  const headRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = headRef.current;
+    const root = document.documentElement;
+    if (!el) {
+      root.style.setProperty("--head-h", "0px");
+      return;
+    }
+    const measure = () => root.style.setProperty("--head-h", `${el.offsetHeight}px`);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
 
   useEffect(() => {
     const on = () => setOnline(navigator.onLine);
@@ -178,7 +194,7 @@ function Shell() {
   const waiting = usePending();
   const due = useCellarAlerts().length;
   const head = (
-    <header class="app-head">
+    <header class={dockHidden ? "app-head hidden" : "app-head"} ref={headRef}>
       <div class="app-head-row">
         <a href="/" class="app-brand" aria-label={t("品酒日记")}>
           <Logo size={30} class="head-logo" />
@@ -226,7 +242,7 @@ function Shell() {
     </div>
   );
   return (
-    <div class={wide ? "app book" : "app"}>
+    <div class={`app${wide ? " book" : ""}${dockHidden ? " head-hidden" : ""}`}>
       <PullRefresh enabled={!fullScreen && !wide} />
       {/* Uploading is silent; only no signal, or uploads that keep failing, are worth a line. */}
       {!online ? (

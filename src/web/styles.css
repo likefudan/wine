@@ -702,6 +702,44 @@ h3 {
   background: color-mix(in srgb, var(--bg) 94%, transparent);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   backdrop-filter: blur(16px) saturate(160%);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Scrolling on down the page slides the brand bar out above the screen, as the tab bar slides out
+   below (hideOnScroll.ts); scrolling back brings both in again. */
+.app-head.hidden {
+  transform: translateY(-100%);
+  transition: transform 0.7s cubic-bezier(0.45, 0, 0.25, 1);
+  pointer-events: none;
+}
+/* A page's own bar (我的品鉴 + 新建品鉴, a detail page's back row) stays: under the brand bar while
+   that shows, at the very top once it has gone. */
+.pin {
+  position: sticky;
+  top: var(--head-h, 0px);
+  z-index: 6;
+  margin: 0 -16px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  transition:
+    top 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    padding-top 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.head-hidden .pin {
+  top: 0;
+  padding-top: max(8px, env(safe-area-inset-top));
+  transition:
+    top 0.7s cubic-bezier(0.45, 0, 0.25, 1),
+    padding-top 0.7s cubic-bezier(0.45, 0, 0.25, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-head,
+  .app-head.hidden,
+  .pin,
+  .head-hidden .pin {
+    transition-duration: 0.15s;
+  }
 }
 /* The brand on the left; the language and my picture on the right. */
 .app-head-row {
@@ -2822,6 +2860,14 @@ a.pro-score {
     padding-right: var(--edge-r);
   }
   /* A heading that stays put reaches from the fold to the page's outer edge. */
+  /* The right page has no brand bar over it. */
+  .book .leaf.right .pin {
+    top: 0;
+    margin-left: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--edge-r));
+    padding: 8px var(--edge-r) 8px var(--gutter);
+    background: color-mix(in srgb, var(--paper-glow) 92%, transparent);
+  }
   .book .leaf.right .page-head.sticky {
     margin-left: calc(-1 * var(--gutter));
     margin-right: calc(-1 * var(--edge-r));

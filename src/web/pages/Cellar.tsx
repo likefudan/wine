@@ -300,7 +300,7 @@ export function CellarLotPage() {
 
   return (
     <div class="page">
-      <header class="page-head">
+      <header class="page-head pin">
         <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
           <BackIcon />
         </button>

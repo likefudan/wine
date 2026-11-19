@@ -99,7 +99,7 @@ export function RecsPage() {
   const full = lots.filter((l) => l.qty > 0);
   return (
     <div class="page recs">
-      <header class="page-head">
+      <header class="page-head pin">
         <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
           <BackIcon />
         </button>
