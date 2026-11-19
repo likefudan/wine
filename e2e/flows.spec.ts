@@ -274,6 +274,17 @@ test("the tab bar and the brand bar slide away while scrolling down the page and
   // The brand bar on top goes with it; 我的品鉴 + 新建品鉴 stays pinned at the top of the screen.
   const head = page.locator(".app-head");
   const pin = page.locator(".section-head.pin");
+  // The app moving the page by itself hides nothing: only the reader's own scrolling does.
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) => {
+        scrollTo(0, 300);
+        // The bar reacts one frame after a scroll: give it two.
+        requestAnimationFrame(() => requestAnimationFrame(() => done()));
+      }),
+  );
+  await expect(dock).not.toHaveClass(/hidden/);
+  await page.evaluate(() => scrollTo(0, 0));
   await page.mouse.wheel(0, 600);
   await expect(dock).toHaveClass(/hidden/);
   await expect(head).toHaveClass(/hidden/);

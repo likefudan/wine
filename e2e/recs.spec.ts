@@ -97,6 +97,9 @@ test("recommendations: tonight's bottle, taste profile and a step further", asyn
   await expect(page.locator(".cellar-alert")).toBeVisible();
   await expect(page.locator(".recs-home")).toHaveCount(0);
   await page.goto("/library?view=cellar");
+  // The reminders count as seen once the 酒窖 has drawn its bottles: the dot on the 酒册 tab goes.
+  await expect(page.locator("main")).toContainText("Old Vine Cellars");
+  await expect(page.locator("nav .dot")).toHaveCount(0);
   await page.click("nav >> text=品鉴");
   await expect(page.locator(".recs-home")).toContainText("Old Vine Cellars");
   await page.goto("/library?view=cellar");
