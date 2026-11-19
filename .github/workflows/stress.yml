@@ -1,0 +1,133 @@
+name: Stress test
+
+# 压力测试: runs the tests many times over, in several copies side by side, to find tests that only
+# fail sometimes (timing, order, a slow machine) before they fail a real pull request.
+# Started by hand only (Actions → Stress test → Run workflow), never on a push, so CI stays fast.
+#
+# Kinds (scripts/stress.sh):
+#   unit          npm test, as CI runs it
+#   unit-shuffle  the same tests in a random order
+#   e2e           the browser tests, as CI runs them
+#   e2e-busy      the browser tests while every CPU core is kept busy
+#   e2e-alone     each browser test file by itself on a fresh site
+#
+# Everything runs on the runner against the local test Worker. The workflow reads no secrets, so it
+# cannot reach the test site, production or a paid AI model.
+# The report is on the run's Summary page (and in the `report` job's log).
+on:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: How many times each copy runs its tests
+        default: "10"
+      copies:
+        description: Copies of each kind running side by side
+        default: "3"
+      kinds:
+        description: Which kinds, separated by spaces
+        default: unit unit-shuffle e2e e2e-busy e2e-alone
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - id: plan
+        env:
+          ROUNDS: ${{ inputs.rounds }}
+          COPIES: ${{ inputs.copies }}
+          KINDS: ${{ inputs.kinds }}
+        run: |
+          [[ "$ROUNDS" =~ ^[0-9]+$ && "$ROUNDS" -ge 1 && "$ROUNDS" -le 50 ]] || { echo "rounds: 1 to 50"; exit 1; }
+          [[ "$COPIES" =~ ^[0-9]+$ && "$COPIES" -ge 1 && "$COPIES" -le 10 ]] || { echo "copies: 1 to 10"; exit 1; }
+          include=""
+          for kind in $KINDS; do
+            case "$kind" in
+              unit | unit-shuffle | e2e | e2e-busy | e2e-alone) ;;
+              *) echo "unknown kind: $kind"; exit 1 ;;
+            esac
+            # One round of e2e-alone starts a fresh site per file and takes about as long as five
+            # ordinary rounds.
+            rounds=$ROUNDS
+            [ "$kind" = e2e-alone ] && rounds=$(((ROUNDS + 4) / 5))
+            for copy in $(seq "$COPIES"); do
+              include="$include{\"kind\":\"$kind\",\"copy\":$copy,\"rounds\":$rounds},"
+            done
+          done
+          [ -n "$include" ] || { echo "no kinds"; exit 1; }
+          echo "matrix={\"include\":[${include%,}]}" >> "$GITHUB_OUTPUT"
+
+  stress:
+    needs: plan
+    name: ${{ matrix.kind }} ${{ matrix.copy }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The browser, set up as in ci.yml.
+      - if: startsWith(matrix.kind, 'e2e')
+        run: npm run build
+      - name: Playwright version
+        if: startsWith(matrix.kind, 'e2e')
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - if: startsWith(matrix.kind, 'e2e')
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium-shell
+      - if: startsWith(matrix.kind, 'e2e')
+        run: npx playwright install --only-shell chromium
+      - name: Chromium libraries present
+        if: startsWith(matrix.kind, 'e2e')
+        run: |
+          shell=$(find ~/.cache/ms-playwright -type f -name chrome-headless-shell | head -1)
+          if ldd "$shell" | grep -q "not found"; then
+            ldd "$shell" | grep "not found"
+            npx playwright install-deps chromium
+          fi
+      - name: ${{ matrix.kind }} × ${{ matrix.rounds }}
+        env:
+          KIND: ${{ matrix.kind }}
+          ROUNDS: ${{ matrix.rounds }}
+          COPY: ${{ matrix.copy }}
+        run: bash scripts/stress.sh "$KIND" "$ROUNDS" "$COPY"
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: stress-${{ matrix.kind }}-${{ matrix.copy }}
+          path: stress-results/
+          retention-days: 7
+
+  report:
+    needs: stress
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch the results
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" --pattern "stress-*" --dir results || mkdir -p results
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Fails when any round failed, so a red run means there is something to read.
+      - run: |
+          set -o pipefail
+          node scripts/stress-summary.mjs results | tee -a "$GITHUB_STEP_SUMMARY"
