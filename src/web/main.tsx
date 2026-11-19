@@ -8,7 +8,8 @@ import { useEffect, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
-import { GlassIcon, ListIcon, SearchIcon } from "./components";
+import { GlassIcon, ListIcon, PersonIcon, SearchIcon } from "./components";
+import { LangMenu } from "./LangSwitch";
 import { Logo } from "./Logo";
 import { useHideOnScroll } from "./hideOnScroll";
 import { useScrollReset } from "./scroll";
@@ -204,10 +205,19 @@ function Shell() {
       {/* Every page but the two full-screen ones has the brand on top; deeper pages add a back row. */}
       {!fullScreen && (
         <header class="app-head">
-          <a href="/" class="app-brand" aria-label={t("品酒日记")}>
-            <Logo size={30} class="head-logo" />
-            <span class="brand">{t("品酒日记")}</span>
-          </a>
+          <div class="app-head-row">
+            <a href="/" class="app-brand" aria-label={t("品酒日记")}>
+              <Logo size={30} class="head-logo" />
+              <span class="brand">{t("品酒日记")}</span>
+            </a>
+            {/* Top right, as on the badminton site: the language, then me. */}
+            <div class="head-actions-top">
+              <LangMenu />
+              <a href="/me" class="head-me" aria-label={t("我的")}>
+                <Avatar />
+              </a>
+            </div>
+          </div>
         </header>
       )}
       <main class={fullScreen ? "main full" : "main"}>
@@ -252,7 +262,7 @@ function Shell() {
               <span>{t("酒库")}</span>
             </a>
             <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
-              <Avatar />
+              <PersonIcon />
               {waiting > 0 && (
                 <span class="dot">
                   <span class="visually-hidden">{t("{n} 人待审核", { n: waiting })}</span>
