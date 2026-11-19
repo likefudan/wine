@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // 我 vs 专业: under the shared lookup, the aromas the reviews and I both found, the ones I didn't
-// note (with a nudge when I was close), and "找到了" adding one to my note.
+// note (with a nudge when I was close), and "找到了" adding one to my note, or taking it back on a second tap.
 test("compares my aromas with the critics' and adds one I find on a second sniff", async ({ page }) => {
   await page.goto("/");
   await page.fill('input[type="email"]', `versus${Date.now()}@example.com`);
@@ -101,7 +101,29 @@ test("compares my aromas with the critics' and adds one I find on a second sniff
   await page.screenshot({ path: "test-results/versus.png", fullPage: true });
 
   // A second sniff: cedar is there after all.
-  await box.locator(".versus-missed li", { hasText: "雪松" }).locator("text=找到了").click();
+  const cedar = box.locator(".versus-missed li", { hasText: "雪松" }).locator("button");
+  await cedar.click();
   await expect(box).toContainText("你也记下了 2 种");
-  await expect(box.locator(".versus-missed li")).toHaveCount(1);
+  await expect(cedar).toHaveAttribute("aria-pressed", "true");
+  await expect(cedar).toHaveText("✓ 找到了");
+  // The row stays put, so a mistaken tap can be taken back.
+  await expect(box.locator(".versus-missed li")).toHaveCount(2);
+
+  // Tapped by mistake: tapping again takes it out of my note.
+  await cedar.click();
+  await expect(box).toContainText("你也记下了 1 种");
+  await expect(cedar).toHaveAttribute("aria-pressed", "false");
+  await expect(cedar).toHaveText("找到了");
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const sync = await (await fetch("/api/sync")).json();
+        return (sync.tastings[0].descriptors as { id: string }[]).map((d) => d.id).sort();
+      }),
+    )
+    .toEqual(["blackcurrant", "raspberry", "violet"]);
+
+  // And found for real this time.
+  await cedar.click();
+  await expect(box).toContainText("你也记下了 2 种");
 });
