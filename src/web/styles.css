@@ -666,12 +666,6 @@ h3 {
   line-height: 18px;
   vertical-align: 1px;
 }
-.tabbar .tab-avatar {
-  width: 24px;
-  height: 24px;
-  font-size: 12px;
-  box-shadow: 0 0 0 1.5px currentColor;
-}
 .dock-add {
   flex: none;
   display: flex;
@@ -706,13 +700,80 @@ h3 {
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   backdrop-filter: blur(16px) saturate(160%);
 }
+/* The brand on the left; the language and my picture on the right. */
+.app-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 608px;
+  margin: 0 auto;
+}
+.head-actions-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.head-me {
+  display: flex;
+  border-radius: 50%;
+  text-decoration: none;
+}
+.head-avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+}
+.lang-menu-box {
+  position: relative;
+  flex: none;
+}
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0.75px solid var(--line-2);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--sans);
+  cursor: pointer;
+}
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 132px;
+  padding: 6px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.lang-menu button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lang-menu button.on {
+  color: var(--primary);
+  font-weight: 700;
+}
 .app-brand {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  max-width: 608px;
-  margin: 0 auto;
+  min-width: 0;
   color: var(--ink);
   text-decoration: none;
 }

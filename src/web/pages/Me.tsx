@@ -35,10 +35,10 @@ const LABEL_MODEL_HINT: Record<LabelModel, string> = {
   "DeepSeek-V4.1-Flash-1017": "最快，几秒出结果，小字偶尔认错",
 };
 
-/** My picture, the icon of the 我的 tab (which is already a link). */
+/** My picture, in the top right corner of every page: a link to 我的. */
 export function Avatar() {
   const me = useStore((s) => s.me);
-  return me ? <Face name={me.name ?? me.email} picture={me.picture} class="tab-avatar" /> : null;
+  return me ? <Face name={me.name ?? me.email} picture={me.picture} class="head-avatar" /> : null;
 }
 
 type MeTab = "growth" | "taste" | "tasting" | "general" | "members";
