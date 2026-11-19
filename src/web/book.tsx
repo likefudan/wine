@@ -120,83 +120,47 @@ function BlankPage(props: { text: string }) {
   );
 }
 
-/** Which sewing to draw while choosing one (?spine=a|b|c). */
-const SEWING = new URLSearchParams(location.search).get("spine") ?? "a";
-
 /**
- * The fold: the shadow where the two pages dip into the binding, the thread it is sewn with, and a
- * ribbon marker. The thread is drawn by hand, one stretch of it repeated down the fold.
+ * The fold: the shadow where the two pages dip into the binding, a ribbon marker, and in place of a
+ * straight sewing thread a vine (Ke Li 2026-11-19 picked it over two stitch patterns): it wanders
+ * down the fold with a leaf, a tendril or a small bunch of grapes now and then. One stretch of it
+ * is drawn and repeated.
  */
 export function Spine() {
   return (
     <div class="spine" aria-hidden="true">
-      <svg class={`spine-thread sew-${SEWING}`} width="40" height="100%" role="presentation">
+      <svg class="spine-vine" width="44" height="100%" role="presentation">
         <defs>
-          {SEWING === "a" && (
-            // Hand sewing: stitches of uneven length, each a little off the line, between needle holes.
-            <pattern id="sew" width="40" height="150" patternUnits="userSpaceOnUse">
-              <g class="holes">
-                <circle cx="17.6" cy="6" r="1.3" />
-                <circle cx="22.6" cy="30" r="1.3" />
-                <circle cx="17.2" cy="43" r="1.3" />
-                <circle cx="22.9" cy="71" r="1.3" />
-                <circle cx="17.8" cy="83" r="1.3" />
-                <circle cx="22.3" cy="104" r="1.3" />
-                <circle cx="17.4" cy="117" r="1.3" />
-                <circle cx="22.7" cy="142" r="1.3" />
-              </g>
-              <g class="thread">
-                <path d="M17.6 6 C20.6 12 19.2 23 22.6 30" />
-                <path d="M17.2 43 C19 52 21.4 61 22.9 71" />
-                <path d="M17.8 83 C20.8 88 19.6 98 22.3 104" />
-                <path d="M17.4 117 C18.8 126 21.6 133 22.7 142" />
-              </g>
-            </pattern>
-          )}
-          {SEWING === "b" && (
-            // Herringbone, as on an exposed-spine binding: pairs of stitches meeting on the fold.
-            <pattern id="sew" width="40" height="66" patternUnits="userSpaceOnUse">
-              <g class="holes">
-                <circle cx="12.5" cy="4" r="1.2" />
-                <circle cx="27.8" cy="5" r="1.2" />
-                <circle cx="12" cy="26.5" r="1.2" />
-                <circle cx="27.5" cy="26" r="1.2" />
-                <circle cx="12.8" cy="48" r="1.2" />
-                <circle cx="28" cy="48.5" r="1.2" />
-              </g>
-              <g class="thread">
-                <path d="M12.5 4 Q16 11 20 15.5 Q24.5 11 27.8 5" />
-                <path d="M12 26.5 Q16.5 32 20.2 37.5 Q24 32.5 27.5 26" />
-                <path d="M12.8 48 Q16 54.5 19.8 59.5 Q24.5 54 28 48.5" />
-                <path d="M20 15.5 C19.4 20 20.6 22 20.2 26" class="fine" />
-                <path d="M20.2 37.5 C20.8 42 19.4 44 19.8 48" class="fine" />
-                <path d="M19.8 59.5 C19.4 62 20.2 64 20 66 M20 0 C20.3 2 19.8 3 20 4" class="fine" />
-              </g>
-            </pattern>
-          )}
-          {SEWING === "c" && (
-            // A vine: the thread wanders down the fold like a tendril, with a curl and a leaf now and then.
-            <pattern id="sew" width="40" height="240" patternUnits="userSpaceOnUse">
-              <g class="thread">
-                <path d="M20 0 C29 14 11 36 20 56 C28 74 12 92 20 112 C29 132 10 150 20 172 C27 190 13 208 20 224 C22 230 19 236 20 240" />
-                <path
-                  d="M24 24 c6 -4 11 0 9.4 4.4 c-1.4 3.6 -6.2 2.6 -5.4 -0.8 c0.4 -1.6 2.4 -1.8 2.8 -0.6"
-                  class="fine"
-                />
-                <path
-                  d="M15.6 138 c-6 -3 -10.6 1.4 -8.8 5.4 c1.5 3.3 6 2.2 5.2 -1 c-0.4 -1.5 -2.2 -1.7 -2.7 -0.5"
-                  class="fine"
-                />
-                <path d="M23 200 c4.6 -4.6 9.6 -2.6 9.4 1.4 c-0.2 3.2 -4.4 3.4 -4.6 0.5" class="fine" />
-              </g>
-              <g class="leaves">
-                <path d="M16.2 84 c-3 -7 -9.4 -8.4 -13 -5 c2.4 5.6 8.4 7.6 13 5 z" />
-                <path d="M23.6 164 c3.4 -6.6 9.8 -7.6 13 -4 c-2.6 5.2 -8.6 6.8 -13 4 z" />
-              </g>
-            </pattern>
-          )}
+          <pattern id="vine" width="44" height="280" patternUnits="userSpaceOnUse">
+            <g class="stem">
+              <path d="M22 0 C30 16 13 40 22 62 C30 82 14 100 22 124 C31 148 12 168 22 192 C29 210 15 232 22 252 C26 262 17 268 22 280" />
+              {/* leaf stalks, the grapes' stalk, tendrils */}
+              <path d="M22 62 q-3 -0.6 -5 -3 M22 192 q3 -0.6 5 -3 M24 145 q3.6 0.6 6 4" class="fine" />
+              <path d="M22 124 c5 -2.4 10.4 -1 11.2 3 c0.8 4 -4.2 5.8 -6 2.8 c-1 -1.8 0.8 -3.8 2.8 -2.8" class="fine" />
+              <path
+                d="M22 252 c-5 -3 -10 -1 -10.6 3 c-0.4 3.6 4 5 5.6 2.4 c0.9 -1.6 -0.6 -3.2 -2.2 -2.4"
+                class="fine"
+              />
+              <path d="M25.6 22 c4 -3.6 8.6 -2 8.4 1.6 c-0.2 2.8 -3.8 3.2 -4.2 0.6" class="fine" />
+            </g>
+            <g class="leaf">
+              <path d="M17 59 C15.4 52 9.6 48.6 4.6 49.6 C5.4 55.4 10.6 60.4 17 59 Z" />
+              <path d="M27 189 C28.6 182 34.4 178.6 39.4 179.6 C38.6 185.4 33.4 190.4 27 189 Z" />
+            </g>
+            <g class="vein">
+              <path d="M16.4 58.4 L7 51.4 M27.6 188.4 L37 181.4" />
+            </g>
+            <g class="grapes">
+              <circle cx="28.6" cy="151.4" r="1.8" />
+              <circle cx="32.2" cy="151" r="1.8" />
+              <circle cx="35.6" cy="152" r="1.7" />
+              <circle cx="30.4" cy="154.6" r="1.8" />
+              <circle cx="33.8" cy="154.8" r="1.8" />
+              <circle cx="32" cy="158.2" r="1.7" />
+            </g>
+          </pattern>
         </defs>
-        <rect width="40" height="100%" fill="url(#sew)" />
+        <rect width="44" height="100%" fill="url(#vine)" />
       </svg>
       <span class="spine-ribbon" />
     </div>
