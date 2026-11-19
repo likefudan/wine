@@ -113,10 +113,6 @@ export const RECS_MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "同樣的酒，你平均比評論家低 {d} 分（{n} 款）。",
     en: "On the same wines you score {d} points below the critics on average ({n} wines).",
   },
-  "没有对错：这只说明你的口味和评论家哪里不一样。推荐时会把这个差别算进去。": {
-    tw: "沒有對錯：這只說明你的口味和評論家哪裡不一樣。推薦時會把這個差別算進去。",
-    en: "No right or wrong: it only shows where your taste differs. Recommendations take it into account.",
-  },
   看看为你推荐的酒: { tw: "看看為你推薦的酒", en: "See wines picked for you" },
   "下一款试什么？按你的口味挑": { tw: "下一款試什麼？按你的口味挑", en: "What to try next, picked for your taste" },
 };

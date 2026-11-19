@@ -2,6 +2,7 @@
 
 export const CELLAR_MESSAGES: Record<string, { tw: string; en: string }> = {
   酒窖: { tw: "酒窖", en: "Cellar" },
+  酒册: { tw: "酒冊", en: "Wines" },
   放进酒窖: { tw: "放進酒窖", en: "Add to cellar" },
   我的酒: { tw: "我的酒", en: "My wines" },
   下一步: { tw: "下一步", en: "Next" },

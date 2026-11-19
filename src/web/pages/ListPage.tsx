@@ -224,7 +224,7 @@ export function ListPage(props: { id?: string }) {
                       class="icon-button danger"
                       aria-label={t("移除")}
                       onClick={async () =>
-                        (await ask(t("从这次品鉴移除这款酒？你的笔记会留在「我的酒」里。"))) && removeItem(i.id)
+                        (await ask(t("从这次品鉴移除这款酒？你的笔记会留在「酒册」里。"))) && removeItem(i.id)
                       }
                     >
                       ✕
@@ -310,7 +310,7 @@ function MemberSettings(props: { listId: string; onClose: () => void; onLeft: ()
           type="button"
           class="button danger"
           onClick={async () => {
-            if (!(await ask(t("退出这次品鉴？你记的笔记会留在「我的酒」里。")))) return;
+            if (!(await ask(t("退出这次品鉴？你记的笔记会留在「酒册」里。")))) return;
             try {
               await leaveList(props.listId);
               props.onLeft();
@@ -380,7 +380,7 @@ function ListSettings(props: { listId: string; onClose: () => void; onDeleted: (
           type="button"
           class="button danger"
           onClick={async () => {
-            if (!(await ask(t("删除这次品鉴？里面的笔记会留在「我的酒」里。"), { ok: t("删除") }))) return;
+            if (!(await ask(t("删除这次品鉴？里面的笔记会留在「酒册」里。"), { ok: t("删除") }))) return;
             deleteList(list.id);
             props.onDeleted();
           }}

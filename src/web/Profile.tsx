@@ -268,7 +268,6 @@ function Cropper(props: {
 
   return (
     <div class="avatar-crop" data-no-pull>
-      <p class="muted small">{t("拖动、双指缩放，把脸放进圆圈里。")}</p>
       <div class="crop-frame" style={{ width: `${VIEW}px`, height: `${VIEW}px` }}>
         <canvas
           ref={canvas}

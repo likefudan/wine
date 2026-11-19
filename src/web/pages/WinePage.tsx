@@ -35,7 +35,7 @@ export function WinePage(props: { id?: string }) {
     return (
       <div class="page">
         <p class="empty">{t("找不到这款酒")}</p>
-        <a href="/library">{t("回到我的酒")}</a>
+        <a href="/library">{t("回到酒册")}</a>
       </div>
     );
   const listOf = (itemId: string | null) => {

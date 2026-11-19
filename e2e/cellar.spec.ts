@@ -10,7 +10,7 @@ test("cellar: add bottles, reminder, open one, take one from a note", async ({ p
 
   // The 酒窖 is a view of the 酒库, not a tab of its own.
   await expect(page.locator("nav >> text=酒窖")).toHaveCount(0);
-  await page.click("nav >> text=我的酒");
+  await page.click("nav >> text=酒册");
   await page.click(".segmented >> text=酒窖");
   await expect(page.locator(".empty")).toContainText("买了酒就放进来");
   await page.click(".library-head >> text=放进酒窖");
@@ -48,7 +48,7 @@ test("cellar: add bottles, reminder, open one, take one from a note", async ({ p
   await expect(page.locator(".cellar-alert")).toHaveCount(0);
 
   // 开一瓶 = 品一款, from the 酒窖 view .
-  await page.click("nav >> text=我的酒");
+  await page.click("nav >> text=酒册");
   await page.click(".segmented >> text=酒窖");
   await page.click(".row >> text=Cellar Test Cab");
   await page.click("text=开一瓶，品一款");
@@ -81,7 +81,7 @@ test("cellar: add bottles, reminder, open one, take one from a note", async ({ p
   expect(s.tastings.filter((x: { cellarId: string | null }) => x.cellarId)).toHaveLength(2);
 
   // From a note on the wine's page: the bottle button opens a sheet to put more in the cellar.
-  await page.click("nav >> text=我的酒");
+  await page.click("nav >> text=酒册");
   await page.click(".segmented >> text=全部");
   await page.click(".row >> text=Cellar Test Cab");
   await page.locator(".card-action.second").first().click();

@@ -441,7 +441,6 @@ export function TastePanel() {
                 ))}
               </ul>
             )}
-            <p class="small muted">{t("没有对错：这只说明你的口味和评论家哪里不一样。推荐时会把这个差别算进去。")}</p>
           </>
         )}
       </section>
