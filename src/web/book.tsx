@@ -120,10 +120,48 @@ function BlankPage(props: { text: string }) {
   );
 }
 
-/** The fold: the shadow where the two pages dip into the binding, its thread, and a ribbon marker. */
+/**
+ * The fold: the shadow where the two pages dip into the binding, a ribbon marker, and in place of a
+ * straight sewing thread a vine (Ke Li 2026-11-19 picked it over two stitch patterns): it wanders
+ * down the fold with a leaf, a tendril or a small bunch of grapes now and then. One stretch of it
+ * is drawn and repeated.
+ */
 export function Spine() {
   return (
     <div class="spine" aria-hidden="true">
+      <svg class="spine-vine" width="44" height="100%" role="presentation">
+        <defs>
+          <pattern id="vine" width="44" height="280" patternUnits="userSpaceOnUse">
+            <g class="stem">
+              <path d="M22 0 C30 16 13 40 22 62 C30 82 14 100 22 124 C31 148 12 168 22 192 C29 210 15 232 22 252 C26 262 17 268 22 280" />
+              {/* leaf stalks, the grapes' stalk, tendrils */}
+              <path d="M22 62 q-3 -0.6 -5 -3 M22 192 q3 -0.6 5 -3 M24 145 q3.6 0.6 6 4" class="fine" />
+              <path d="M22 124 c5 -2.4 10.4 -1 11.2 3 c0.8 4 -4.2 5.8 -6 2.8 c-1 -1.8 0.8 -3.8 2.8 -2.8" class="fine" />
+              <path
+                d="M22 252 c-5 -3 -10 -1 -10.6 3 c-0.4 3.6 4 5 5.6 2.4 c0.9 -1.6 -0.6 -3.2 -2.2 -2.4"
+                class="fine"
+              />
+              <path d="M25.6 22 c4 -3.6 8.6 -2 8.4 1.6 c-0.2 2.8 -3.8 3.2 -4.2 0.6" class="fine" />
+            </g>
+            <g class="leaf">
+              <path d="M17 59 C15.4 52 9.6 48.6 4.6 49.6 C5.4 55.4 10.6 60.4 17 59 Z" />
+              <path d="M27 189 C28.6 182 34.4 178.6 39.4 179.6 C38.6 185.4 33.4 190.4 27 189 Z" />
+            </g>
+            <g class="vein">
+              <path d="M16.4 58.4 L7 51.4 M27.6 188.4 L37 181.4" />
+            </g>
+            <g class="grapes">
+              <circle cx="28.6" cy="151.4" r="1.8" />
+              <circle cx="32.2" cy="151" r="1.8" />
+              <circle cx="35.6" cy="152" r="1.7" />
+              <circle cx="30.4" cy="154.6" r="1.8" />
+              <circle cx="33.8" cy="154.8" r="1.8" />
+              <circle cx="32" cy="158.2" r="1.7" />
+            </g>
+          </pattern>
+        </defs>
+        <rect width="44" height="100%" fill="url(#vine)" />
+      </svg>
       <span class="spine-ribbon" />
     </div>
   );
