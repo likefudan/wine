@@ -220,6 +220,18 @@ export const SearchIcon = () => (
     <path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
   </svg>
 );
+export const PersonIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+    <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2" />
+    <path
+      d="M4.5 20.5c1-4 4-6 7.500-6s6.500 2 7.500 6"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+  </svg>
+);
 export const GlassIcon = () => (
   <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
     <path

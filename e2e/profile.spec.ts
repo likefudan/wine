@@ -45,13 +45,13 @@ test("a person changes their display name and photo", async ({ page }) => {
   await page.click(".sheet [aria-label=关闭]");
 
   await expect(page.locator(".me-card strong")).toHaveText("Wine Lover");
-  await expect(page.locator(".tabbar .tab-avatar img")).toHaveAttribute("src", /^\/api\/avatars\//);
+  await expect(page.locator(".app-head .head-avatar img")).toHaveAttribute("src", /^\/api\/avatars\//);
 
   // Survives a reload (the server's copy), then 不用头像 goes back to the initial.
   await page.reload();
   await expect(page.locator(".me-card strong")).toHaveText("Wine Lover");
   await page.click(".me-card");
   await page.click(".sheet >> text=不用头像");
-  await expect(page.locator(".tabbar .tab-avatar img")).toHaveCount(0);
-  await expect(page.locator(".tabbar .tab-avatar")).toHaveText("W");
+  await expect(page.locator(".app-head .head-avatar img")).toHaveCount(0);
+  await expect(page.locator(".app-head .head-avatar")).toHaveText("W");
 });
