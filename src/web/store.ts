@@ -96,9 +96,14 @@ function set(next: Partial<State>, persist = true) {
 
 export function useStore<T>(pick: (s: State) => T): T {
   const [, force] = useState(0);
+  // What this render was drawn from.
+  const seen = state;
   useEffect(() => {
     const f = () => force((n) => n + 1);
     listeners.add(f);
+    // Effects run a little after the first draw. A change landing in that gap (the server's copy
+    // arriving just as the page opens) reached no listener: draw again, or the page stays stale.
+    if (state !== seen) f();
     return () => void listeners.delete(f);
   }, []);
   return pick(state);
@@ -113,7 +118,10 @@ function idb(): Promise<IDBDatabase | null> {
     try {
       const req = indexedDB.open(DB_NAME, 1);
       req.onupgradeneeded = () => req.result.createObjectStore("kv");
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        openDb = req.result;
+        resolve(req.result);
+      };
       req.onerror = () => resolve(null);
     } catch {
       resolve(null);
@@ -122,20 +130,31 @@ function idb(): Promise<IDBDatabase | null> {
   return dbPromise;
 }
 
+/** The open database, once there is one: leaving the page cannot wait for a promise. */
+let openDb: IDBDatabase | null = null;
+function write(db: IDBDatabase) {
+  try {
+    const { rejected: _, stuck: __, ...keep } = state;
+    db.transaction("kv", "readwrite").objectStore("kv").put(keep, "state");
+  } catch {
+    // storage full or gone: the server still has everything already sent
+  }
+}
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 function save() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     saveTimer = null;
     const db = await idb();
-    if (!db) return;
-    try {
-      const { rejected: _, stuck: __, ...keep } = state;
-      db.transaction("kv", "readwrite").objectStore("kv").put(keep, "state");
-    } catch {
-      // storage full or gone: the server still has everything already sent
-    }
+    if (db) write(db);
   }, 150);
+}
+/** Leaving or reloading inside that 150 ms: write the phone's copy now, so the last tap is not lost with no signal. */
+function saveNow() {
+  if (!saveTimer || !openDb) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  write(openDb);
 }
 
 export async function loadLocal(): Promise<State> {
@@ -470,10 +489,14 @@ addEventListener("visibilitychange", () => {
   leaving = document.visibilityState === "hidden";
   // Coming back fetches friends' changes too; going away sends mine before the phone sleeps.
   if (!leaving) void flush();
-  else flushPending();
+  else {
+    saveNow();
+    flushPending();
+  }
 });
 addEventListener("pagehide", () => {
   leaving = true;
+  saveNow();
   flushPending();
 });
 
