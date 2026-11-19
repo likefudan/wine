@@ -66,7 +66,7 @@ test("a change the server refuses stays on the phone until I retry or let it go"
   await page.click("header >> text=完成");
 
   // The server's copy (without it) comes back, but the note is still here.
-  await page.click(".tabbar >> text=我的酒");
+  await page.click(".tabbar >> text=酒册");
   await expect(page.locator(".rows .row")).toHaveCount(1);
 
   // Everything has gone up (and the note was refused) before the page reloads.

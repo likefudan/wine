@@ -18,7 +18,7 @@ export function Welcome() {
         <LangSwitch />
       </div>
       <h1 class="brand">{t("你平时怎么喝酒？")}</h1>
-      <p class="lead">{t("选一个最像你的。以后每款酒都能临时换深度，也可以在「我的」里改。")}</p>
+      <p class="lead">{t("选一个最像你的。以后每款酒都能临时换深度，也可以在「我」里改。")}</p>
       <div class="depth-cards">
         {OPTIONS.map((o) => (
           <button key={o.depth} type="button" class="depth-card" onClick={() => updateMe({ depth: o.depth })}>

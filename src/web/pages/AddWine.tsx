@@ -286,15 +286,9 @@ export function AddWine(props: { cellar?: boolean }) {
 
       {answering && <p class="add-to-list">{t("{label} 其实是哪款酒？", { label: answerLabel ?? "#" })}</p>}
       {/* From a 品鉴's page the wine goes into it; from the 品一款 button it stands on its own. Never a choice. */}
-      {!cellar && !answering && (
+      {!cellar && !answering && fixedList && (
         <p class="add-to-list">
-          {fixedList ? (
-            <>
-              {t("属于")} <strong>{fixedList.title}</strong>
-            </>
-          ) : (
-            t("单独品一款，不属于任何品鉴")
-          )}
+          {t("属于")} <strong>{fixedList.title}</strong>
         </p>
       )}
 
@@ -326,7 +320,6 @@ export function AddWine(props: { cellar?: boolean }) {
               <BlindIcon />
               <span>
                 <strong>{t("盲品：先不看酒名")}</strong>
-                <span class="small muted">{t("直接开始品，记成杯号，最后再对答案")}</span>
               </span>
             </a>
           )}
@@ -388,7 +381,7 @@ export function AddWine(props: { cellar?: boolean }) {
             class="button block"
             onClick={() => setForm(q.trim() ? { ...EMPTY, producer: q.trim() } : fromListPlace())}
           >
-            ＋ {q.trim() ? t("新酒：{q}", { q: q.trim() }) : t("手动添加一款酒")}
+            ＋ {q.trim() ? t("新酒：{q}", { q: q.trim() }) : t("添加")}
           </button>
         </>
       )}
@@ -558,7 +551,7 @@ function WineForm(props: {
           onChange={(v) => setD({ ...d, color: v })}
         />
       </Field>
-      <Field label={t("葡萄品种")} hint={t("可多选，混酿就都点上")} group>
+      <Field label={t("葡萄品种")} group>
         <GrapePicker
           label={t("葡萄品种")}
           value={d.grapes}
@@ -582,7 +575,7 @@ function WineForm(props: {
       </div>
       {/* Suggestions narrow as the levels above are filled: California lists its 大区 and AVAs only. */}
       <div class="field-row top">
-        <Field label={t("大区")} hint={t("选了子产区会自动填")}>
+        <Field label={t("大区")}>
           <SuggestInput
             name="area"
             value={d.area}
@@ -591,7 +584,7 @@ function WineForm(props: {
             placeholder="Napa Valley"
           />
         </Field>
-        <Field label={t("子产区")} hint={t("酒标上最小的产区")}>
+        <Field label={t("子产区")}>
           <SuggestInput
             name="appellation"
             value={d.appellation}

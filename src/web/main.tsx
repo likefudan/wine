@@ -9,7 +9,7 @@ import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
 import { HomeRoute, LeftPage, LibraryRoute, MeRoute, Spine, useWide } from "./book";
-import { GlassIcon, ListIcon, PersonIcon, SearchIcon } from "./components";
+import { BottlesIcon, GlassIcon, ListIcon, PersonIcon } from "./components";
 import { LangMenu } from "./LangSwitch";
 import { Logo } from "./Logo";
 import { useHideOnScroll } from "./hideOnScroll";
@@ -203,7 +203,7 @@ function Shell() {
         {/* Top right, as on the badminton site: the language, then me. */}
         <div class="head-actions-top">
           <LangMenu />
-          <a href="/me" class="head-me" aria-label={t("我的")}>
+          <a href="/me" class="head-me" aria-label={t("我")}>
             <Avatar />
           </a>
         </div>
@@ -218,13 +218,13 @@ function Shell() {
           <span>{t("品鉴")}</span>
         </a>
         <a href="/library" class={tab === "library" ? "on" : ""} aria-current={tab === "library" ? "page" : undefined}>
-          <SearchIcon />
+          <BottlesIcon />
           {due > 0 && (
             <span class="dot">
               <span class="visually-hidden">{t("酒窖提醒")}</span>
             </span>
           )}
-          <span>{t("我的酒")}</span>
+          <span>{t("酒册")}</span>
         </a>
         <a href="/me" class={tab === "me" ? "on" : ""} aria-current={tab === "me" ? "page" : undefined}>
           <PersonIcon />
@@ -233,7 +233,7 @@ function Shell() {
               <span class="visually-hidden">{t("{n} 人待审核", { n: waiting })}</span>
             </span>
           )}
-          <span>{t("我的")}</span>
+          <span>{t("我")}</span>
         </a>
       </nav>
       <a href="/add" class="dock-add" aria-label={t("品一款")}>

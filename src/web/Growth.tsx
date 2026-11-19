@@ -67,7 +67,6 @@ export function GrowthPanel() {
 
       <section class="group">
         <h2 class="group-title">{t("每个月")}</h2>
-        <p class="small muted">{t("每款酒找到的香气越多，说明鼻子越来越灵。")}</p>
         <ul class="growth-months">
           {[...g.months].reverse().map((m) => (
             <li key={m.month}>

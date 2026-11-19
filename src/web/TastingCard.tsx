@@ -784,7 +784,6 @@ export function TastingShareSheet(props: {
         <a class={`button block ${canShare ? "" : "primary"}`} href={img || undefined} download={fileName}>
           {t("保存图片")}
         </a>
-        <p class="muted small center">{t("也可以长按图片保存")}</p>
       </div>
     </Sheet>
   );

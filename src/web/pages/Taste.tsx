@@ -1232,7 +1232,6 @@ function Systematic(props: { x: Tasting; v: VintageInfo; patch: Patch; prev: Pre
           />
         </Field>
         <Field label={t("风味特征")} group>
-          <span class="field-hint">{t("嘴里尝到的味道，和闻到的常常一样，也会多出或少了几样")}</span>
           <button
             type="button"
             class="button small same-as-nose"

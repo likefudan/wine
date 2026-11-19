@@ -23,10 +23,6 @@ export const PROFILE_MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "這張照片打不開，請換一張",
     en: "This photo can't be opened. Please pick another.",
   },
-  "拖动、双指缩放，把脸放进圆圈里。": {
-    tw: "拖曳、雙指縮放，把臉放進圓圈裡。",
-    en: "Drag and pinch to fit your face in the circle.",
-  },
   "昵称和头像会显示在一起品鉴的朋友那里、朋友动态和分享图上。": {
     tw: "暱稱和大頭貼會顯示給一起品飲的朋友，也會出現在朋友動態和分享圖上。",
     en: "Friends you taste with see your display name and photo, in Friends and on share images too.",

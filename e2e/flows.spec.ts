@@ -72,7 +72,7 @@ test("a beginner records a wine in a list and finds it in the library", async ({
   await page.click("header >> text=完成");
   await expect(page.locator(".rows.numbered .row")).toHaveCount(1);
 
-  await page.click(".tabbar >> text=我的酒");
+  await page.click(".tabbar >> text=酒册");
   await page.fill("input.search", "黑醋栗");
   await expect(page.locator(".rows .row")).toHaveCount(1);
   await expect(page.locator(".rows .row .wine-sub")).toContainText("赤霞珠 / 梅洛 / 品丽珠");
@@ -253,7 +253,7 @@ test("a wine added from a tasting goes into it; the 品一款 button always reco
   for (const where of ["here", "/"]) {
     if (where === "/") await page.goto("/");
     await page.click(".dock-add");
-    await expect(page.locator(".add-to-list")).toHaveText("单独品一款，不属于任何品鉴");
+    await expect(page.locator(".add-to-list")).toHaveCount(0);
     await expect(page.locator(".chips >> text=Friday at home")).toHaveCount(0);
     await page.goBack();
   }
