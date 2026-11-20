@@ -268,7 +268,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   "{n} 款酒": { tw: "{n} 款酒", en: "Wines: {n}" },
   "{n} 次": { tw: "{n} 次", en: "×{n}" },
-  品酒日记: { tw: "品酒日記", en: "AIroma" },
   "在酒庄 30 秒记下一款酒，回家后随时都能搜到。不懂品酒术语也能上手。": {
     tw: "在酒莊 30 秒記下一款酒，回家後隨時都能搜尋。不懂品酒術語也能上手。",
     en: "Note a wine in 30 seconds at the winery and find it again any time. No wine jargon needed.",
@@ -634,7 +633,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   "成员（{n}）": { tw: "成員（{n}）", en: "Members ({n})" },
   我: { tw: "我", en: "Me" },
-  打开品酒日记: { tw: "打開品酒日記", en: "Open AIroma" },
+  "打开 AIroma": { tw: "打開 AIroma", en: "Open AIroma" },
   打开品鉴: { tw: "打開品飲", en: "Open tasting" },
   扫码加入: { tw: "掃碼加入", en: "Join by QR code" },
   扫码加入品鉴: { tw: "掃碼加入品飲", en: "Scan to join" },

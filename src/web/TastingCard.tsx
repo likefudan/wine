@@ -331,7 +331,7 @@ export async function drawTastingCard(d: CardData): Promise<HTMLCanvasElement> {
   ctx.fillStyle = th.brass;
   ctx.font = `600 30px ${sans}`;
   ctx.textAlign = "left";
-  ctx.fillText(t("品酒日记"), PAD + 60, 112);
+  ctx.fillText("AIroma", PAD + 60, 112);
   ctx.textAlign = "right";
   ctx.font = `400 28px ${sans}`;
   ctx.fillStyle = th.muted;

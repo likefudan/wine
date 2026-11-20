@@ -380,7 +380,7 @@ export async function drawListCard(b: Board): Promise<string> {
   drawLogo(ctx, 76, 70, 52, "#d1ad6c");
   ctx.fillStyle = "#d1ad6c";
   ctx.font = `600 34px ${sans}`;
-  ctx.fillText(t("品酒日记"), 140, 110);
+  ctx.fillText("AIroma", 140, 110);
   ctx.fillStyle = "#fff7f2";
   ctx.font = `600 76px ${serif}`;
   ctx.fillText(fit(ctx, b.list.title, W - 160), 80, 210);
