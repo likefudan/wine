@@ -18,8 +18,4 @@ export const LEGAL_MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "管理酒窖，到了適飲期提醒你",
     en: "Keep track of your cellar and get reminded when a bottle is ready",
   },
-  "用 Google 登录只用来确认你是谁：网站只会拿到你的姓名、邮箱和头像，用来建立账号、显示你的名字。": {
-    tw: "用 Google 登入只用來確認你是誰：網站只會拿到你的姓名、電子郵件和大頭貼，用來建立帳號、顯示你的名字。",
-    en: "Google sign-in is only used to know who you are: the site receives just your name, email address and profile picture, to create your account and show your name.",
-  },
 };

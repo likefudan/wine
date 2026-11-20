@@ -96,15 +96,11 @@ export function Login(props: { session: { google: boolean; dev: boolean; me: Me 
           </button>
         </form>
       )}
-      <p class="muted center small">{t("任何 Google 账号都能注册。新用户有时要等站长审核，审核前也能正常记录。")}</p>
       <ul class="login-features">
         {FEATURES.map((f) => (
           <li key={f}>{t(f)}</li>
         ))}
       </ul>
-      <p class="muted small">
-        {t("用 Google 登录只用来确认你是谁：网站只会拿到你的姓名、邮箱和头像，用来建立账号、显示你的名字。")}
-      </p>
       <LegalLinks />
     </div>
   );
