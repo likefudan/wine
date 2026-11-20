@@ -3,9 +3,9 @@
    under candlelight. Only the floating tab bar stays glass. */
 
 :root {
-  --bg: #f1e9d8;
-  --surface: #f8f3e7;
-  --surface-2: #e6dcc6;
+  --bg: #f6f3ec;
+  --surface: #fcfaf6;
+  --surface-2: #e9e5db;
   --ink: #1d1a16;
   --ink-2: #3d362d;
   --muted: #6b6152;
@@ -17,11 +17,11 @@
   --fill: #7a1f2b;
   --fill-ink: #f6efe0;
   --brass: #75632f;
-  --brass-soft: #e9dfc4;
+  --brass-soft: #ece7d8;
   --danger: #9c2a22;
   --shadow: none;
-  --paper-glow: #f7f1e3;
-  --glass-tint: rgb(248 243 231 / 6%);
+  --paper-glow: #faf8f3;
+  --glass-tint: rgb(252 250 246 / 6%);
   --glass-halo: 0 0 6px rgb(255 255 255 / 90%), 0 0 2px rgb(255 255 255 / 90%);
   --glass-active: color-mix(in srgb, var(--primary) 14%, rgb(255 255 255 / 22%));
   --glass-sheen: linear-gradient(
@@ -34,7 +34,7 @@
   --glass-shadow:
     0 12px 32px rgb(29 26 22 / 16%), 0 2px 6px rgb(29 26 22 / 8%), inset 0 1px 0.5px rgb(255 255 255 / 85%),
     inset 0 -1px 1px rgb(255 255 255 / 30%), inset 0 0 0 0.5px rgb(255 255 255 / 25%);
-  --book-desk: #d9cdb4;
+  --book-desk: #dfdace;
   --spine-shade-1: rgb(60 42 20 / 4%);
   --spine-shade-2: rgb(60 42 20 / 13%);
   --spine-crease: rgb(50 34 16 / 34%);
