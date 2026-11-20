@@ -64,3 +64,57 @@ test("返回 goes to the page a page was opened from, one step each time, and ne
   await fresh.click(back);
   await expect(fresh).toHaveURL(/:8788\/$/);
 });
+
+test("pages glide in: forward from the right, back from the left, tabs fade", async ({ page }) => {
+  // What the page's arrival looks like right after a navigation: the first keyframe of <main>'s animation.
+  const arrival = () =>
+    page.evaluate(() => {
+      const a = document.querySelector("main")?.getAnimations()[0];
+      const k = (a?.effect as KeyframeEffect | undefined)?.getKeyframes()[0];
+      return k ? String(k.transform ?? "fade") : "none";
+    });
+  await page.goto("/");
+  await page.fill('input[type="email"]', `motion${Date.now()}@example.com`);
+  await page.click("text=Dev login");
+  await page.click("text=刚开始认真喝，想学怎么品");
+  await expect(page.locator(".tabbar")).toBeVisible();
+  await page.waitForTimeout(400);
+  expect(await arrival()).toBe("none");
+
+  await page.click(".tabbar >> text=酒册");
+  await expect(page).toHaveURL(/\/library/);
+  expect(await arrival()).toBe("fade");
+
+  await page.click(".dock-add");
+  await expect(page).toHaveURL(/\/add/);
+  expect(await arrival()).toBe("translateX(22px)");
+  await page.waitForTimeout(400);
+  expect(await arrival()).toBe("none");
+
+  await page.click('button[aria-label="返回"]');
+  await expect(page).toHaveURL(/\/library/);
+  expect(await arrival()).toBe("translateX(-22px)");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  // The browser's own back (or a swipe from the edge, which the phone animates itself): no second glide.
+  await page.click(".dock-add");
+  await page.waitForTimeout(800);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/library/);
+  expect(await arrival()).toBe("none");
+});
+
+test("less motion asked for: a short fade only", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.fill('input[type="email"]', `calm${Date.now()}@example.com`);
+  await page.click("text=Dev login");
+  await page.click("text=刚开始认真喝，想学怎么品");
+  await page.click(".dock-add");
+  await expect(page).toHaveURL(/\/add/);
+  const first = await page.evaluate(() => {
+    const a = document.querySelector("main")?.getAnimations()[0];
+    return (a?.effect as KeyframeEffect | undefined)?.getKeyframes()[0]?.transform ?? "fade";
+  });
+  expect(first).toBe("fade");
+});

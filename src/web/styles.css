@@ -222,6 +222,8 @@ input[type="checkbox"] {
 }
 .app {
   min-height: 100vh;
+  /* A page gliding in from the right (pageMotion.ts) must not make the screen scroll sideways. */
+  overflow-x: clip;
   padding-bottom: calc(96px + env(safe-area-inset-bottom));
 }
 .main {
