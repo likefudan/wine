@@ -1,6 +1,6 @@
 {
-  "name": "品酒日记 Wine Diary",
-  "short_name": "品酒日记",
+  "name": "AIroma 品酒日记",
+  "short_name": "AIroma",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f1e9d8",

@@ -1,7 +1,7 @@
 name: Deploy
 
-# One deploy, shared by CI (main → test site wine-staging.llmat.dev) and Release (new version →
-# production wine.llmat.dev). Deploys need the repository secrets CLOUDFLARE_API_TOKEN and
+# One deploy, shared by CI (main → test site airoma-staging.llmat.dev) and Release (new version →
+# production airoma.llmat.dev). Deploys need the repository secrets CLOUDFLARE_API_TOKEN and
 # CLOUDFLARE_ACCOUNT_ID (pass `secrets: inherit`); without them it says so and stops without failing.
 on:
   workflow_call:
@@ -96,4 +96,4 @@ jobs:
       - if: steps.go.outputs.ok == 'true'
         run: node scripts/smoke.mjs
         env:
-          SITE_ORIGIN: ${{ inputs.target == 'production' && 'https://wine.llmat.dev' || 'https://wine-staging.llmat.dev' }}
+          SITE_ORIGIN: ${{ inputs.target == 'production' && 'https://airoma.llmat.dev' || 'https://airoma-staging.llmat.dev' }}
