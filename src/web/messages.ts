@@ -5,6 +5,7 @@ import { BLIND_MESSAGES } from "./messages-blind";
 import { CELLAR_MESSAGES } from "./messages-cellar";
 import { COST_MESSAGES } from "./messages-costs";
 import { FRIEND_MESSAGES } from "./messages-friends";
+import { LEGAL_MESSAGES } from "./messages-legal";
 import { PROFILE_MESSAGES } from "./messages-profile";
 import { RECS_MESSAGES } from "./messages-recs";
 import { REVIEW_MESSAGES } from "./messages-reviews";
@@ -15,6 +16,7 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   ...COST_MESSAGES,
   ...FRIEND_MESSAGES,
   ...BLIND_MESSAGES,
+  ...LEGAL_MESSAGES,
   ...PROFILE_MESSAGES,
   ...RECS_MESSAGES,
   ...REVIEW_MESSAGES,

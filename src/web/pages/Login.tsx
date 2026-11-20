@@ -1,12 +1,21 @@
 import { useState } from "preact/hooks";
 import type { Me } from "../../shared/model";
 import { LangSwitch } from "../LangSwitch";
+import { LegalLinks } from "../LegalLinks";
 import { Logo } from "../Logo";
 import { t, tk } from "../i18n";
 import { api, getState, unsentCount } from "../store";
 
 export const inWeChat = () => /MicroMessenger/i.test(navigator.userAgent);
 export const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+/** What the app does, for someone (or Google's sign-in review) seeing it for the first time. */
+const FEATURES = [
+  tk("拍一下酒标，自动认出酒庄、酒名和年份"),
+  tk("用大白话一步步带你看颜色、闻香气、尝口感，记下自己的评分"),
+  tk("和朋友一起品鉴，先各自打分再对比；还能对照专业评价"),
+  tk("管理酒窖，到了适饮期提醒你"),
+];
 
 const ERRORS: Record<string, string> = {
   disabled: tk("这个账号已被停用。"),
@@ -88,6 +97,15 @@ export function Login(props: { session: { google: boolean; dev: boolean; me: Me 
         </form>
       )}
       <p class="muted center small">{t("任何 Google 账号都能注册。新用户有时要等站长审核，审核前也能正常记录。")}</p>
+      <ul class="login-features">
+        {FEATURES.map((f) => (
+          <li key={f}>{t(f)}</li>
+        ))}
+      </ul>
+      <p class="muted small">
+        {t("用 Google 登录只用来确认你是谁：网站只会拿到你的姓名、邮箱和头像，用来建立账号、显示你的名字。")}
+      </p>
+      <LegalLinks />
     </div>
   );
 }

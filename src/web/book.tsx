@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { isBlindId } from "../shared/blind";
+import { isLegalPath } from "./LegalLinks";
 import { Logo } from "./Logo";
 import { t } from "./i18n";
 import { Home } from "./pages/Home";
@@ -74,7 +75,7 @@ export function leftPage(
   if (path.startsWith("/library")) return { page: <Library />, selected: latestWineId() };
   if (path.startsWith("/wine/")) return { page: <Library />, selected: id };
   if (path.startsWith("/cellar")) return { page: <Library />, selected: id || null };
-  if (path.startsWith("/me")) return { page: <MePage part="index" />, selected: null };
+  if (path.startsWith("/me") || isLegalPath(path)) return { page: <MePage part="index" />, selected: null };
   if (path.startsWith("/lists/")) return { page: <Home />, selected: id };
   if (path === "/") return { page: <Home />, selected: latestListId() };
   return { page: <Home />, selected: null };
