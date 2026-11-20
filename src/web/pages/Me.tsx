@@ -10,6 +10,7 @@ import { LangSwitch } from "../LangSwitch";
 import { LegalLinks } from "../LegalLinks";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
+import { goBack } from "../nav";
 import { currentLang, fmtDate, t, tm } from "../i18n";
 import {
   ApiError,
@@ -133,7 +134,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
     <div class={props.part === "index" ? "page me-index" : "page"}>
       {sub && (
         <header class="page-head pin">
-          <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+          <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => goBack(route, "/me")}>
             <BackIcon />
           </button>
           <h1 class="page-head-title">{tabs.find((x) => x.id === tab)!.label}</h1>
