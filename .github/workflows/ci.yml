@@ -2,8 +2,8 @@ name: CI
 
 # Pull requests: checks only.
 # Merge to main: checks (skipped when a pull request already tested exactly these files), then deploy
-# to the test site (wine-staging.llmat.dev).
-# Push a release tag v* (e.g. v2026.11.18): checks, then deploy to production (wine.llmat.dev).
+# to the test site (airoma-staging.llmat.dev).
+# Push a release tag v* (e.g. v2026.11.18): checks, then deploy to production (airoma.llmat.dev).
 # Release (release.yml) deploys production itself and does not start this workflow.
 # 自动发布: after the test site takes a new main, the auto-release job releases it to production
 # unless the repository variable AUTO_RELEASE is false (see release.yml).
