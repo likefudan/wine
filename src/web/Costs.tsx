@@ -215,7 +215,7 @@ function Prices(props: { onRepriced: () => void }) {
     updatedAt: null,
   });
   const reprice = async () => {
-    if (!(await ask(t("用现在的价格表重新算一遍所有历史调用的金额？")))) return;
+    if (!(await ask(t("用现在的价格表重新算一遍所有历史调用的金额？"), { danger: false }))) return;
     await run(() => api("/api/admin/costs/reprice", { body: {} }), t("已按现价重算"));
     props.onRepriced();
   };

@@ -1,4 +1,5 @@
 import { useLocation } from "preact-iso";
+import { goBack } from "../nav";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   REGION_NAMES,
@@ -279,7 +280,12 @@ export function AddWine(props: { cellar?: boolean }) {
   return (
     <div class="page">
       <header class="page-head">
-        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+        <button
+          type="button"
+          class="icon-button"
+          aria-label={t("返回")}
+          onClick={() => goBack(route, listId ? `/lists/${listId}` : "/")}
+        >
           <BackIcon />
         </button>
         <h1 class="page-head-title">{answering ? t("对答案") : cellar ? t("放进酒窖") : t("品一款")}</h1>

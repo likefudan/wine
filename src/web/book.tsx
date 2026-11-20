@@ -50,6 +50,17 @@ export function latestWineId(): string | null {
   return last?.vintageId ?? s.cellar.find((l) => known.has(l.vintageId))?.vintageId ?? null;
 }
 
+/**
+ * The tab a note or a new wine belongs under, on the open book where the tab bar stays beside it:
+ * the one whose list is on the left page.
+ */
+export function tabOfForm(path: string, query: Record<string, string>): "lists" | "library" {
+  if (path.startsWith("/cellar")) return "library";
+  if (!path.startsWith("/taste/")) return "lists";
+  const x = getState().tastings.find((n) => n.id === path.split("/")[2]);
+  return !x || x.listItemId || query.in === "home" || isBlindId(x.vintageId) ? "lists" : "library";
+}
+
 /** What the left page shows for an address, and which of its entries is the one open on the right. */
 export function leftPage(
   path: string,

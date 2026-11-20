@@ -1,4 +1,5 @@
 import { lazy, useLocation, useRoute } from "preact-iso";
+import { goBack } from "../nav";
 import { useState } from "preact/hooks";
 import { DESCRIPTOR_BY_ID } from "../../shared/descriptors";
 import { glassColor, tastingNote } from "../../shared/guide";
@@ -46,7 +47,7 @@ export function WinePage(props: { id?: string }) {
   return (
     <div class="page">
       <header class="page-head pin">
-        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => goBack(route, "/library")}>
           <BackIcon />
         </button>
         <div class="page-head-title taste-wine">
@@ -94,7 +95,7 @@ export function WinePage(props: { id?: string }) {
                 <div class="list-card-head">
                   <strong class="num big-score">{x.score ?? "—"}</strong>
                   <span class="muted small">
-                    {fmtWhen(x.tastedAt, true)} · {t(DEPTH_INFO[x.depth].name)}
+                    {fmtWhen(x.tastedAt)} · {t(DEPTH_INFO[x.depth].name)}
                     {l ? ` · ${l.title}` : ""}
                     {x.buyAgain ? ` · ${t("还会买")}` : ""}
                     {x.cellarId ? ` · ${t("从酒窖开的")}` : ""}

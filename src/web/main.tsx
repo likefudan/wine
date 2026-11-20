@@ -1,4 +1,5 @@
 import "@fontsource/cormorant-garamond/500.css";
+import "./nav";
 import "@fontsource/cormorant-garamond/600.css";
 import "@fontsource/cormorant-garamond/500-italic.css";
 import "./styles.css";
@@ -8,7 +9,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { Me } from "../shared/model";
 import { useCellarAlerts } from "./CellarAlerts";
 import { AnswersPage, BlindStart } from "./Blind";
-import { HomeRoute, LeftPage, LibraryRoute, MeRoute, Spine, useWide } from "./book";
+import { HomeRoute, LeftPage, LibraryRoute, MeRoute, Spine, tabOfForm, useWide } from "./book";
 import { BottlesIcon, GlassIcon, ListIcon, PersonIcon } from "./components";
 import { LangMenu } from "./LangSwitch";
 import { isLegalPath } from "./LegalLinks";
@@ -198,7 +199,9 @@ function Shell() {
         ? "library"
         : path.startsWith("/me") || isLegalPath(path)
           ? "me"
-          : "";
+          : path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/blind")
+            ? tabOfForm(path, query)
+            : "";
   const fullScreen =
     path.startsWith("/taste") || path.startsWith("/add") || path.startsWith("/cellar/add") || path.startsWith("/blind");
   const waiting = usePending();

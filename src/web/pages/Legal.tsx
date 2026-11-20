@@ -1,3 +1,6 @@
+import { useLocation } from "preact-iso";
+import { BackIcon } from "../components";
+import { goBack } from "../nav";
 import { Logo } from "../Logo";
 import { LangSwitch } from "../LangSwitch";
 import { currentLang, t, useLang } from "../i18n";
@@ -9,6 +12,7 @@ import { type LegalDoc, PRIVACY, TERMS } from "./legalText";
  * without an account). Signed out, the page brings its own top row, since the app's is not there.
  */
 function LegalPage(props: { title: string; doc: LegalDoc; signedIn: boolean }) {
+  const { route } = useLocation();
   const site = "AIroma";
   const fill = (s: string) => s.split("{site}").join(site).split("{host}").join(location.host);
   return (
@@ -22,7 +26,21 @@ function LegalPage(props: { title: string; doc: LegalDoc; signedIn: boolean }) {
           <LangSwitch />
         </div>
       )}
-      <h1 class="page-head-title">{props.title}</h1>
+      {props.signedIn ? (
+        <header class="page-head">
+          <button
+            type="button"
+            class="icon-button back-up"
+            aria-label={t("返回")}
+            onClick={() => goBack(route, "/me?tab=general")}
+          >
+            <BackIcon />
+          </button>
+          <h1 class="page-head-title">{props.title}</h1>
+        </header>
+      ) : (
+        <h1 class="page-head-title">{props.title}</h1>
+      )}
       <p class="muted small">{props.doc.updated}</p>
       {props.doc.sections.map((s) => (
         <section key={s.h}>
