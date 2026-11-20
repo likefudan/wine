@@ -151,10 +151,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   },
   "搜索中…": { tw: "搜尋中…", en: "Searching…" },
   "这个账号已被停用。": { tw: "這個帳號已被停用。", en: "This account has been disabled." },
-  "任何 Google 账号都能注册。新用户有时要等站长审核，审核前也能正常记录。": {
-    tw: "任何 Google 帳號都能註冊。新使用者有時要等站長審核，審核前也能正常記錄。",
-    en: "Any Google account can sign up. New accounts may wait for the owner's approval, and can keep notes meanwhile.",
-  },
   "你的账号正在等站长审核。现在就能正常记录；拍酒标识别和酒庄地址联想要等审核通过后才能用。": {
     tw: "你的帳號正在等站長審核。現在就能正常記錄；拍酒標辨識和酒莊地址建議要等審核通過後才能用。",
     en: "Your account is waiting for the owner's approval. You can keep notes now; label reading and winery lookup start once you're approved.",
