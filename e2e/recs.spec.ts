@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { ulid } from "../src/shared/model";
 
-// 推荐: 今晚开哪瓶 from the cellar, 下一款试试 / 进阶一款, and 我的 → 口味.
+// 推荐: 今晚开哪瓶 from the cellar, 下一款试试 / 进阶一款, and 我 → 我的品酒.
 test("recommendations: tonight's bottle, taste profile and a step further", async ({ page }) => {
   const year = new Date().getFullYear();
   await page.goto("/");
@@ -123,8 +123,8 @@ test("recommendations: tonight's bottle, taste profile and a step further", asyn
   await page.locator(".rec-card", { hasText: "Old Vine Cellars" }).locator("text=开一瓶，品一款").click();
   await expect(page).toHaveURL(/\/taste\/[0-9A-Z]{26}/);
 
-  // 我的 → 口味
-  await page.goto("/me?tab=taste");
+  // 我 → 我的品酒
+  await page.goto("/me");
   await expect(page.locator(".taste-features").first()).toContainText("赤霞珠");
   await expect(page.locator(".taste-features").first()).toContainText("+");
   await expect(page.locator("[role=tabpanel]")).toContainText("不太对你胃口");

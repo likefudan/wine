@@ -62,7 +62,7 @@ Repository secrets (Settings → Secrets and variables → Actions):
 | Secret | What |
 | --- | --- |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Deploys. The token needs Workers Scripts, D1, Workers R2 Storage (edit), Account Settings (read), and on the zone llmat.dev Workers Routes, DNS (edit) and Zone (read). |
-| `OWNER_EMAILS` | Google emails of the site owners, comma-separated: they can always sign in, approve newcomers and set 每天免审核名额 in 我的 → 成员. |
+| `OWNER_EMAILS` | Google emails of the site owners, comma-separated: they can always sign in, approve newcomers and set 每天免审核名额 in 我 → 管理 → 成员. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The same OAuth client as jaysbadminton. Its redirect URIs must include `/api/auth/google/callback` on `https://airoma.llmat.dev` and `https://airoma-staging.llmat.dev`. |
 | `AZURE_FOUNDRY_API_KEY` | Reading wine labels (Claude on Azure, the same key as jaysbadminton). Label scanning is hidden behind a message while it is missing. |
 

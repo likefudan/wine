@@ -91,9 +91,9 @@ test("the pages switch to English", async ({ page }) => {
   await expect
     .poll(async () => (await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()))).me.depth)
     .toBe("quick");
-  await page.goto("/me?tab=general");
+  await page.goto("/me?tab=settings");
   await page.click(".lang-switch >> text=EN");
-  await expect(page.locator("h1")).toHaveText("Me");
+  await expect(page.locator("h1")).toHaveText("Settings");
   await page.goto("/");
   await expect(page.locator("text=New tasting")).toBeVisible();
 });

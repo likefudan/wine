@@ -2,9 +2,9 @@ import { lazy, useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
 import { exportName, toCsv, toJson } from "../../shared/export";
 import { DEPTHS, type Depth, LABEL_MODELS, type LabelModel, type Member, OWNER_ONLY_MODELS } from "../../shared/model";
-import { Choice, Field } from "../components";
+import { BackIcon, Choice, Field } from "../components";
 import { GrowthPanel } from "../Growth";
-import { TastePanel } from "./Recs";
+import { TasteSections } from "./Recs";
 import { Face, ProfileSheet } from "../Profile";
 import { LangSwitch } from "../LangSwitch";
 import { LegalLinks } from "../LegalLinks";
@@ -42,9 +42,14 @@ export function Avatar() {
   return me ? <Face name={me.name ?? me.email} picture={me.picture} class="head-avatar" /> : null;
 }
 
-type MeTab = "growth" | "taste" | "tasting" | "general" | "members";
+/**
+ * 我 has three parts (Ke Li 2026-11-20: five tabs were too many): what I have tasted and like, 设置, and
+ * for owners 管理. The older addresses (?tab=general, ?tab=members…) still open the part they moved to.
+ */
+type MeTab = "home" | "settings" | "admin";
+const OLD_TAB: Record<string, MeTab> = { tasting: "settings", general: "settings", members: "admin" };
 
-/** How many newcomers wait for approval (owners only): a dot on 我的 and on its 成员 tab. */
+/** How many newcomers wait for approval (owners only): a dot on 我 and on its 管理 entry. */
 let pending = 0;
 const pendingListeners = new Set<(n: number) => void>();
 const setPending = (n: number) => {
@@ -115,17 +120,26 @@ export function MePage(props: { part?: "index" | "panels" }) {
     location.href = "/";
   };
   const tabs: { id: MeTab; label: string }[] = [
-    { id: "growth", label: t("成长") },
-    { id: "taste", label: t("口味") },
-    { id: "tasting", label: t("记录偏好") },
-    { id: "general", label: t("通用") },
-    ...(me.owner ? [{ id: "members" as const, label: t("管理") }] : []),
+    { id: "home", label: t("我的品酒") },
+    { id: "settings", label: t("设置") },
+    ...(me.owner ? [{ id: "admin" as const, label: t("管理") }] : []),
   ];
-  const tab: MeTab = tabs.some((x) => x.id === query.tab) ? (query.tab as MeTab) : "growth";
-  const pick = (id: MeTab) => route(id === "growth" ? "/me" : `/me?tab=${id}`, true);
+  const asked = OLD_TAB[query.tab ?? ""] ?? query.tab;
+  const tab: MeTab = tabs.some((x) => x.id === asked) ? (asked as MeTab) : "home";
+  const href = (id: MeTab) => (id === "home" ? "/me" : `/me?tab=${id}`);
+  // One page (a phone): 设置 and 管理 are pages of their own, opened from the two entries under my card.
+  const sub = !props.part && tab !== "home";
   return (
     <div class={props.part === "index" ? "page me-index" : "page"}>
-      {index && (
+      {sub && (
+        <header class="page-head pin">
+          <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+            <BackIcon />
+          </button>
+          <h1 class="page-head-title">{tabs.find((x) => x.id === tab)!.label}</h1>
+        </header>
+      )}
+      {index && !sub && (
         <>
           <h1 class="visually-hidden">{t("我")}</h1>
           <button type="button" class="me-card" aria-label={t("编辑资料")} onClick={() => setEditing(true)}>
@@ -138,29 +152,42 @@ export function MePage(props: { part?: "index" | "panels" }) {
             <span class="me-card-edit">{t("编辑")}</span>
           </button>
           {editing && <ProfileSheet onClose={() => setEditing(false)} />}
-          <div class="segmented" role="tablist" aria-label={t("设置")}>
-            {tabs.map((x) => (
-              <button
-                key={x.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === x.id}
-                class={tab === x.id ? "on" : ""}
-                onClick={() => pick(x.id)}
-              >
-                {x.label}
-                {x.id === "members" && waiting > 0 && <span class="badge">{waiting}</span>}
-              </button>
-            ))}
-          </div>
+          {props.part === "index" ? (
+            // The open book: the parts as a table of contents on the left page.
+            <div class="segmented" role="tablist" aria-label={t("我")}>
+              {tabs.map((x) => (
+                <button
+                  key={x.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === x.id}
+                  class={tab === x.id ? "on" : ""}
+                  onClick={() => route(href(x.id), true)}
+                >
+                  {x.label}
+                  {x.id === "admin" && waiting > 0 && <span class="badge">{waiting}</span>}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <nav class="me-links" aria-label={t("设置")}>
+              {tabs.slice(1).map((x) => (
+                <a key={x.id} href={href(x.id)}>
+                  {x.label}
+                  {x.id === "admin" && waiting > 0 && <span class="badge">{waiting}</span>}
+                  <span aria-hidden="true">›</span>
+                </a>
+              ))}
+            </nav>
+          )}
         </>
       )}
       {panels && (
         <>
-          {tab === "growth" && <GrowthPanel />}
-          {tab === "taste" && <TastePanel />}
-          {tab === "tasting" && (
+          {tab === "home" && <GrowthPanel taste={<TasteSections />} />}
+          {tab === "settings" && (
             <section class="group" role="tabpanel">
+              <h2 class="group-title">{t("记录偏好")}</h2>
               <Field label={t("默认品鉴深度")} hint={t(DEPTH_INFO[me.depth ?? "quick"].who)} group>
                 <Choice
                   label={t("默认品鉴深度")}
@@ -200,9 +227,10 @@ export function MePage(props: { part?: "index" | "panels" }) {
               </Field>
             </section>
           )}
-          {tab === "general" && (
+          {tab === "settings" && (
             <>
-              <section class="group" role="tabpanel">
+              <section class="group">
+                <h2 class="group-title">{t("显示")}</h2>
                 <Field label={t("语言")} group>
                   <LangSwitch />
                 </Field>
@@ -286,7 +314,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
               <LegalLinks />
             </>
           )}
-          {tab === "members" && (
+          {tab === "admin" && (
             <>
               <div class="segmented sub" role="tablist" aria-label={t("管理")}>
                 <button
@@ -294,7 +322,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
                   role="tab"
                   aria-selected={query.view !== "costs"}
                   class={query.view !== "costs" ? "on" : ""}
-                  onClick={() => route("/me?tab=members", true)}
+                  onClick={() => route("/me?tab=admin", true)}
                 >
                   {t("成员")}
                   {waiting > 0 && <span class="badge">{waiting}</span>}
@@ -304,7 +332,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
                   role="tab"
                   aria-selected={query.view === "costs"}
                   class={query.view === "costs" ? "on" : ""}
-                  onClick={() => route("/me?tab=members&view=costs", true)}
+                  onClick={() => route("/me?tab=admin&view=costs", true)}
                 >
                   {t("模型开销")}
                 </button>

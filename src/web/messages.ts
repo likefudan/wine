@@ -33,7 +33,9 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
   属于: { tw: "屬於", en: "Part of" },
   "{n} 人待审核": { tw: "{n} 人待審核", en: "{n} waiting for approval" },
   记录偏好: { tw: "紀錄偏好", en: "Preferences" },
-  通用: { tw: "一般", en: "General" },
+  我的品酒: { tw: "我的品飲", en: "My palate" },
+  显示: { tw: "顯示", en: "Display" },
+  "打过分的 {n} 款，平均 {s} 分。": { tw: "評過分的 {n} 款，平均 {s} 分。", en: "{n} scored, average {s}." },
   "没有网络，记录先存在手机上": { tw: "沒有網路，紀錄先存在手機上", en: "Offline: notes are saved on this phone" },
   "有一条修改没能保存：{msg}": { tw: "有一筆修改沒能儲存：{msg}", en: "A change couldn't be saved: {msg}" },
   "有 {n} 条记录暂时没能上传，会自动重试": {
@@ -55,7 +57,6 @@ export const MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "說不準的話，和上一款（{wine}）比：",
     en: "Not sure? Compare it with the last wine ({wine}):",
   },
-  成长: { tw: "成長", en: "Progress" },
   "记几款酒之后，这里会显示你认识了哪些香气、喝过哪些品种，以及每个月的变化。": {
     tw: "記幾款酒之後，這裡會顯示你認識了哪些香氣、喝過哪些品種，以及每個月的變化。",
     en: "After a few wines, this shows the aromas you can name, the grapes you've tried and how your notes change month by month.",

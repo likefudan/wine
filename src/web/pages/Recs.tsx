@@ -123,7 +123,7 @@ function ConfidenceNote(props: { profile: TasteProfile }) {
         : profile.confidence === "solid"
           ? t("根据你打过分的 {n} 款酒。", { n: profile.scored })
           : t("根据你打过分的 {n} 款酒。记得越多越准，大约 50 款之后最准。", { n: profile.scored })}{" "}
-      <a href="/me?tab=taste">{t("我的口味")}</a>
+      <a href="/me">{t("我的口味")}</a>
     </p>
   );
 }
@@ -366,11 +366,13 @@ const STRUCT_TEXT: Record<StructDim, Record<Band, string>> = {
 const signed = (x: number) => (x > 0 ? `+${x}` : String(x));
 
 /** 我的 → 口味: what my scores say I like, and how I differ from the critics. */
-export function TastePanel() {
+/** What I like, inside 我 → 我的品酒 (Growth.tsx): the sections only, between the numbers and the months. */
+export function TasteSections() {
   const profile = useProfile();
   if (profile.confidence === "none")
     return (
-      <section class="group" role="tabpanel">
+      <section class="group">
+        <h2 class="group-title">{t("你偏爱")}</h2>
         <p class="muted small">
           {t("给至少 3 款酒打了分，这里会显示你偏爱的品种、产区和风格，以及你和评论家的差别。")}
         </p>
@@ -379,25 +381,7 @@ export function TastePanel() {
   const gapAll = profile.gaps.find((g) => g.kind === "all");
   const gapsBy = profile.gaps.filter((g) => g.kind !== "all" && Math.abs(g.gap) >= 2).slice(0, 4);
   return (
-    <div role="tabpanel" class="growth">
-      <section class="group">
-        <div class="stat-row taste-stats">
-          <div class="stat">
-            <strong>{profile.scored}</strong>
-            <span>{t("款打过分")}</span>
-          </div>
-          <div class="stat">
-            <strong>{profile.baseline}</strong>
-            <span>{t("平均分")}</span>
-          </div>
-        </div>
-        <p class="small muted">
-          {profile.confidence === "solid"
-            ? t("数字是和你自己的平均分比：+3 表示这类酒你平均多给 3 分。")
-            : t("数字是和你自己的平均分比：+3 表示这类酒你平均多给 3 分。现在记得还不多，只能当参考。")}
-        </p>
-      </section>
-
+    <>
       <section class="group">
         <h2 class="group-title">{t("你偏爱")}</h2>
         {profile.likes.length === 0 ? (
@@ -411,6 +395,12 @@ export function TastePanel() {
             {profile.structure.map((s) => t(STRUCT_TEXT[s.dim][s.band])).join(t("、"))}
           </p>
         )}
+        <p class="small muted">
+          {t("打过分的 {n} 款，平均 {s} 分。", { n: profile.scored, s: profile.baseline })}{" "}
+          {profile.confidence === "solid"
+            ? t("数字是和你自己的平均分比：+3 表示这类酒你平均多给 3 分。")
+            : t("数字是和你自己的平均分比：+3 表示这类酒你平均多给 3 分。现在记得还不多，只能当参考。")}
+        </p>
       </section>
 
       {profile.dislikes.length > 0 && (
@@ -445,12 +435,11 @@ export function TastePanel() {
             )}
           </>
         )}
+        <a class="button" href="/recs">
+          {t("看看为你推荐的酒")}
+        </a>
       </section>
-
-      <a class="button" href="/recs">
-        {t("看看为你推荐的酒")}
-      </a>
-    </div>
+    </>
   );
 }
 

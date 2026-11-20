@@ -279,7 +279,7 @@ function Shell() {
             class="link"
             onClick={() => {
               clearRejected();
-              route("/me?tab=general");
+              route("/me?tab=settings");
             }}
           >
             {t("查看")}
