@@ -118,3 +118,36 @@ test("less motion asked for: a short fade only", async ({ page }) => {
   });
   expect(first).toBe("fade");
 });
+
+test("返回 on a note just started leaves nothing behind; 完成 keeps it", async ({ page }) => {
+  await page.goto("/");
+  await page.fill('input[type="email"]', `undo${Date.now()}@example.com`);
+  await page.click("text=Dev login");
+  await page.click("text=只想快速记个分");
+  const start = async () => {
+    await page.click(".dock-add");
+    await page.fill("input.search", "Undo Winery");
+    const known = page.locator(".rows .row >> text=Undo Winery");
+    if (await known.count()) await known.first().click();
+    else {
+      await page.click("text=新酒：Undo Winery");
+      await page.fill('input[placeholder="2019"]', "2020");
+      await page.click(".choice >> text=红");
+      await page.click("text=开始品鉴");
+    }
+    await expect(page).toHaveURL(/\/taste\//);
+  };
+  await page.click('.tabbar >> text="我"');
+  await start();
+  // Nothing written: back to where 品一款 was pressed, and no entry in 品鉴.
+  await page.click('header button[aria-label="返回"]');
+  await expect(page).toHaveURL(/\/me/);
+  await page.click(".tabbar >> text=品鉴");
+  await expect(page.locator(".cards .solo-card")).toHaveCount(0);
+  // 完成 keeps it, even empty, and shows it in 品鉴.
+  await page.click('.tabbar >> text="我"');
+  await start();
+  await page.click("header >> text=完成");
+  await expect(page).toHaveURL(/:8788\/$/);
+  await expect(page.locator(".cards .solo-card")).toHaveCount(1);
+});

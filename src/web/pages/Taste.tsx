@@ -1,5 +1,5 @@
 import { lazy, useLocation, useRoute } from "preact-iso";
-import { goUp } from "../nav";
+import { goBack, goUp } from "../nav";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   BEGINNER_GROUPS,
@@ -97,6 +97,8 @@ export function Taste() {
   const [buying, setBuying] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(x);
+  /** Something was answered on this visit. */
+  const touched = useRef(false);
 
   useEffect(() => {
     if (!x && saved) setX(saved);
@@ -130,6 +132,7 @@ export function Taste() {
   const depth = toDepth(x.depth) ?? "quick";
   const patch: Patch = (change) => {
     const next = { ...x, ...change };
+    touched.current = true;
     setX(next);
     latest.current = next;
     if (timer.current) clearTimeout(timer.current);
@@ -156,6 +159,21 @@ export function Taste() {
     goUp(route, backOf(x, query.in === "home"));
   };
 
+  /**
+   * 返回 is not 完成 (Ke Li 2026-11-20): it goes back to where this page was opened from, and a note
+   * just started with nothing written in it is not kept. A bottle opened for it goes back on the
+   * shelf; a wine added to a 品鉴 stays there, waiting to be noted.
+   */
+  const back = () => {
+    if (query.new === "1" && !touched.current && blank(x)) {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      latest.current = undefined;
+      deleteTasting(x.id, !!saved?.cellarId);
+    }
+    goBack(route, backOf(x, query.in === "home"));
+  };
+
   return (
     <div class="page taste">
       <header class="page-head sticky">
@@ -164,7 +182,7 @@ export function Taste() {
             {t("属于")} <strong>{list.title}</strong>
           </p>
         )}
-        <button type="button" class="icon-button" aria-label={t("返回")} onClick={done}>
+        <button type="button" class="icon-button" aria-label={t("返回")} onClick={back}>
           <BackIcon />
         </button>
         <div class="page-head-title taste-wine">
@@ -908,6 +926,10 @@ function GuideWords(props: { w: Words; color: "red" | "white"; nose?: TastingDes
 }
 
 /** Whether anything the questions ask is already written. */
+/** Nothing at all written: no answer, score, words or guess. */
+const blank = (x: Tasting) =>
+  !filled(x) && x.score === null && x.buyAgain === null && !x.note?.trim() && !Object.keys(x.guesses).length;
+
 const filled = (x: Tasting) =>
   !!(
     x.appearance.clarity ||
