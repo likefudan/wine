@@ -7,6 +7,7 @@ import { GrowthPanel } from "../Growth";
 import { TastePanel } from "./Recs";
 import { Face, ProfileSheet } from "../Profile";
 import { LangSwitch } from "../LangSwitch";
+import { LegalLinks } from "../LegalLinks";
 import { ask } from "../confirm";
 import { DEPTH_INFO } from "../depths";
 import { currentLang, fmtDate, t, tm } from "../i18n";
@@ -282,6 +283,7 @@ export function MePage(props: { part?: "index" | "panels" }) {
               <button type="button" class="link danger delete-account" onClick={deleteAccount}>
                 {t("删除账号和全部数据")}
               </button>
+              <LegalLinks />
             </>
           )}
           {tab === "members" && (

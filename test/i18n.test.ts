@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { describe, expect, it } from "vitest";
 import { MESSAGES } from "../src/web/messages";
+import { PRIVACY, TERMS } from "../src/web/pages/legalText";
 
 const pages = import.meta.glob("../src/web/**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true }) as Record<
   string,
@@ -33,6 +34,15 @@ describe("translations", () => {
     for (const [zh, m] of Object.entries(MESSAGES)) {
       expect(placeholders(m.tw), zh).toEqual(placeholders(zh));
       expect(placeholders(m.en), zh).toEqual(placeholders(zh));
+    }
+  });
+
+  it("has the privacy policy and the terms, section for section, in every language", () => {
+    for (const doc of [PRIVACY, TERMS]) {
+      const shape = (l: keyof typeof doc) =>
+        doc[l].sections.map((s) => s.body.map((b) => (Array.isArray(b) ? b.length : 0)));
+      expect(shape("zh-TW")).toEqual(shape("zh-CN"));
+      expect(shape("en")).toEqual(shape("zh-CN"));
     }
   });
 });

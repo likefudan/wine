@@ -11,6 +11,7 @@ import { AnswersPage, BlindStart } from "./Blind";
 import { HomeRoute, LeftPage, LibraryRoute, MeRoute, Spine, useWide } from "./book";
 import { BottlesIcon, GlassIcon, ListIcon, PersonIcon } from "./components";
 import { LangMenu } from "./LangSwitch";
+import { isLegalPath } from "./LegalLinks";
 import { Logo } from "./Logo";
 import { useHideOnScroll } from "./hideOnScroll";
 import { useScrollReset } from "./scroll";
@@ -22,6 +23,7 @@ import { hasSavedLang, setLang, t, tm, useLang } from "./i18n";
 import { AddWine } from "./pages/AddWine";
 import { CellarLotPage, CellarRedirect } from "./pages/Cellar";
 import { JoinPage } from "./pages/JoinPage";
+import { Privacy, PrivacyOut, Terms, TermsOut } from "./pages/Legal";
 import { ListPage } from "./pages/ListPage";
 import { Login } from "./pages/Login";
 import { Avatar, refreshPending, usePending } from "./pages/Me";
@@ -163,6 +165,14 @@ function Shell() {
     if (boot.state === "in" && !me) setBoot({ state: "out", session: null });
   }, [me, boot.state]);
 
+  // 隐私政策 and 服务条款 are for anyone, and need nothing from the server: shown at once when signed out.
+  if (isLegalPath(path) && (boot.state !== "in" || !me))
+    return (
+      <Router>
+        <Route path="/privacy" component={PrivacyOut} />
+        <Route path="/terms" component={TermsOut} />
+      </Router>
+    );
   if (boot.state === "loading") return <div class="splash" aria-busy="true" />;
   if (boot.state === "out" || !me) {
     // A scanned QR code opens the list even when signed out.
@@ -186,7 +196,7 @@ function Shell() {
       ? "lists"
       : path.startsWith("/library") || path.startsWith("/wine") || path.startsWith("/cellar")
         ? "library"
-        : path.startsWith("/me")
+        : path.startsWith("/me") || isLegalPath(path)
           ? "me"
           : "";
   const fullScreen =
@@ -306,6 +316,8 @@ function Shell() {
                 <Route path="/me" component={MeRoute} />
                 <Route path="/friends" component={FriendsPage} />
                 <Route path="/recs" component={RecsPage} />
+                <Route path="/privacy" component={Privacy} />
+                <Route path="/terms" component={Terms} />
                 <Route default component={HomeRoute} />
               </Router>
             </main>

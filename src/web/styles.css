@@ -3120,3 +3120,54 @@ a.pro-score {
     min-height: 40px;
   }
 }
+
+/* ---- 隐私政策 and 服务条款 (pages/Legal.tsx), and the links to them ---- */
+.legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.legal-links a {
+  color: var(--muted);
+  padding: 8px 2px;
+}
+.login .legal-links {
+  margin-top: auto;
+}
+.login-features {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 15px;
+}
+.legal {
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+.legal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.legal h2 {
+  margin: 10px 0 6px;
+  font-size: 18px;
+}
+.legal p {
+  margin: 0 0 8px;
+}
+.legal ul {
+  margin: 0 0 8px;
+  padding-left: 1.2em;
+}
+.legal li {
+  margin-bottom: 6px;
+}
