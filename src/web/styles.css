@@ -46,8 +46,10 @@
     "Cormorant Garamond", "Songti SC", "Songti TC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC",
     "STSong", "SimSun", serif;
   --sans:
-    -apple-system, BlinkMacSystemFont, "PingFang SC", "PingFang TC", "Noto Sans SC", "Noto Sans TC", "Segoe UI", Roboto,
-    "Helvetica Neue", sans-serif;
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "PingFang TC", "Noto Sans SC", "Noto Sans TC", "Noto Sans CJK SC",
+    "Source Han Sans SC", "Microsoft YaHei", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* Running text. The serif, except on a screen too coarse for it (below). */
+  --text: var(--serif);
   color-scheme: light;
 }
 
@@ -132,6 +134,16 @@
   color-scheme: dark;
 }
 
+/* A desktop monitor at one pixel per point: a Song face's cross strokes are thinner than a pixel at
+   text sizes, so they come out grey and the page reads as out of focus. Running text is set in the
+   sans there; titles, big enough to hold their thin strokes, keep the serif. Phones and high-density
+   screens are untouched. */
+@media (max-resolution: 1.49dppx) {
+  :root {
+    --text: var(--sans);
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -144,7 +156,7 @@ body {
     radial-gradient(120% 60% at 50% 0%, var(--paper-glow) 0%, transparent 70%) no-repeat,
     var(--bg);
   color: var(--ink);
-  font: 17px / 1.55 var(--serif);
+  font: 17px / 1.55 var(--text);
   font-variant-numeric: lining-nums;
   -webkit-tap-highlight-color: transparent;
 }
