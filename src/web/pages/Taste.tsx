@@ -152,7 +152,7 @@ export function Taste() {
     }
     // 完成 uploads now: in a shared list friends see it, and nothing waits on the phone.
     flushPending();
-    route(backOf(x), true);
+    route(backOf(x, query.in === "home"), true);
   };
 
   return (
@@ -252,7 +252,7 @@ export function Taste() {
             timer.current = null;
             latest.current = undefined;
             deleteTasting(x.id, putBack);
-            route(backOf(x), true);
+            route(backOf(x, query.in === "home"), true);
           }}
         >
           {t("删除这条笔记")}
@@ -271,10 +271,14 @@ export function Taste() {
   );
 }
 
-/** Back to the list the wine is in, else the wine's page in the library. */
-function backOf(x: Tasting): string {
+/**
+ * Back to where the note was opened from: the 品鉴 the wine is in; for a wine tasted on its own, the
+ * diary when it was opened or started there (?in=home, Ke Li 2026-11-20: it went to 酒册), else the
+ * wine's page in 酒册.
+ */
+function backOf(x: Tasting, fromHome: boolean): string {
   const listId = x.listItemId ? getState().items.find((i) => i.id === x.listItemId)?.listId : undefined;
-  return listId ? `/lists/${listId}` : isBlindId(x.vintageId) ? "/" : `/wine/${x.vintageId}`;
+  return listId ? `/lists/${listId}` : fromHome || isBlindId(x.vintageId) ? "/" : `/wine/${x.vintageId}`;
 }
 
 // ── Shared pieces ────────────────────────────────────────────────────────────────────────────

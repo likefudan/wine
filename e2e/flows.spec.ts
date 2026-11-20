@@ -330,4 +330,14 @@ test("a wine tasted on its own is one entry of 品鉴 per sitting, named by its 
   // It opens that one note, not the wine.
   await solo.last().click();
   await expect(page).toHaveURL(new RegExp(`${new URL(first).pathname}\\?in=home$`));
+  // Back, 完成 alike, returns to 品鉴 where it was opened, not to the wine in 酒册.
+  await page.click('header button[aria-label="返回"]');
+  await expect(page).toHaveURL(/:8788\/$/);
+  await expect(solo).toHaveCount(2);
+  // Opened from 酒册, it goes back to the wine there.
+  await page.click(".tabbar >> text=酒册");
+  await page.click(".rows .row >> text=Solo Winery");
+  await page.locator('a.card[href^="/taste/"]').first().click();
+  await page.click('header button[aria-label="返回"]');
+  await expect(page).toHaveURL(/\/wine\//);
 });

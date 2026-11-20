@@ -178,7 +178,8 @@ export function AddWine(props: { cellar?: boolean }) {
     const item = listId ? addItem(listId, info.id) : null;
     const x = blankTasting(info.id, item?.id ?? null, getState().me?.depth ?? "quick");
     saveTasting({ ...x, photoId });
-    route(`/taste/${x.id}?new=1`, true);
+    // 品一款 outside any 品鉴 is a new entry of the diary: 完成 goes there to show it.
+    route(`/taste/${x.id}?new=1${item ? "" : "&in=home"}`, true);
   };
 
   const fromCatalog = (w: CatalogWine, year: number, id?: string) =>
