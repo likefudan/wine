@@ -6,7 +6,7 @@ import { FriendsOnWine } from "../Friends";
 import { BackIcon, BottleIcon, Glass, ShareIcon, WineName } from "../components";
 import { DEPTH_INFO } from "../depths";
 import { ProReviews } from "../Reviews";
-import { currentLang, fmtDate, p, t } from "../i18n";
+import { currentLang, fmtWhen, p, t } from "../i18n";
 import { saveTasting, useStore } from "../store";
 import { AddToCellarSheet, WineCellar } from "./Cellar";
 import { openTasting } from "./ListPage";
@@ -94,7 +94,7 @@ export function WinePage(props: { id?: string }) {
                 <div class="list-card-head">
                   <strong class="num big-score">{x.score ?? "—"}</strong>
                   <span class="muted small">
-                    {fmtDate(x.tastedAt)} · {t(DEPTH_INFO[x.depth].name)}
+                    {fmtWhen(x.tastedAt, true)} · {t(DEPTH_INFO[x.depth].name)}
                     {l ? ` · ${l.title}` : ""}
                     {x.buyAgain ? ` · ${t("还会买")}` : ""}
                     {x.cellarId ? ` · ${t("从酒窖开的")}` : ""}
