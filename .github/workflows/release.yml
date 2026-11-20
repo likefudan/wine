@@ -2,7 +2,7 @@ name: Release
 
 # 一键发布正式站: Actions → Release → Run workflow (on main). Tags the latest main as vYYYY.MM.DD
 # (Pacific date; .2, .3 … for later releases the same day), publishes a GitHub release with the
-# merged PRs as notes, then deploys wine.llmat.dev in this same run (deploy.yml).
+# merged PRs as notes, then deploys airoma.llmat.dev in this same run (deploy.yml).
 # Only a commit whose CI on main is green can be released. It can be run right after a merge: it
 # waits for that CI (up to 15 minutes) instead of failing while it is still running.
 #
