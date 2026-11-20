@@ -19,7 +19,7 @@ test("exports my notes as CSV and JSON", async ({ page }) => {
   await page.click("text=开始品鉴");
   await expect(page).toHaveURL(/\/taste\//);
 
-  await page.goto("/me?tab=general");
+  await page.goto("/me?tab=settings");
   const [csv] = await Promise.all([page.waitForEvent("download"), page.click("text=导出 CSV")]);
   expect(csv.suggestedFilename()).toMatch(/^wine-journal-\d{4}-\d{2}-\d{2}\.csv$/);
   const text = readFileSync((await csv.path())!, "utf8");

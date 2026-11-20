@@ -32,7 +32,7 @@ function LegalPage(props: { title: string; doc: LegalDoc; signedIn: boolean }) {
             type="button"
             class="icon-button back-up"
             aria-label={t("返回")}
-            onClick={() => goBack(route, "/me?tab=general")}
+            onClick={() => goBack(route, "/me?tab=settings")}
           >
             <BackIcon />
           </button>

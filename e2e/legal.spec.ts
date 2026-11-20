@@ -37,7 +37,7 @@ test("opened directly, and from 我 when signed in", async ({ page }) => {
   await page.fill('input[type="email"]', `legal${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=只想快速记个分");
-  await page.goto("/me?tab=general");
+  await page.goto("/me?tab=settings");
   await page.click(".legal-links >> text=隐私政策");
   await expect(page.locator("h1")).toHaveText("隐私政策");
   // Signed in, the app's own top bar and tabs are there instead of the page's.
@@ -50,8 +50,8 @@ test("signed in, the policy has a way back to 我", async ({ page }) => {
   await page.fill('input[type="email"]', `legalback${Date.now()}@example.com`);
   await page.click("text=Dev login");
   await page.click("text=只想快速记个分");
-  await page.goto("/me?tab=general");
+  await page.goto("/me?tab=settings");
   await page.click(".legal-links >> text=服务条款");
   await page.click('header button[aria-label="返回"]');
-  await expect(page).toHaveURL(/\/me\?tab=general/);
+  await expect(page).toHaveURL(/\/me\?tab=settings/);
 });

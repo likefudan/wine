@@ -3,7 +3,6 @@
 export const RECS_MESSAGES: Record<string, { tw: string; en: string }> = {
   为你推荐: { tw: "為你推薦", en: "For you" },
   今晚开哪瓶: { tw: "今晚開哪瓶", en: "Tonight's bottle" },
-  口味: { tw: "口味", en: "Taste" },
   我的口味: { tw: "我的口味", en: "My taste" },
   随便: { tw: "隨便", en: "Anything" },
   日常小酌: { tw: "日常小酌", en: "Weeknight" },
@@ -78,8 +77,6 @@ export const RECS_MESSAGES: Record<string, { tw: string; en: string }> = {
     tw: "給至少 3 款酒評了分，這裡會顯示你偏愛的品種、產區和風格，以及你和評論家的差別。",
     en: "Score at least 3 wines and this shows the grapes, regions and styles you prefer, and how you differ from the critics.",
   },
-  款打过分: { tw: "款評過分", en: "wines scored" },
-  平均分: { tw: "平均分", en: "average" },
   "数字是和你自己的平均分比：+3 表示这类酒你平均多给 3 分。": {
     tw: "數字是和你自己的平均分比：+3 表示這類酒你平均多給 3 分。",
     en: "Numbers compare with your own average: +3 means you give these 3 points more.",

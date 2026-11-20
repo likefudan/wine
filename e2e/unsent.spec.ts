@@ -82,7 +82,7 @@ test("a change the server refuses stays on the phone until I retry or let it go"
         }),
     );
   await expect.poll(saved).toBe("0/1");
-  await page.goto("/me?tab=general");
+  await page.goto("/me?tab=settings");
   await expect(page.locator(".failed-changes")).toContainText("1 条修改", { timeout: 15_000 });
   await expect(page.locator(".sync-status")).not.toContainText("都已备份");
   refuse = false;

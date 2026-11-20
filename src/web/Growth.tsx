@@ -1,3 +1,4 @@
+import type { ComponentChildren } from "preact";
 import { DESCRIPTORS, DESCRIPTOR_BY_ID } from "../shared/descriptors";
 import { grapeName } from "../shared/grapes";
 import { growthOf, suggestStandard } from "../shared/growth";
@@ -13,10 +14,11 @@ const monthLabel = (ym: string) => {
 };
 
 /**
- * 我的 → 成长 (docs/design.zh.md §3.4): the aromas I can name, the grapes and countries I have tried,
+ * 我 → 我的品酒 (docs/design.zh.md §3.4): the aromas I can name, the grapes and countries I have tried,
  * and month by month how my notes change. Nothing here is a grade: it only shows what I wrote.
+ * `taste`: what I like (Recs.tsx TasteSections), shown between the numbers and the months.
  */
-export function GrowthPanel() {
+export function GrowthPanel(props: { taste?: ComponentChildren }) {
   const tastings = useStore((s) => s.tastings);
   const vintages = useStore((s) => s.vintages);
   const depth = useStore((s) => s.me?.depth ?? null);
@@ -64,6 +66,8 @@ export function GrowthPanel() {
           </button>
         </section>
       )}
+
+      {props.taste}
 
       <section class="group">
         <h2 class="group-title">{t("每个月")}</h2>

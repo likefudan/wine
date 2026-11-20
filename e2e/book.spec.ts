@@ -53,7 +53,7 @@ test.describe("a phone on its side", () => {
     await expect(left.locator(".rows .selected")).toContainText("Spine Winery");
     await expect(right.locator(".page-head")).toContainText("Spine Winery");
     await left.locator('.tabbar >> text="我"').click();
-    await left.locator(".segmented >> text=通用").click();
+    await left.locator(".segmented >> text=设置").click();
     await expect(right).toContainText("外观");
     await expect(left.locator(".me-card")).toBeVisible();
   });

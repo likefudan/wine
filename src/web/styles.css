@@ -989,6 +989,26 @@ h3 {
   font-weight: 600;
   font-size: 14px;
 }
+/* 我: 设置 and (owners) 管理, two entries under my card instead of tabs. */
+.me-links {
+  display: flex;
+  border-top: 0.5px solid var(--ink);
+  border-bottom: 0.5px solid var(--ink);
+}
+.me-links a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--ink-2);
+  font-size: 15px;
+  text-decoration: none;
+}
+.me-links a + a {
+  border-left: 0.5px dotted var(--ink-2);
+}
 
 /* 昵称和头像 (Profile.tsx), the badminton site's 头像 form and cropper. */
 .profile-sheet {
