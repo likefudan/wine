@@ -97,10 +97,11 @@ export async function placeDetails(
       id: string;
       displayName?: { text: string };
       formattedAddress?: string;
-      addressComponents?: { longText: string; types: string[] }[];
+      // Google leaves `types` out of a part that has none.
+      addressComponents?: { longText: string; types?: string[] }[];
       location?: { latitude: number; longitude: number };
     };
-    const part = (type: string) => p.addressComponents?.find((c) => c.types.includes(type))?.longText ?? null;
+    const part = (type: string) => p.addressComponents?.find((c) => c.types?.includes(type))?.longText ?? null;
     return {
       id: p.id,
       name: p.displayName?.text ?? "",
@@ -120,7 +121,8 @@ interface NearbyRaw {
   id: string;
   displayName?: { text: string };
   formattedAddress?: string;
-  addressComponents?: { longText: string; types: string[] }[];
+  // Google leaves `types` out of a part that has none.
+  addressComponents?: { longText: string; types?: string[] }[];
   location?: { latitude: number; longitude: number };
 }
 
@@ -216,7 +218,7 @@ export async function nearbyPlaces(
     })(),
   ]);
   const places = found.map((p) => {
-    const part = (type: string) => p.addressComponents?.find((c) => c.types.includes(type))?.longText ?? null;
+    const part = (type: string) => p.addressComponents?.find((c) => c.types?.includes(type))?.longText ?? null;
     const plat = p.location?.latitude ?? null;
     const plng = p.location?.longitude ?? null;
     return {
@@ -254,10 +256,10 @@ async function placesUser(c: Context<{ Bindings: Env }>) {
   return user;
 }
 
-const logPlaces = (env: Env, userId: string, meter: string[]) =>
+const logPlaces = (env: Env, userId: string, meter: string[], ok = true) =>
   Promise.all(
     meter.map((model) =>
-      logCall(env, { userId, feature: "places", model, usage: { input: 0, output: 0, searches: 1 } }),
+      logCall(env, { userId, feature: "places", model, ok, usage: { input: 0, output: 0, searches: 1 } }),
     ),
   );
 
@@ -271,9 +273,16 @@ placesRoutes.get("/places/near", async (c) => {
   const kind = (PLACE_KINDS as readonly string[]).includes(t) ? (t as PlaceKind) : null;
   const lang = /^[a-z]{2}(-[A-Z]{2})?$/.test(c.req.query("l") ?? "") ? c.req.query("l")! : "en";
   const meter: string[] = [];
-  const found = await nearbyPlaces(c.env, lat, lng, kind, lang, meter);
-  await logPlaces(c.env, user.id, meter);
-  return c.json(found);
+  try {
+    const found = await nearbyPlaces(c.env, lat, lng, kind, lang, meter);
+    await logPlaces(c.env, user.id, meter);
+    return c.json(found);
+  } catch (err) {
+    // Google was asked (and bills) even when its answer could not be read: 开销 shows these as failed.
+    console.error("places near failed:", err);
+    await logPlaces(c.env, user.id, meter, false);
+    throw err;
+  }
 });
 
 placesRoutes.get("/places", async (c) => {
