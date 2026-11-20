@@ -1,4 +1,5 @@
 import { useLocation } from "preact-iso";
+import { goBack } from "../nav";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { bottleCount, windowLabel } from "../../shared/cellar";
 import { FAMILY_BY_ID } from "../../shared/descriptors";
@@ -94,13 +95,14 @@ function reasonText(r: TonightReason): string {
 
 /** /recs */
 export function RecsPage() {
+  const { route } = useLocation();
   const profile = useProfile();
   const lots = useStore((s) => s.cellar);
   const full = lots.filter((l) => l.qty > 0);
   return (
     <div class="page recs">
       <header class="page-head pin">
-        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => goBack(route, "/")}>
           <BackIcon />
         </button>
         <h1 class="page-head-title">{t("为你推荐")}</h1>

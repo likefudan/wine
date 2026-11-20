@@ -1,4 +1,5 @@
 import { useLocation, useRoute } from "preact-iso";
+import { goUp } from "../nav";
 import { useEffect, useState } from "preact/hooks";
 import { glassColor } from "../../shared/guide";
 import {
@@ -124,9 +125,9 @@ export function ListPage(props: { id?: string }) {
   return (
     <div class="page">
       <header class="page-head pin">
-        <a href="/" class="icon-button back-up" aria-label={t("返回")}>
+        <button type="button" class="icon-button back-up" aria-label={t("返回")} onClick={() => goUp(route, "/")}>
           <BackIcon />
-        </a>
+        </button>
         <div class="page-head-title">
           <h1 class="list-title">{list.title}</h1>
           <span class="muted small">

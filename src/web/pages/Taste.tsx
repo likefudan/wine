@@ -1,4 +1,5 @@
 import { lazy, useLocation, useRoute } from "preact-iso";
+import { goUp } from "../nav";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   BEGINNER_GROUPS,
@@ -152,7 +153,7 @@ export function Taste() {
     }
     // 完成 uploads now: in a shared list friends see it, and nothing waits on the phone.
     flushPending();
-    route(backOf(x, query.in === "home"), true);
+    goUp(route, backOf(x, query.in === "home"));
   };
 
   return (
@@ -247,12 +248,12 @@ export function Taste() {
             const putBack =
               !!saved?.cellarId &&
               getState().cellar.some((l) => l.id === saved.cellarId) &&
-              (await ask(t("这瓶是从酒窖开的，要放回酒窖吗？"), { ok: t("放回酒窖") }));
+              (await ask(t("这瓶是从酒窖开的，要放回酒窖吗？"), { ok: t("放回酒窖"), danger: false }));
             if (timer.current) clearTimeout(timer.current);
             timer.current = null;
             latest.current = undefined;
             deleteTasting(x.id, putBack);
-            route(backOf(x, query.in === "home"), true);
+            goUp(route, backOf(x, query.in === "home"));
           }}
         >
           {t("删除这条笔记")}

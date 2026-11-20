@@ -1,4 +1,6 @@
+import { useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
+import { goBack } from "./nav";
 import { DESCRIPTOR_BY_ID } from "../shared/descriptors";
 import { glassColor } from "../shared/guide";
 import type { FriendFeed, FriendNote } from "../shared/model";
@@ -138,6 +140,7 @@ export function FriendsSection() {
 
 /** /friends: everything, newest first. Opening it counts as having seen them. */
 export function FriendsPage() {
+  const { route } = useLocation();
   const { feed, more, loading } = useFriendFeed();
   const [seen] = useState(seenAt);
   useEffect(() => {
@@ -146,7 +149,7 @@ export function FriendsPage() {
   return (
     <div class="page">
       <header class="page-head pin">
-        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => goBack(route, "/")}>
           <BackIcon />
         </button>
         <h1 class="page-head-title">{t("朋友动态")}</h1>

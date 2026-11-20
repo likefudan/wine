@@ -1,4 +1,5 @@
 import { useLocation, useRoute } from "preact-iso";
+import { goBack, goUp } from "../nav";
 import { useEffect, useState } from "preact/hooks";
 import {
   BOTTLE_SIZES,
@@ -21,7 +22,7 @@ import { type Tasting, type VintageInfo, nameKey, yearLabel } from "../../shared
 import type { ReviewsView } from "../../shared/reviews";
 import { BackIcon, Field, Glass, Sheet, WineName } from "../components";
 import { ask } from "../confirm";
-import { currentLang, fmtDate, t, tk } from "../i18n";
+import { currentLang, fmtWhen, t, tk } from "../i18n";
 import { SuggestInput } from "../SuggestInput";
 import {
   addVintage,
@@ -301,7 +302,7 @@ export function CellarLotPage() {
   return (
     <div class="page">
       <header class="page-head pin">
-        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => goBack(route, `/wine/${v.id}`)}>
           <BackIcon />
         </button>
         <div class="page-head-title taste-wine">
@@ -334,7 +335,7 @@ export function CellarLotPage() {
                 type="button"
                 class="link small"
                 onClick={async () => {
-                  if (await ask(t("不记录，只把数量减一瓶？"), { ok: t("减一瓶") })) open(false);
+                  if (await ask(t("不记录，只把数量减一瓶？"), { ok: t("减一瓶"), danger: false })) open(false);
                 }}
               >
                 {t("只减一瓶，不记录")}
@@ -354,10 +355,10 @@ export function CellarLotPage() {
           onClick={async () => {
             if (!(await ask(t("删除这条酒窖记录？喝过的笔记会留着。"), { ok: t("删除"), danger: true }))) return;
             deleteLot(lot.id);
-            route("/library?view=cellar", true);
+            goUp(route, "/library?view=cellar");
           }}
         >
-          {t("删除这条笔记")}
+          {t("删除这条酒窖记录")}
         </button>
       )}
     </div>
@@ -448,7 +449,7 @@ function TastedRow(props: { x: Tasting }) {
     <li>
       <a class="row compact" href={`/taste/${x.id}`}>
         <span class="row-main">
-          <span>{fmtDate(x.tastedAt)}</span>
+          <span>{fmtWhen(x.tastedAt)}</span>
           {(place || x.note) && <span class="row-list">{[place, x.note].filter(Boolean).join(" · ")}</span>}
         </span>
         <span class="row-score num">{x.score ?? "—"}</span>

@@ -44,3 +44,14 @@ test("opened directly, and from 我 when signed in", async ({ page }) => {
   await expect(page.locator(".legal-top")).toHaveCount(0);
   await expect(page.locator(".tabbar a.on")).toContainText("我");
 });
+
+test("signed in, the policy has a way back to 我", async ({ page }) => {
+  await page.goto("/");
+  await page.fill('input[type="email"]', `legalback${Date.now()}@example.com`);
+  await page.click("text=Dev login");
+  await page.click("text=只想快速记个分");
+  await page.goto("/me?tab=general");
+  await page.click(".legal-links >> text=服务条款");
+  await page.click('header button[aria-label="返回"]');
+  await expect(page).toHaveURL(/\/me\?tab=general/);
+});

@@ -48,6 +48,7 @@ export const CELLAR_MESSAGES: Record<string, { tw: string; en: string }> = {
   "不记录，只把数量减一瓶？": { tw: "不記錄，只把數量減一瓶？", en: "Take one bottle off without a note?" },
   减一瓶: { tw: "減一瓶", en: "Take one off" },
   "只减一瓶，不记录": { tw: "只減一瓶，不記錄", en: "Take one off, no note" },
+  删除这条酒窖记录: { tw: "刪除這筆酒窖紀錄", en: "Delete from cellar" },
   "删除这条酒窖记录？喝过的笔记会留着。": {
     tw: "刪除這筆酒窖紀錄？喝過的筆記會留著。",
     en: "Delete this from the cellar? Notes on bottles you opened stay.",

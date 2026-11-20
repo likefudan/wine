@@ -1,4 +1,5 @@
 import { useLocation, useRoute } from "preact-iso";
+import { goBack, goUp } from "./nav";
 import { useEffect, useState } from "preact/hooks";
 import {
   BLIND,
@@ -58,7 +59,12 @@ export function BlindStart() {
   return (
     <div class="page">
       <header class="page-head">
-        <button type="button" class="icon-button" aria-label={t("返回")} onClick={() => history.back()}>
+        <button
+          type="button"
+          class="icon-button"
+          aria-label={t("返回")}
+          onClick={() => goBack(route, list ? `/lists/${list.id}` : "/")}
+        >
           <BackIcon />
         </button>
         <h1 class="page-head-title">{t("盲品")}</h1>
@@ -357,9 +363,14 @@ export function AnswersPage() {
   return (
     <div class="page">
       <header class="page-head">
-        <a href={`/lists/${list.id}`} class="icon-button" aria-label={t("返回")}>
+        <button
+          type="button"
+          class="icon-button"
+          aria-label={t("返回")}
+          onClick={() => goUp(route, `/lists/${list.id}`)}
+        >
           <BackIcon />
-        </a>
+        </button>
         <div class="page-head-title">
           <h1 class="list-title">{t("对答案")}</h1>
           <span class="muted small">{list.title}</span>
