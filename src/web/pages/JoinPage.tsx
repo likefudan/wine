@@ -54,12 +54,12 @@ export function JoinPage(props: { signedIn: boolean }) {
         {head}
         <div class="lockup">
           <Logo size={44} />
-          <h1 class="brand">{t("品酒日记")}</h1>
+          <h1 class="brand">{"AIroma"}</h1>
         </div>
         <p class="notice" role="alert">
           {error}
         </p>
-        <a href="/">{props.signedIn ? t("回到品鉴") : t("打开品酒日记")}</a>
+        <a href="/">{props.signedIn ? t("回到品鉴") : t("打开 AIroma")}</a>
       </div>
     );
   if (!board) return <div class="splash" aria-busy="true" />;

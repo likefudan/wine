@@ -206,9 +206,9 @@ function Shell() {
   const head = (
     <header class={dockHidden ? "app-head hidden" : "app-head"} ref={headRef}>
       <div class="app-head-row">
-        <a href="/" class="app-brand" aria-label={t("品酒日记")}>
+        <a href="/" class="app-brand" aria-label={"AIroma"}>
           <Logo size={30} class="head-logo" />
-          <span class="brand">{t("品酒日记")}</span>
+          <span class="brand">{"AIroma"}</span>
         </a>
         {/* Top right, as on the badminton site: the language, then me. */}
         <div class="head-actions-top">

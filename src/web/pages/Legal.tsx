@@ -9,7 +9,7 @@ import { type LegalDoc, PRIVACY, TERMS } from "./legalText";
  * without an account). Signed out, the page brings its own top row, since the app's is not there.
  */
 function LegalPage(props: { title: string; doc: LegalDoc; signedIn: boolean }) {
-  const site = t("品酒日记");
+  const site = "AIroma";
   const fill = (s: string) => s.split("{site}").join(site).split("{host}").join(location.host);
   return (
     <div class="page legal">

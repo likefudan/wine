@@ -53,7 +53,7 @@ export function Login(props: { session: { google: boolean; dev: boolean; me: Me 
         </div>
         <div class="lockup">
           <Logo size={56} />
-          <h1 class="brand">{t("品酒日记")}</h1>
+          <h1 class="brand">{"AIroma"}</h1>
         </div>
         <p class="lead">{t("在酒庄 30 秒记下一款酒，回家后随时都能搜到。不懂品酒术语也能上手。")}</p>
       </div>

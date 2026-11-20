@@ -1,4 +1,4 @@
-# AIroma 品酒日记
+# AIroma
 
 A mobile-first web app for keeping a structured wine tasting journal: record each wine in seconds at the winery, search everything you have tasted later, and compare notes with the friends who were there.
 
