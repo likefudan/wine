@@ -5,8 +5,6 @@ export interface Env {
   PHOTOS?: R2Bucket;
   /** https://airoma.llmat.dev: the Google redirect goes back here. */
   SITE_ORIGIN: string;
-  /** https://wine.llmat.dev: the address before the rename, still served, and signing in there still works. */
-  OLD_ORIGIN?: string;
   /** "production" or "staging"; missing in tests. */
   ENVIRONMENT?: string;
   /** Who runs the site, comma-separated Google emails: they may always sign in and invite others. */

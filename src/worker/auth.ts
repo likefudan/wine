@@ -210,13 +210,7 @@ async function startSession(
   setCookie(c, SESSION_COOKIE, raw, { ...cookieOptions(c), expires });
 }
 
-// Google sends the visitor back to the address they signed in from: the site's own, or the previous
-// one (OLD_ORIGIN) while it is still served. Any other host gets the site's own.
-export function redirectUri(env: Pick<Env, "SITE_ORIGIN" | "OLD_ORIGIN">, url: string) {
-  const here = new URL(url).origin;
-  const old = env.OLD_ORIGIN ? new URL(env.OLD_ORIGIN).origin : "";
-  return `${here === old ? old : new URL(env.SITE_ORIGIN).origin}/api/auth/google/callback`;
-}
+const redirectUri = (env: Env) => `${new URL(env.SITE_ORIGIN).origin}/api/auth/google/callback`;
 
 export const authRoutes = new Hono<{ Bindings: Env }>();
 
@@ -248,7 +242,7 @@ authRoutes.get("/google", async (c) => {
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.search = new URLSearchParams({
     client_id: c.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: redirectUri(c.env, c.req.url),
+    redirect_uri: redirectUri(c.env),
     response_type: "code",
     scope: "openid email profile",
     state,
@@ -284,7 +278,7 @@ authRoutes.get("/google/callback", async (c) => {
         code,
         client_id: c.env.GOOGLE_CLIENT_ID!,
         client_secret: c.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: redirectUri(c.env, c.req.url),
+        redirect_uri: redirectUri(c.env),
         grant_type: "authorization_code",
         code_verifier: saved.verifier,
       }),
