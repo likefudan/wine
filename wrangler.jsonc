@@ -21,14 +21,9 @@
   // then labels are read but not kept.
   "vars": {
     "SITE_ORIGIN": "https://airoma.llmat.dev",
-    // The address before the app was renamed AIroma: kept working until everyone has moved.
-    "OLD_ORIGIN": "https://wine.llmat.dev",
     "ENVIRONMENT": "production"
   },
-  "routes": [
-    { "pattern": "airoma.llmat.dev", "custom_domain": true },
-    { "pattern": "wine.llmat.dev", "custom_domain": true }
-  ],
+  "routes": [{ "pattern": "airoma.llmat.dev", "custom_domain": true }],
   "observability": { "enabled": true },
 
   // Test site: its own Worker, database and domain. Every merge to main lands here; production only
@@ -47,13 +42,9 @@
       ],
       "vars": {
         "SITE_ORIGIN": "https://airoma-staging.llmat.dev",
-        "OLD_ORIGIN": "https://wine-staging.llmat.dev",
         "ENVIRONMENT": "staging"
       },
-      "routes": [
-        { "pattern": "airoma-staging.llmat.dev", "custom_domain": true },
-        { "pattern": "wine-staging.llmat.dev", "custom_domain": true }
-      ],
+      "routes": [{ "pattern": "airoma-staging.llmat.dev", "custom_domain": true }],
       "observability": { "enabled": true }
     }
   }
