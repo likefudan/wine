@@ -64,8 +64,10 @@ export function leftPage(
   if (path.startsWith("/taste/")) {
     const x = s.tastings.find((n) => n.id === id);
     const item = x?.listItemId ? s.items.find((i) => i.id === x.listItemId) : undefined;
-    // A glass in a 品鉴: the other glasses stay at hand. A note by itself: the wine's earlier notes.
+    // A glass in a 品鉴: the other glasses stay at hand. A note by itself: the wine's earlier notes,
+    // or, opened from 品鉴 where it is an entry of its own (?in=home), the diary stays.
     if (item) return listPage(item.listId, item.id);
+    if (x && query.in === "home") return { page: <Home />, selected: x.id };
     if (x && !isBlindId(x.vintageId))
       return { page: <WinePage key={`w${x.vintageId}`} id={x.vintageId} />, selected: x.id };
     return { page: <Home />, selected: null };

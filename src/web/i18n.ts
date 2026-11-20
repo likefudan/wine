@@ -106,3 +106,16 @@ export function fmtDate(value: string, withYear = true): string {
   if (lang === "en") return `${MONTHS[m - 1]} ${day}${showYear ? `, ${y}` : ""}`;
   return `${showYear ? `${y}年` : ""}${m}月${day}日`;
 }
+
+/** 早上 / 中午 / 下午 / 晚上 of an instant (local time): what tells two tastings of one day apart. */
+export function dayPart(value: string): string {
+  const h = new Date(value).getHours();
+  return t(
+    h >= 5 && h < 11 ? tk("早上") : h >= 11 && h < 14 ? tk("中午") : h >= 14 && h < 18 ? tk("下午") : tk("晚上"),
+  );
+}
+
+/** 11月19日 晚上 / Nov 19, evening: the day and the part of it. */
+export function fmtWhen(value: string, withYear = false): string {
+  return `${fmtDate(value, withYear)}${lang === "en" ? ", " : " "}${dayPart(value)}`;
+}

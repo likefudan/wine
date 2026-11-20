@@ -10,7 +10,7 @@ import { RecsHomeCard } from "./Recs";
 import { NearbyPicker } from "../NearbyPicker";
 import { PlaceInput } from "../PlaceInput";
 import { Choice, Field, Glass, Sheet, WineName } from "../components";
-import { fmtDate, t, tk } from "../i18n";
+import { fmtDate, fmtWhen, t, tk } from "../i18n";
 import { newList, useStore } from "../store";
 import { useSelected } from "../selected";
 
@@ -23,6 +23,13 @@ export const KIND_NAMES: Record<ListKind, string> = {
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+/** An instant as local "2026-11-19T20:05", so it sorts among the plain dates of 品鉴. */
+const localStamp = (iso: string) => {
+  const d = new Date(iso);
+  const two = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}`;
 };
 
 /** The place fields of each kind of list: what the name is called, and what Google looks for first. */
@@ -156,8 +163,13 @@ export function Home() {
   const [adding, setAdding] = useState(false);
   const selected = useSelected();
   const vById = new Map(vintages.map((v) => [v.id, v]));
-  const loose = tastings.filter((x) => !x.listItemId).slice(0, 5);
-  const sorted = [...lists].sort((a, b) => (b.startsOn ?? b.createdAt).localeCompare(a.startsOn ?? a.createdAt));
+  // One diary, newest first: a 品鉴 with several wines, or one wine tasted by itself (品一款). Each
+  // entry is one sitting (Ke Li 2026-11-20), so a wine tasted twice is two entries; the wine with
+  // all its notes is in 酒册.
+  const entries = [
+    ...lists.map((l) => ({ at: l.startsOn ?? localStamp(l.createdAt), list: l, solo: null })),
+    ...tastings.filter((x) => !x.listItemId).map((x) => ({ at: localStamp(x.tastedAt), list: null, solo: x })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
 
   return (
     <div class="page">
@@ -177,13 +189,38 @@ export function Home() {
         <RecsHomeCard />
         <FriendsSection />
       </div>
-      {sorted.length === 0 && (
+      {entries.length === 0 && (
         <div class="empty">
           <p>{t("一次品鉴可以是一次酒庄参观、一顿饭局或一整趟旅行。去之前建好，到了就按上酒顺序一款款记。")}</p>
         </div>
       )}
       <ul class="cards">
-        {sorted.map((l) => {
+        {entries.map(({ list: l, solo: x }) => {
+          if (x) {
+            const v = blindShown(x, vById.get(x.vintageId));
+            if (!v) return null;
+            const waiting = isBlindId(x.vintageId);
+            const where = x.location?.name || x.location?.address;
+            return (
+              <li key={x.id} class={selected === x.id ? "selected" : undefined}>
+                <a class="card list-card solo-card" href={`/taste/${x.id}?in=home`}>
+                  <div class="list-card-head">
+                    <strong class="list-title">{fmtWhen(x.tastedAt)}</strong>
+                    <span class="muted small">
+                      {t("单款")}
+                      {where ? ` · ${where}` : ""}
+                    </span>
+                  </div>
+                  <div class="glass-row">
+                    <Glass color={glassColor(v.color, x.appearance, v.year)} size={22} />
+                    <WineName v={v} sub={false} />
+                    <span class="row-score num">{waiting ? t("待对答案") : (x.score ?? "—")}</span>
+                  </div>
+                </a>
+              </li>
+            );
+          }
+          if (!l) return null;
           const its = items.filter((i) => i.listId === l.id).sort((a, b) => a.position - b.position);
           return (
             <li key={l.id} class={selected === l.id ? "selected" : undefined}>
@@ -212,27 +249,6 @@ export function Home() {
           );
         })}
       </ul>
-      {loose.length > 0 && (
-        <section>
-          <h2 class="visually-hidden">{t("单独记的酒")}</h2>
-          <ul class="rows">
-            {loose.map((x) => {
-              const v = blindShown(x, vById.get(x.vintageId));
-              if (!v) return null;
-              const waiting = isBlindId(x.vintageId);
-              return (
-                <li key={x.id}>
-                  <a class="row" href={`/taste/${x.id}`}>
-                    <Glass color={glassColor(v.color, x.appearance, v.year)} />
-                    <WineName v={v} sub={waiting} />
-                    <span class="row-score num">{waiting ? t("待对答案") : (x.score ?? "—")}</span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
       {adding && <NewListSheet onClose={() => setAdding(false)} onCreated={(id) => route(`/lists/${id}`)} />}
     </div>
   );

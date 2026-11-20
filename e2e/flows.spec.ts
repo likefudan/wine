@@ -294,3 +294,40 @@ test("the tab bar and the brand bar slide away while scrolling down the page and
   await expect(dock).not.toHaveClass(/hidden/);
   await expect(head).not.toHaveClass(/hidden/);
 });
+
+test("a wine tasted on its own is one entry of 品鉴 per sitting, named by its day and time of day", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.click("text=只想快速记个分");
+  await page.click(".dock-add");
+  await page.fill("input.search", "Solo Winery");
+  await page.click("text=新酒：Solo Winery");
+  await page.fill('input[placeholder="2019"]', "2020");
+  await page.click(".choice >> text=红");
+  await page.click("text=开始品鉴");
+  await expect(page).toHaveURL(/\/taste\//);
+  const first = page.url().split("?")[0]!;
+  await page.click("header >> text=完成");
+  // The same wine again: a second sitting, not one more note under the same entry.
+  await page.goto("/");
+  await page.click(".dock-add");
+  await page.fill("input.search", "Solo Winery");
+  await page.click(".rows .row >> text=Solo Winery");
+  await expect(page).toHaveURL(/\/taste\//);
+  expect(page.url().split("?")[0]).not.toBe(first);
+  await page.click("header >> text=完成");
+
+  await page.goto("/");
+  const solo = page.locator(".cards .solo-card");
+  await expect(solo).toHaveCount(2);
+  const d = new Date();
+  await expect(solo.first().locator(".list-title")).toHaveText(
+    new RegExp(`^${d.getMonth() + 1}月${d.getDate()}日 (早上|中午|下午|晚上)$`),
+  );
+  await expect(solo.first()).toContainText("单款");
+  await expect(solo.first()).toContainText("Solo Winery");
+  // It opens that one note, not the wine.
+  await solo.last().click();
+  await expect(page).toHaveURL(new RegExp(`${new URL(first).pathname}\\?in=home$`));
+});

@@ -459,6 +459,17 @@ h3 {
 .glass-row .muted {
   margin-left: 6px;
 }
+/* One wine tasted by itself: the day is the title, the wine is the line under it. */
+.solo-card .glass-row {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+.solo-card .wine-producer {
+  font-size: 17px;
+}
+.solo-card .row-score {
+  font-size: 24px;
+}
 .row {
   display: flex;
   align-items: center;
