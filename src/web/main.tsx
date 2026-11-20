@@ -14,6 +14,7 @@ import { LangMenu } from "./LangSwitch";
 import { isLegalPath } from "./LegalLinks";
 import { Logo } from "./Logo";
 import { useHideOnScroll } from "./hideOnScroll";
+import { usePageMotion } from "./pageMotion";
 import { useScrollReset } from "./scroll";
 import { ConfirmHost } from "./confirm";
 import { FriendsPage } from "./Friends";
@@ -80,6 +81,9 @@ function Shell() {
     if (boot.state === "in") flushPending();
   }, [path]);
   useScrollReset(path, wide ? rightRef : undefined);
+  // The arriving page glides or fades in (pageMotion.ts).
+  const mainRef = useRef<HTMLElement>(null);
+  usePageMotion(path, mainRef, boot.state === "in" && !!me?.depth, wide);
   // How tall the brand bar is: what stays pinned under it (.pin) needs to know where it ends.
   const headRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -298,7 +302,7 @@ function Shell() {
         {wide && <Spine key="spine" />}
         <section key="right" class="leaf right">
           <div class="leaf-scroll" ref={rightRef}>
-            <main class={fullScreen || wide ? "main full" : "main"}>
+            <main class={fullScreen || wide ? "main full" : "main"} ref={mainRef}>
               <Router>
                 <Route path="/" component={HomeRoute} />
                 <Route path="/lists/:id" component={ListPage} />
